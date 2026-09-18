@@ -265,7 +265,7 @@
   <div class="modal-content">
     <h3>☁️ Подключение к облаку</h3>
     <p class="settings-hint" id="settingsHint">Это окно появляется один раз на каждом устройстве. Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
-    <input type="password" id="tokenInput" name="darya_token" placeholder="github_pat_..." autocomplete="off">
+    <div id="tokenInputWrap"></div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelSettings">Позже</button>
       <button class="modal-btn primary" id="saveSettings">Сохранить</button>
@@ -303,8 +303,16 @@ function clearTransientInputs() {
   if (s) s.value = '';
   if (qa) qa.value = '';
 }
+function clearSearchOnly() {
+  const s = document.getElementById('searchInput');
+  if (s && document.activeElement !== s) s.value = '';
+}
 window.addEventListener('load', clearTransientInputs);
 window.addEventListener('pageshow', clearTransientInputs);
+// Страховка от поздней подстановки браузером
+setTimeout(clearSearchOnly, 300);
+setTimeout(clearSearchOnly, 1200);
+
 function clearLeakedSearch(text) {
   if (!text) return;
   const s = document.getElementById('searchInput');
@@ -678,20 +686,38 @@ document.addEventListener('click', e => {
   if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; }
 }, true);
 
+// Настройки облака: поле токена создаётся только на время открытого окна
 function openSettings(hint) {
   if (hint) document.getElementById('settingsHint').textContent = hint;
-  document.getElementById('tokenInput').value = getToken();
+  const wrap = document.getElementById('tokenInputWrap');
+  wrap.innerHTML = '';
+  const inp = document.createElement('input');
+  inp.type = 'password';
+  inp.id = 'tokenInput';
+  inp.name = 'darya_token';
+  inp.placeholder = 'github_pat_...';
+  inp.autocomplete = 'new-password';
+  inp.value = getToken();
+  wrap.appendChild(inp);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
   document.getElementById('settingsModal').classList.add('open');
+  setTimeout(() => inp.focus(), 0);
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+  const wrap = document.getElementById('tokenInputWrap');
+  if (wrap) wrap.innerHTML = '';
+}
+function saveSettings() {
+  const inp = document.getElementById('tokenInput');
+  const v = inp ? inp.value.trim() : '';
+  if (v) localStorage.setItem(TOKEN_KEY, v); else localStorage.removeItem(TOKEN_KEY);
+  closeSettings();
+  schedulePush();
 }
 document.getElementById('logoBtn').addEventListener('dblclick', () => openSettings('Служебный вход: заменить токен на этом устройстве.'));
-document.getElementById('cancelSettings').addEventListener('click', () => document.getElementById('settingsModal').classList.remove('open'));
-document.getElementById('saveSettings').addEventListener('click', () => {
-  const v = document.getElementById('tokenInput').value.trim();
-  if (v) localStorage.setItem(TOKEN_KEY, v); else localStorage.removeItem(TOKEN_KEY);
-  document.getElementById('settingsModal').classList.remove('open');
-  schedulePush();
-});
-document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('saveSettings').click(); });
+document.getElementById('cancelSettings').addEventListener('click', closeSettings);
+document.getElementById('saveSettings').addEventListener('click', saveSettings);
 
 const micBtn = document.getElementById('micBtn');
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
