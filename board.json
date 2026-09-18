@@ -55,5 +55,28 @@
       "subtasks": [],
       "subOpen": false
     }
+  ],
+  "zones": [
+    {
+      "key": "other",
+      "label": "Прочее",
+      "emoji": "📋",
+      "hidden": false,
+      "tint": 0
+    },
+    {
+      "key": "portal",
+      "label": "Портал 2.0",
+      "emoji": "🚪",
+      "hidden": true,
+      "tint": 1
+    },
+    {
+      "key": "aviabit",
+      "label": "Авиабит",
+      "emoji": "🛩️",
+      "hidden": false,
+      "tint": 2
+    }
   ]
 }
