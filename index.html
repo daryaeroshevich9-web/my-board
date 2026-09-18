@@ -31,7 +31,7 @@
   ::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:var(--si-total-bg,#E8EDF4);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default}
+  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:#E8EDF4;border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default}
   .title-block{min-width:160px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
   .subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
@@ -57,6 +57,8 @@
   .icon-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.65);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;flex:none}
   .icon-btn:hover{background:rgba(255,255,255,.95)}
   .icon-btn svg{width:18px;height:18px;color:var(--text-secondary)}
+  .toolbar .icon-btn{background:rgba(255,255,255,.65);color:inherit;padding:0}
+  .toolbar .icon-btn:hover{filter:none;background:rgba(255,255,255,.95)}
   .summary{max-width:var(--maxw);margin:0 auto;padding:20px 28px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   .summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);display:flex;align-items:center;gap:12px}
   .summary-card.clickable{cursor:pointer;transition:transform .15s, box-shadow .15s}
@@ -88,7 +90,7 @@
   .note:active{cursor:grabbing}
   .note.dragging-src{opacity:.35}
   .note:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.10)}
-  .drag-ghost{position:fixed;z-index:1200;pointer-events:none;opacity:.95;transform:rotate(2deg);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:12px;margin:0}
+  .drag-ghost{position:fixed;z-index:1200;pointer-events:none;opacity:.95;transform:rotate(2deg);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:12px;margin:0;background:var(--card)}
   .note::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--zone-color)}
   .note-checkbox{position:absolute;left:12px;top:12px;width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--zone-color)}
   .note-body{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -96,7 +98,7 @@
   .note.done{opacity:.5}
   .note.done .note-text{text-decoration:line-through}
   .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.75);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
-  .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
+  .sub-count{font-size:11px;color:var(--text-muted);background:rgba(255,255,255,.7);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
   .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
   .subtask{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
   .subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none}
@@ -191,7 +193,7 @@
       <input type="date" id="dateTo">
       <button id="generateReport">📊 Отчёт</button>
       <button class="icon-btn" id="zonesBtn" title="Разделы: добавить, скрыть, показать">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/></svg>
       </button>
     </div>
   </div>
@@ -288,12 +290,12 @@ const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/cont
 const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
 
 const ZONE_PALETTE = [
-  {c:'#3A5F8A', bg:'#E4EBF3', bd:'#B9C9DD'},
-  {c:'#B04A5E', bg:'#F7E4E8', bd:'#E3C4CC'},
-  {c:'#A67C00', bg:'#F5EED8', bd:'#E0D5AE'},
-  {c:'#3E7A5E', bg:'#E2F0E6', bd:'#BBDCC9'},
-  {c:'#6B4FA0', bg:'#ECE6F5', bd:'#D3C6E6'},
-  {c:'#0E7490', bg:'#E0F2F5', bd:'#B5DDE4'}
+  {c:'#3A5F8A', bg:'rgba(228,235,243,.50)', bd:'rgba(185,201,221,.55)'},
+  {c:'#B04A5E', bg:'rgba(247,228,232,.50)', bd:'rgba(227,196,204,.55)'},
+  {c:'#A67C00', bg:'rgba(245,238,216,.45)', bd:'rgba(224,213,174,.55)'},
+  {c:'#3E7A5E', bg:'rgba(226,240,230,.45)', bd:'rgba(187,220,201,.55)'},
+  {c:'#6B4FA0', bg:'rgba(236,230,245,.45)', bd:'rgba(211,198,230,.55)'},
+  {c:'#0E7490', bg:'rgba(224,242,245,.45)', bd:'rgba(181,221,228,.55)'}
 ];
 const DEFAULT_ZONES = [
   {key:'other', label:'Прочее', emoji:'📋', hidden:false, tint:0},
