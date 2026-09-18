@@ -177,13 +177,13 @@
       <div class="subtitle">Авиабит · Портал 2.0 · Прочее</div>
     </div>
     <div class="quick-wrap">
-      <input type="text" class="quick-add" id="quickAdd" placeholder="Быстрая задача" autocomplete="off">
+      <input type="text" class="quick-add" id="quickAdd" name="darya_quick" placeholder="Быстрая задача" autocomplete="off">
       <button class="mic-btn" id="micBtn" title="Голосовой ввод">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
       </button>
     </div>
     <div class="toolbar">
-      <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по доске и корзине" autocomplete="off">
+      <input type="text" class="search-input" id="searchInput" name="darya_search" placeholder="🔍 Поиск по доске и корзине" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
       <input type="date" id="dateFrom">
       <input type="date" id="dateTo">
       <button id="generateReport">📊 Отчёт</button>
@@ -232,7 +232,7 @@
 <div class="modal" id="addModal">
   <div class="modal-content">
     <h3>Новая задача</h3>
-    <input type="text" id="addInput" placeholder="Описание задачи..." autocomplete="off">
+    <input type="text" id="addInput" name="darya_add" placeholder="Описание задачи..." autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
@@ -243,7 +243,7 @@
 <div class="modal" id="editModal">
   <div class="modal-content">
     <h3>Редактировать задачу</h3>
-    <input type="text" id="editInput" placeholder="Описание задачи..." autocomplete="off">
+    <input type="text" id="editInput" name="darya_edit" placeholder="Описание задачи..." autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelEdit">Отмена</button>
       <button class="modal-btn primary" id="confirmEdit">Сохранить</button>
@@ -265,7 +265,7 @@
   <div class="modal-content">
     <h3>☁️ Подключение к облаку</h3>
     <p class="settings-hint" id="settingsHint">Это окно появляется один раз на каждом устройстве. Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
-    <input type="password" id="tokenInput" placeholder="github_pat_..." autocomplete="off">
+    <input type="password" id="tokenInput" name="darya_token" placeholder="github_pat_..." autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelSettings">Позже</button>
       <button class="modal-btn primary" id="saveSettings">Сохранить</button>
@@ -297,7 +297,6 @@ function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
 function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
 
-// Защита от «браузерной памяти» полей: очистка поиска и быстрой задачи при загрузке/возврате
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
   const qa = document.getElementById('quickAdd');
@@ -306,7 +305,6 @@ function clearTransientInputs() {
 }
 window.addEventListener('load', clearTransientInputs);
 window.addEventListener('pageshow', clearTransientInputs);
-// Если браузер успел подставить текст новой задачи в поиск — стираем его, чтобы фильтр не спрятал доску
 function clearLeakedSearch(text) {
   if (!text) return;
   const s = document.getElementById('searchInput');
@@ -381,7 +379,6 @@ function parseMdTasks(md) {
   });
   return out;
 }
-// Запасной импорт из notes.md — только на самом первом запуске и только если есть что импортировать
 function importFromMd() {
   return fetch(MD_RAW + '?t=' + Date.now())
     .then(r => (r.ok ? r.text() : null))
@@ -458,7 +455,7 @@ function render() {
             '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
             '</div>'
           ).join('') +
-          (t.subOpen ? '<input class="sub-add" autocomplete="off" data-subadd="' + t.id + '" placeholder="+ подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
+          (t.subOpen ? '<input class="sub-add" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="+ подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
           '</div>';
       }
       return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
@@ -558,6 +555,7 @@ function editSubStart(event, tid, sid) {
   input.type = 'text';
   input.className = 'sub-edit';
   input.autocomplete = 'off';
+  input.name = 'darya_subedit_' + sid;
   input.value = s.text;
   span.replaceWith(input);
   input.focus();
@@ -600,7 +598,6 @@ document.getElementById('clearDoneBtn').addEventListener('click', e => {
   }
 });
 
-// Универсальный drag-and-drop: мышь — сразу, палец — после удержания ~0.3 c
 let dragState = null;
 let justDragged = false;
 
@@ -681,7 +678,6 @@ document.addEventListener('click', e => {
   if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; }
 }, true);
 
-// Облако: окно токена всплывает само при первом открытии; скрытый вход — двойной клик по логотипу
 function openSettings(hint) {
   if (hint) document.getElementById('settingsHint').textContent = hint;
   document.getElementById('tokenInput').value = getToken();
@@ -697,7 +693,6 @@ document.getElementById('saveSettings').addEventListener('click', () => {
 });
 document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('saveSettings').click(); });
 
-// Голосовой ввод
 const micBtn = document.getElementById('micBtn');
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog = null, listening = false, voiceBase = '';
@@ -812,17 +807,15 @@ cloudRead()
     if (data && Array.isArray(data.tasks)) {
       const cloudTasks = data.tasks.map(migrateTask);
       if (cloudTasks.length > 0) {
-        // В облаке есть задачи — берём их как источник истины.
         tasks = cloudTasks;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
         localStorage.setItem(INIT_KEY, '1');
       } else if (tasks.length > 0) {
-        // Облако пришло пустым, но локальный кэш живой: не затираем данные.
+        // Пустое облако при живом кэше — не затираем данные.
       } else if (!localStorage.getItem(INIT_KEY)) {
         return importFromMd();
       }
     } else {
-      // board.json не найден: первый запуск — импорт из notes.md, иначе оставляем кэш.
       if (!localStorage.getItem(INIT_KEY)) {
         return importFromMd();
       }
