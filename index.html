@@ -5,16 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Доска Дарьи</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f4f5f7; margin: 0; padding: 20px; color: #172b4d; }
-  h1 { text-align: center; font-size: 24px; margin-bottom: 30px; }
-  .board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; align-items: flex-start; }
-  .column { background: #ebecf0; border-radius: 10px; padding: 12px; min-width: 280px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .column h2 { font-size: 16px; margin-top: 0; padding: 4px 8px; color: #5e6c84; text-transform: uppercase; letter-spacing: 1px; }
-  .card { background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); font-size: 14px; line-height: 1.4; word-break: break-word; }
-  .card.done { text-decoration: line-through; color: #8993a4; background: #fafbfc; box-shadow: none; }
-</style>
+    body { margin:0; padding:24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+      background-color:#b98a5a;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1.6px),
+        radial-gradient(rgba(80,50,20,0.20) 1px, transparent 1.6px),
+        radial-gradient(rgba(255,255,255,0.08) 2px, transparent 2.6px);
+      background-size:14px 14px,22px 22px,34px 34px;
+      background-position:0 0,7px 9px,12px 4px;
+      color:#3d2b1f; }
+    h1 { text-align:center; color:#fdf6e3; font-size:22px; margin:4px 0 26px; text-shadow:0 2px 3px rgba(0,0,0,.35); }
+    .zones { display:flex; gap:28px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+    .zone { width:320px; }
+    .zone-tag { display:inline-block; background:#fdf6e3; padding:8px 16px; font-weight:700; font-size:15px;
+      box-shadow:0 2px 5px rgba(0,0,0,.3); transform:rotate(-1.5deg); position:relative; margin-bottom:20px; }
+    .zone-tag::before { content:''; position:absolute; top:-7px; left:50%; margin-left:-7px; width:14px; height:14px;
+      border-radius:50%; background:radial-gradient(circle at 35% 30%, #868e96, #343a40 70%); box-shadow:0 2px 3px rgba(0,0,0,.4); }
+    .stickies { display:flex; flex-direction:column; gap:18px; }
+    .sticky { padding:16px 14px 18px; min-height:64px; font-size:15px; line-height:1.35; word-break:break-word;
+      border-radius:2px; box-shadow:2px 4px 9px rgba(0,0,0,.3); position:relative; }
+    .sticky::before { content:''; position:absolute; top:-7px; left:50%; margin-left:-7px; width:14px; height:14px;
+      border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff8787, #c92a2a 70%); box-shadow:0 2px 3px rgba(0,0,0,.45); }
+    .sticky:nth-child(odd) { transform:rotate(-1.6deg); }
+    .sticky:nth-child(even) { transform:rotate(1.4deg); }
+    .sticky.done { opacity:.55; text-decoration:line-through; }
+    @media (max-width:720px) {
+      body { padding:14px; }
+      .zones { flex-direction:column; gap:24px; }
+      .zone { width:100%; }
+      .sticky:nth-child(odd) { transform:rotate(-0.8deg); }
+      .sticky:nth-child(even) { transform:rotate(0.7deg); }
+    }
+    </style>
 </head>
 <body>
-<h1>Моя Доска</h1>
-<div class="board">
-<div class="column"><h2>Входящие</h2></div><div class="column"><h2>Авиабит</h2></div><div class="column"><h2>Портал 2.0</h2></div><div class="column"><h2>Прочее</h2><div class="card ">Разобрать логи инцидента с рейсом SU1234</div><div class="card ">Тестовая задача из чата (проверка интеграции)</div><div class="card ">Согласование SLA с топливозаправщиками</div><div class="card done">Обновить чек-лист предполетной подготовки</div></div></div></body></html>
+<h1>Доска Дарьи</h1>
+<div class="zones"><div class="zone"><div class="zone-tag">Авиабит</div><div class="stickies"></div></div><div class="zone"><div class="zone-tag">Портал 2.0</div><div class="stickies"></div></div><div class="zone"><div class="zone-tag">Прочее</div><div class="stickies"><div class="sticky" style="background:#bde0fe">Разобрать логи инцидента с рейсом SU1234</div><div class="sticky" style="background:#bde0fe">Тестовая задача из чата (проверка интеграции)</div><div class="sticky" style="background:#bde0fe">Согласование SLA с топливозаправщиками</div><div class="sticky done" style="background:#bde0fe">Обновить чек-лист предполетной подготовки</div></div></div></div>
+</body>
+</html>
