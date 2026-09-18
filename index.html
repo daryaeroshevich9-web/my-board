@@ -90,10 +90,11 @@
   .add-btn{width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--black);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:400;line-height:1;transition:all .15s;flex:none}
   .add-btn:hover{transform:scale(1.1);background:var(--soft)}
   .notes{display:flex;flex-direction:column;gap:10px;min-height:40px}
-  .note{position:relative;border-radius:12px;padding:12px 14px 12px 44px;font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .18s, box-shadow .18s, opacity .18s;display:flex;align-items:flex-start;cursor:grab}
+  .note{position:relative;border-radius:12px;padding:12px 14px 12px 44px;font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .18s, box-shadow .18s, opacity .18s;display:flex;align-items:flex-start;cursor:grab;touch-action:pan-y}
   .note:active{cursor:grabbing}
-  .note.dragging{opacity:.4;transform:scale(.98)}
+  .note.dragging-src{opacity:.35}
   .note:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.10)}
+  .drag-ghost{position:fixed;z-index:1200;pointer-events:none;opacity:.95;transform:rotate(2deg);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:12px;margin:0}
   .note::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--zone-color)}
   .zone-aviabit .note{background:var(--z-aviabit-bg);border-color:var(--z-aviabit-bd);--zone-color:var(--z-aviabit-c)}
   .zone-portal .note{background:var(--z-portal-bg);border-color:var(--z-portal-bd);--zone-color:var(--z-portal-c)}
@@ -136,9 +137,6 @@
   .modal-btn.primary:hover{filter:brightness(.88)}
   .modal-btn.secondary{background:var(--soft);color:var(--text)}
   .modal-btn.secondary:hover{background:var(--soft-hover)}
-  .move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-  .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
-  .move-btn:hover{background:var(--soft)}
   .settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
   .trash-note{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
   .trash-tag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;flex:none;border:1px solid}
@@ -159,12 +157,12 @@
     .quick-wrap{flex:1 1 100%;order:3}
     .toolbar{margin-left:0;width:100%;order:4}
     .search-input{flex:1;min-width:0}
-    .summary{padding:14px 16px 0;gap:10px}
-    .summary-card{padding:10px 12px;gap:10px}
-    .summary-icon{width:32px;height:32px;font-size:16px}
-    .summary-text .num{font-size:18px}
-    .summary-text .label{font-size:11px}
-    .clear-done-btn{width:28px;height:28px;font-size:13px}
+    .summary{padding:14px 12px 0;gap:8px;grid-template-columns:repeat(4,1fr)}
+    .summary-card{flex-direction:column;align-items:center;text-align:center;gap:2px;padding:8px 4px;position:relative}
+    .summary-icon{width:22px;height:22px;font-size:13px;border-radius:6px}
+    .summary-text .num{font-size:16px}
+    .summary-text .label{font-size:8.5px;line-height:1.15;letter-spacing:.2px}
+    .clear-done-btn{position:absolute;top:-7px;right:-7px;width:24px;height:24px;font-size:12px;margin:0}
     .zones{padding:14px 16px 40px;gap:14px;grid-template-columns:1fr}
     .zone{border-radius:16px;padding:14px}
   }
@@ -179,13 +177,13 @@
       <div class="subtitle">Авиабит · Портал 2.0 · Прочее</div>
     </div>
     <div class="quick-wrap">
-      <input type="text" class="quick-add" id="quickAdd" placeholder="Быстрая задача">
+      <input type="text" class="quick-add" id="quickAdd" placeholder="Быстрая задача" autocomplete="off">
       <button class="mic-btn" id="micBtn" title="Голосовой ввод">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
       </button>
     </div>
     <div class="toolbar">
-      <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по доске и корзине">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по доске и корзине" autocomplete="off">
       <input type="date" id="dateFrom">
       <input type="date" id="dateTo">
       <button id="generateReport">📊 Отчёт</button>
@@ -234,7 +232,7 @@
 <div class="modal" id="addModal">
   <div class="modal-content">
     <h3>Новая задача</h3>
-    <input type="text" id="addInput" placeholder="Описание задачи...">
+    <input type="text" id="addInput" placeholder="Описание задачи..." autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
@@ -245,24 +243,10 @@
 <div class="modal" id="editModal">
   <div class="modal-content">
     <h3>Редактировать задачу</h3>
-    <input type="text" id="editInput" placeholder="Описание задачи...">
+    <input type="text" id="editInput" placeholder="Описание задачи..." autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelEdit">Отмена</button>
       <button class="modal-btn primary" id="confirmEdit">Сохранить</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="moveModal">
-  <div class="modal-content">
-    <h3>Переместить задачу</h3>
-    <div class="move-list">
-      <button class="move-btn" onclick="moveTask('other')">📋 Прочее</button>
-      <button class="move-btn" onclick="moveTask('portal')">🚪 Портал 2.0</button>
-      <button class="move-btn" onclick="moveTask('aviabit')">🛩️ Авиабит</button>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeMove()">Отмена</button>
     </div>
   </div>
 </div>
@@ -281,7 +265,7 @@
   <div class="modal-content">
     <h3>☁️ Подключение к облаку</h3>
     <p class="settings-hint" id="settingsHint">Это окно появляется один раз на каждом устройстве. Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
-    <input type="password" id="tokenInput" placeholder="github_pat_...">
+    <input type="password" id="tokenInput" placeholder="github_pat_..." autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelSettings">Позже</button>
       <button class="modal-btn primary" id="saveSettings">Сохранить</button>
@@ -297,7 +281,7 @@ const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/
 
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 tasks.forEach(migrateTask);
-let currentAddZone = null, currentEditId = null, currentMoveId = null;
+let currentAddZone = null, currentEditId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 
 function migrateTask(t) {
@@ -448,10 +432,10 @@ function render() {
             '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
             '</div>'
           ).join('') +
-          (t.subOpen ? '<input class="sub-add" data-subadd="' + t.id + '" placeholder="+ подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
+          (t.subOpen ? '<input class="sub-add" autocomplete="off" data-subadd="' + t.id + '" placeholder="+ подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
           '</div>';
       }
-      return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '" draggable="true">' +
+      return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
         '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
         '<div class="note-body">' +
           '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
@@ -460,7 +444,6 @@ function render() {
         '<div class="note-actions">' +
           '<button class="note-action" onclick="openSubs(' + t.id + ')" title="Добавить подзадачу"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' +
           '<button class="note-action" onclick="editTask(' + t.id + ')" title="Редактировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
-          '<button class="note-action" onclick="openMove(' + t.id + ')" title="Переместить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>' +
           '<button class="note-action danger" onclick="deleteTask(' + t.id + ')" title="В корзину"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
         '</div>' +
       '</div>';
@@ -548,6 +531,7 @@ function editSubStart(event, tid, sid) {
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'sub-edit';
+  input.autocomplete = 'off';
   input.value = s.text;
   span.replaceWith(input);
   input.focus();
@@ -577,13 +561,6 @@ function delSub(event, tid, sid) {
   const t = tasks.find(x => x.id === tid);
   if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); saveTasks(); render(); }
 }
-function openMove(id) { currentMoveId = id; document.getElementById('moveModal').classList.add('open'); }
-function closeMove() { document.getElementById('moveModal').classList.remove('open'); }
-function moveTask(zone) {
-  const t = tasks.find(x => x.id === currentMoveId);
-  if (t) { t.zone = zone; saveTasks(); render(); }
-  closeMove();
-}
 function openTrash() { document.getElementById('trashModal').classList.add('open'); }
 function closeTrash() { document.getElementById('trashModal').classList.remove('open'); }
 
@@ -596,6 +573,87 @@ document.getElementById('clearDoneBtn').addEventListener('click', e => {
     saveTasks(); render();
   }
 });
+
+// Универсальный drag-and-drop: мышь — сразу, палец — после удержания ~0.3 c
+let dragState = null;
+let justDragged = false;
+
+function beginDrag() {
+  if (!dragState) return;
+  const note = dragState.note;
+  const r = note.getBoundingClientRect();
+  const ghost = note.cloneNode(true);
+  ghost.className = 'drag-ghost';
+  ghost.style.width = r.width + 'px';
+  ghost.style.left = r.left + 'px';
+  ghost.style.top = r.top + 'px';
+  document.body.appendChild(ghost);
+  dragState.ghost = ghost;
+  dragState.ox = dragState.x0 - r.left;
+  dragState.oy = dragState.y0 - r.top;
+  dragState.active = true;
+  note.classList.add('dragging-src');
+  positionGhost(dragState.x0, dragState.y0);
+}
+function positionGhost(x, y) {
+  if (!dragState || !dragState.ghost) return;
+  dragState.ghost.style.left = (x - dragState.ox) + 'px';
+  dragState.ghost.style.top = (y - dragState.oy) + 'px';
+  let found = null;
+  document.querySelectorAll('.zone').forEach(z => {
+    const r = z.getBoundingClientRect();
+    const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    z.classList.toggle('drop-hover', inside);
+    if (inside) found = z;
+  });
+  dragState.zone = found;
+}
+function endDrag(commit) {
+  if (!dragState) return;
+  clearTimeout(dragState.timer);
+  if (dragState.active) {
+    if (dragState.ghost) dragState.ghost.remove();
+    document.querySelectorAll('.zone').forEach(z => z.classList.remove('drop-hover'));
+    dragState.note.classList.remove('dragging-src');
+    if (commit && dragState.zone) {
+      const t = tasks.find(x => x.id === dragState.id);
+      const z = dragState.zone.dataset.zone;
+      if (t && !t.deleted && t.zone !== z) { t.zone = z; saveTasks(); }
+    }
+    justDragged = true;
+    setTimeout(() => { justDragged = false; }, 0);
+    render();
+  }
+  dragState = null;
+}
+document.addEventListener('pointerdown', e => {
+  const note = e.target.closest ? e.target.closest('.note') : null;
+  if (!note) return;
+  if (e.target.closest && e.target.closest('input,button,.subtask,.sub-edit')) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  dragState = {id: Number(note.dataset.id), x0: e.clientX, y0: e.clientY, active: false, type: e.pointerType, note: note, timer: null, ghost: null, zone: null, ox: 0, oy: 0};
+  if (e.pointerType !== 'mouse') {
+    dragState.timer = setTimeout(() => { if (dragState && !dragState.active) beginDrag(); }, 280);
+  }
+});
+document.addEventListener('pointermove', e => {
+  if (!dragState) return;
+  if (!dragState.active) {
+    const dx = e.clientX - dragState.x0, dy = e.clientY - dragState.y0;
+    if (Math.hypot(dx, dy) > 6) {
+      if (dragState.type === 'mouse') beginDrag();
+      else { clearTimeout(dragState.timer); dragState = null; return; }
+    } else return;
+  }
+  positionGhost(e.clientX, e.clientY);
+});
+document.addEventListener('pointerup', () => endDrag(true));
+document.addEventListener('pointercancel', () => endDrag(false));
+document.addEventListener('touchmove', e => { if (dragState && dragState.active) e.preventDefault(); }, {passive: false});
+document.addEventListener('contextmenu', e => { if (dragState) e.preventDefault(); });
+document.addEventListener('click', e => {
+  if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; }
+}, true);
 
 // Облако: окно токена всплывает само при первом открытии; скрытый вход — двойной клик по логотипу
 function openSettings(hint) {
@@ -682,29 +740,6 @@ document.getElementById('confirmEdit').addEventListener('click', () => {
 document.getElementById('editInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('confirmEdit').click();
   if (e.key === 'Escape') document.getElementById('cancelEdit').click();
-});
-
-document.addEventListener('dragstart', e => {
-  const note = e.target.closest ? e.target.closest('.note') : null;
-  if (!note) return;
-  if (e.target.closest && e.target.closest('input,button')) { e.preventDefault(); return; }
-  e.dataTransfer.setData('text/plain', note.dataset.id);
-  e.dataTransfer.effectAllowed = 'move';
-  note.classList.add('dragging');
-});
-document.addEventListener('dragend', e => {
-  const note = e.target.closest ? e.target.closest('.note') : null;
-  if (note) note.classList.remove('dragging');
-});
-document.querySelectorAll('.zone').forEach(z => {
-  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drop-hover'); });
-  z.addEventListener('dragleave', () => z.classList.remove('drop-hover'));
-  z.addEventListener('drop', e => {
-    e.preventDefault(); z.classList.remove('drop-hover');
-    const id = Number(e.dataTransfer.getData('text/plain'));
-    const t = tasks.find(x => x.id === id);
-    if (t && !t.deleted) { t.zone = z.dataset.zone; saveTasks(); render(); }
-  });
 });
 
 document.getElementById('generateReport').addEventListener('click', () => {
