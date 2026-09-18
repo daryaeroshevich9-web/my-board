@@ -1,0 +1,7 @@
+{
+  "tasks": [
+    {"id": 1750000000001, "zone": "portal", "text": "Дополнительные операции", "done": false, "created": "2026-09-18T00:00:00.000Z", "doneAt": null, "deleted": false, "subtasks": []},
+    {"id": 1750000000002, "zone": "portal", "text": "Текст для операций вне ТГО по SVO", "done": false, "created": "2026-09-18T00:00:00.000Z", "doneAt": null, "deleted": false, "subtasks": []},
+    {"id": 1750000000003, "zone": "portal", "text": "Задача на уведомления", "done": false, "created": "2026-09-18T00:00:00.000Z", "doneAt": null, "deleted": false, "subtasks": []}
+  ]
+}
