@@ -39,73 +39,38 @@
   }
   ::-webkit-scrollbar{width:8px;height:8px}
   ::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
-
-  .topbar{
-    position:sticky;top:0;z-index:100;
-    background:var(--topbar);
-    backdrop-filter:saturate(180%) blur(16px);
-    -webkit-backdrop-filter:saturate(180%) blur(16px);
-    border-bottom:1px solid var(--border);
-    box-shadow:0 4px 20px rgba(0,0,0,.05);
-  }
+  .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .logo{
-    width:40px;height:40px;border-radius:12px;flex:none;
-    background:var(--si-total-bg);
-    border:1px solid var(--border);
-    box-shadow:0 1px 2px rgba(0,0,0,.06);
-    display:flex;align-items:center;justify-content:center;font-size:20px;
-  }
+  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:var(--si-total-bg);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px}
   .title-block{min-width:160px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
   .subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
   .quick-wrap{display:flex;gap:8px;align-items:center;flex:1 1 260px}
-  .quick-add{
-    flex:1;min-width:0;padding:10px 14px;border:1px solid var(--border);border-radius:10px;
-    font:inherit;font-size:14px;background:rgba(255,255,255,.65);color:var(--text);
-  }
+  .quick-add{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:rgba(255,255,255,.65);color:var(--text)}
   .quick-add:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:var(--card)}
-  .mic-btn{
-    width:38px;height:38px;border:1px solid var(--border);border-radius:10px;flex:none;
-    background:rgba(255,255,255,.65);cursor:pointer;
-    display:flex;align-items:center;justify-content:center;transition:all .15s;
-  }
+  .mic-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;flex:none;background:rgba(255,255,255,.65);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .mic-btn svg{width:18px;height:18px;color:var(--text-secondary)}
   .mic-btn:hover{background:rgba(255,255,255,.95)}
   .mic-btn.listening{background:#b93c32;border-color:#b93c32;animation:pulse 1.2s infinite}
   .mic-btn.listening svg{color:#fff}
   .mic-btn.hidden{display:none}
-  @keyframes pulse{
-    0%{box-shadow:0 0 0 0 rgba(185,60,50,.35)}
-    70%{box-shadow:0 0 0 10px rgba(185,60,50,0)}
-    100%{box-shadow:0 0 0 0 rgba(185,60,50,0)}
-  }
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(185,60,50,.35)}70%{box-shadow:0 0 0 10px rgba(185,60,50,0)}100%{box-shadow:0 0 0 0 rgba(185,60,50,0)}}
   .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
   .search-input{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:13px;background:rgba(255,255,255,.65);min-width:150px;color:var(--text)}
   .search-input:focus{outline:none;border-color:var(--accent);background:var(--card)}
-  .quick-add::placeholder, .search-input::placeholder{color:var(--text-muted)}
+  .quick-add::placeholder,.search-input::placeholder{color:var(--text-muted)}
   .toolbar input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;background:rgba(255,255,255,.65);cursor:pointer;color:var(--text-secondary)}
-  .toolbar button{
-    padding:8px 14px;border:none;border-radius:8px;background:var(--black);color:#fff;
-    font-family:inherit;font-weight:600;cursor:pointer;font-size:13px;transition:all .15s;
-  }
+  .toolbar button{padding:8px 14px;border:none;border-radius:8px;background:var(--black);color:#fff;font-family:inherit;font-weight:600;cursor:pointer;font-size:13px;transition:all .15s}
   .toolbar button:hover{filter:brightness(.88);transform:translateY(-1px)}
   #generateReport{background:var(--accent)}
   #generateReport:hover{filter:brightness(.9)}
-
+  .icon-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.65);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
+  .icon-btn:hover{background:rgba(255,255,255,.95);transform:translateY(-1px)}
   .summary{max-width:var(--maxw);margin:0 auto;padding:20px 28px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   .summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);display:flex;align-items:center;gap:12px}
   .summary-card.clickable{cursor:pointer;transition:transform .15s, box-shadow .15s}
   .summary-card.clickable:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
-  .clear-done-btn{
-    margin-left:auto;flex:none;
-    width:32px;height:32px;border-radius:8px;
-    border:1px solid var(--border);background:rgba(255,255,255,.65);
-    box-shadow:0 1px 2px rgba(0,0,0,.06);
-    cursor:pointer;font-size:15px;
-    display:flex;align-items:center;justify-content:center;
-    transition:all .15s;
-  }
+  .clear-done-btn{margin-left:auto;flex:none;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.65);box-shadow:0 1px 2px rgba(0,0,0,.06);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .clear-done-btn:hover{background:var(--soft);transform:scale(1.06)}
   .summary-icon{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px}
   .si-total{background:var(--si-total-bg);color:var(--si-total-c)}
@@ -114,7 +79,6 @@
   .si-trash{background:var(--si-trash-bg);color:var(--si-trash-c)}
   .summary-text .num{font-family:'Unbounded',sans-serif;font-weight:700;font-size:22px;line-height:1.1}
   .summary-text .label{font-size:12px;color:var(--text-secondary);font-weight:500}
-
   .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
   .zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
   .zone.drop-hover{outline:2px dashed var(--black);outline-offset:4px}
@@ -125,21 +89,10 @@
   .ze-other{background:linear-gradient(135deg,var(--t-other-a),var(--t-other-b))}
   .zone-head h2{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:600;letter-spacing:.3px}
   .count{margin-left:auto;font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:var(--text-secondary);background:var(--soft);min-width:28px;height:28px;padding:0 8px;border-radius:999px;display:flex;align-items:center;justify-content:center}
-  .add-btn{
-    width:28px;height:28px;border:none;border-radius:8px;
-    background:transparent;color:var(--black);
-    cursor:pointer;display:flex;align-items:center;justify-content:center;
-    font-size:22px;font-weight:400;line-height:1;transition:all .15s;flex:none;
-  }
+  .add-btn{width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--black);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:400;line-height:1;transition:all .15s;flex:none}
   .add-btn:hover{transform:scale(1.1);background:var(--soft)}
   .notes{display:flex;flex-direction:column;gap:10px;min-height:40px}
-  .note{
-    position:relative;border-radius:12px;padding:12px 14px 12px 44px;
-    font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;
-    border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);
-    transition:transform .18s, box-shadow .18s, opacity .18s;
-    display:flex;align-items:flex-start;cursor:grab;
-  }
+  .note{position:relative;border-radius:12px;padding:12px 14px 12px 44px;font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .18s, box-shadow .18s, opacity .18s;display:flex;align-items:flex-start;cursor:grab}
   .note:active{cursor:grabbing}
   .note.dragging{opacity:.4;transform:scale(.98)}
   .note:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.10)}
@@ -166,22 +119,17 @@
   .note-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;flex:none;margin-left:8px}
   .note:hover .note-actions{opacity:1}
   @media (hover:none){.note-actions{opacity:1}}
-  .note-action{
-    width:28px;height:28px;border:none;border-radius:6px;
-    background:rgba(255,255,255,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-    cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none;
-  }
+  .note-action{width:28px;height:28px;border:none;border-radius:6px;background:rgba(255,255,255,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none}
   .note-action:hover{background:rgba(255,255,255,.92);transform:scale(1.1)}
   .note-action svg{width:16px;height:16px;color:var(--text-secondary)}
   .note-action.danger:hover{background:rgba(185,60,50,.12)}
   .note-action.danger svg{color:#b93c32}
   .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
-
   .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px}
   .modal.open{display:flex}
   .modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;overflow-y:auto}
   .modal h3{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600;margin-bottom:16px}
-  .modal input[type="text"]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:16px}
+  .modal input[type="text"],.modal input[type="password"]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:16px}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end}
   .modal-btn{padding:10px 20px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
   .modal-btn.primary{background:var(--black);color:#fff}
@@ -191,6 +139,7 @@
   .move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
   .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
   .move-btn:hover{background:var(--soft)}
+  .settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
   .trash-note{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
   .trash-tag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;flex:none;border:1px solid}
   .tag-aviabit{background:var(--z-aviabit-bg);border-color:var(--z-aviabit-bd);color:var(--z-aviabit-c)}
@@ -203,7 +152,6 @@
   .trash-btn.restore:hover{background:rgba(4,120,87,.18)}
   .trash-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
   .trash-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
-
   @media (max-width:720px){
     .topbar-inner{padding:12px 16px;gap:10px}
     h1{font-size:17px}
@@ -241,6 +189,7 @@
       <input type="date" id="dateFrom">
       <input type="date" id="dateTo">
       <button id="generateReport">📊 Отчёт</button>
+      <button class="icon-btn" id="settingsBtn" title="Облачная синхронизация: токен">🔑</button>
     </div>
   </div>
 </header>
@@ -329,50 +278,130 @@
   </div>
 </div>
 
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <h3>☁️ Облачная синхронизация</h3>
+    <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
+    <input type="password" id="tokenInput" placeholder="github_pat_...">
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="cancelSettings">Отмена</button>
+      <button class="modal-btn primary" id="saveSettings">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const STORAGE_KEY = 'darya_board_tasks';
-let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-let currentAddZone = null;
-let currentEditId = null;
-let currentMoveId = null;
+const TOKEN_KEY = 'darya_board_token';
+const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
+const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
 
-if (tasks.length === 0) {
-  const now = new Date().toISOString();
-  tasks = [
-    {id: 1, zone: 'other', text: 'Разобрать логи инцидента с рейсом SU1234', done: false, created: now, doneAt: null, deleted: false, subtasks: [], subOpen: false},
-    {id: 2, zone: 'other', text: 'Тестовая задача из чата (проверка интеграции)', done: false, created: now, doneAt: null, deleted: false, subtasks: [], subOpen: false},
-    {id: 3, zone: 'other', text: 'Согласование SLA с топливозаправщиками', done: false, created: now, doneAt: null, deleted: false, subtasks: [], subOpen: false},
-    {id: 4, zone: 'other', text: 'Обновить чек-лист предполетной подготовки', done: true, created: now, doneAt: now, deleted: false, subtasks: [], subOpen: false}
-  ];
-  saveTasks();
-}
-tasks.forEach(t => {
+let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+tasks.forEach(migrateTask);
+let currentAddZone = null, currentEditId = null, currentMoveId = null;
+let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
+
+function migrateTask(t) {
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
   if (t.subOpen === undefined) t.subOpen = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
-});
+  if (t.deleted === undefined) t.deleted = false;
+  if (!t.created) t.created = new Date().toISOString();
+  return t;
+}
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
+function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
 
-// Авто-уборка: выполненные задачи уходят в корзину спустя 3 суток после отметки
+function saveTasks() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  if (!suppressPush) schedulePush();
+}
+function schedulePush() {
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { cloudWrite().catch(() => {}); }, 800);
+}
+
+function cloudRead() {
+  return fetch(API_URL + '?t=' + Date.now(), {headers: {'Accept': 'application/vnd.github.v3+json'}})
+    .then(r => {
+      if (r.status === 404) return null;
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    })
+    .then(d => {
+      if (!d) return null;
+      cloudSha = d.sha;
+      return JSON.parse(b64d(d.content));
+    });
+}
+
+function cloudWrite() {
+  const token = getToken();
+  if (!token) {
+    openSettings('Чтобы синхронизировать изменения с облаком, вставь свой токен доступа. Он сохранится только в этом браузере.');
+    return Promise.reject('no-token');
+  }
+  const payload = () => {
+    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks}, null, 2))};
+    if (cloudSha) b.sha = cloudSha;
+    return b;
+  };
+  const headers = {'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json'};
+  return fetch(API_URL, {method: 'PUT', headers: headers, body: JSON.stringify(payload())})
+    .then(r => {
+      if (r.status === 409 || r.status === 422) {
+        return cloudRead().then(() => fetch(API_URL, {method: 'PUT', headers: headers, body: JSON.stringify(payload())}));
+      }
+      return r;
+    })
+    .then(r => {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    })
+    .then(d => { if (d && d.content) cloudSha = d.content.sha; });
+}
+
+function parseMdTasks(md) {
+  const zoneMap = {'авиабит': 'aviabit', 'портал 2.0': 'portal', 'прочее': 'other'};
+  const out = [];
+  let zone = 'other';
+  md.split('\n').forEach((line, i) => {
+    const s = line.trim();
+    if (s.startsWith('## ')) zone = zoneMap[s.slice(3).trim().toLowerCase()] || 'other';
+    else if (s.startsWith('- [ ]') || s.startsWith('- [x]')) {
+      const done = s.startsWith('- [x]');
+      const now = new Date().toISOString();
+      out.push(migrateTask({id: Date.now() + i, zone: zone, text: s.slice(5).trim(), done: done, created: now, doneAt: done ? now : null, deleted: false, subtasks: [], subOpen: false}));
+    }
+  });
+  return out;
+}
+function importFromMd() {
+  return fetch(MD_RAW + '?t=' + Date.now())
+    .then(r => (r.ok ? r.text() : null))
+    .then(md => {
+      if (md) {
+        tasks = parseMdTasks(md);
+        importedFromMd = true;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      }
+    })
+    .catch(() => {});
+}
+
+// Авто-уборка: выполненные уходят в корзину спустя 3 суток
 const DONE_TRASH_DELAY = 3 * 24 * 60 * 60 * 1000;
 function sweepDoneToTrash() {
   const cutoff = Date.now() - DONE_TRASH_DELAY;
   let changed = false;
   tasks.forEach(t => {
-    if (t.done && t.doneAt && !t.deleted && new Date(t.doneAt).getTime() <= cutoff) {
-      t.deleted = true;
-      changed = true;
-    }
+    if (t.done && t.doneAt && !t.deleted && new Date(t.doneAt).getTime() <= cutoff) { t.deleted = true; changed = true; }
   });
   if (changed) saveTasks();
 }
-sweepDoneToTrash();
 
-function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 function splitEmoji(text) {
   const re = /^\s*(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u;
   const m = text.match(re);
@@ -384,7 +413,6 @@ function matchesQuery(t, q) {
   if (t.text.toLowerCase().includes(q)) return true;
   return t.subtasks.some(s => s.text.toLowerCase().includes(q));
 }
-
 const zoneLabels = {aviabit: 'Авиабит', portal: 'Портал 2.0', other: 'Прочее'};
 
 function render() {
@@ -403,7 +431,6 @@ function render() {
     const zoneActive = active.filter(t => t.zone === zone);
     const zoneTasks = zoneActive.filter(t => matchesQuery(t, q));
     document.querySelector('[data-count="' + zone + '"]').textContent = zoneTasks.length;
-
     if (zoneTasks.length === 0) {
       container.innerHTML = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
       return;
@@ -459,20 +486,11 @@ function render() {
 
 function toggleDone(id) {
   const t = tasks.find(x => x.id === id);
-  if (t) {
-    t.done = !t.done;
-    t.doneAt = t.done ? new Date().toISOString() : null;
-    saveTasks(); render();
-  }
+  if (t) { t.done = !t.done; t.doneAt = t.done ? new Date().toISOString() : null; saveTasks(); render(); }
 }
 function editTask(id) {
   const t = tasks.find(x => x.id === id);
-  if (t) {
-    currentEditId = id;
-    document.getElementById('editInput').value = t.text;
-    document.getElementById('editModal').classList.add('open');
-    document.getElementById('editInput').focus();
-  }
+  if (t) { currentEditId = id; document.getElementById('editInput').value = t.text; document.getElementById('editModal').classList.add('open'); document.getElementById('editInput').focus(); }
 }
 function deleteTask(id) {
   const t = tasks.find(x => x.id === id);
@@ -483,25 +501,15 @@ function restoreTask(id) {
   if (t) { t.deleted = false; saveTasks(); render(); }
 }
 function permanentDelete(id) {
-  if (confirm('Удалить задачу навсегда?')) {
-    tasks = tasks.filter(x => x.id !== id);
-    saveTasks(); render();
-  }
+  if (confirm('Удалить задачу навсегда?')) { tasks = tasks.filter(x => x.id !== id); saveTasks(); render(); }
 }
 function openSubs(id) {
   const t = tasks.find(x => x.id === id);
-  if (t) {
-    t.subOpen = true; saveTasks(); render();
-    const el = document.querySelector('[data-subadd="' + id + '"]');
-    if (el) el.focus();
-  }
+  if (t) { t.subOpen = true; saveTasks(); render(); const el = document.querySelector('[data-subadd="' + id + '"]'); if (el) el.focus(); }
 }
 function toggleSub(tid, sid) {
   const t = tasks.find(x => x.id === tid);
-  if (t) {
-    const s = t.subtasks.find(y => y.id === sid);
-    if (s) { s.done = !s.done; saveTasks(); render(); }
-  }
+  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
 }
 function delSub(event, tid, sid) {
   event.preventDefault(); event.stopPropagation();
@@ -516,10 +524,7 @@ function subKey(event, tid) {
       if (t) {
         t.subtasks.push({id: Date.now(), text: value, done: false});
         saveTasks(); render();
-        setTimeout(() => {
-          const el = document.querySelector('[data-subadd="' + tid + '"]');
-          if (el) el.focus();
-        }, 0);
+        setTimeout(() => { const el = document.querySelector('[data-subadd="' + tid + '"]'); if (el) el.focus(); }, 0);
       }
     }
   }
@@ -534,7 +539,6 @@ function moveTask(zone) {
 function openTrash() { document.getElementById('trashModal').classList.add('open'); }
 function closeTrash() { document.getElementById('trashModal').classList.remove('open'); }
 
-// Кнопка уборки выполненных: квадратная пиктограмма у правого края карточки "В корзине"
 document.getElementById('clearDoneBtn').addEventListener('click', e => {
   e.stopPropagation();
   const doneActive = tasks.filter(t => t.done && !t.deleted);
@@ -545,73 +549,61 @@ document.getElementById('clearDoneBtn').addEventListener('click', e => {
   }
 });
 
-// Голосовой ввод (Web Speech API, в Яндекс Браузере распознаёт встроенный SpeechKit)
+// Настройки облака
+function openSettings(hint) {
+  if (hint) document.getElementById('settingsHint').textContent = hint;
+  document.getElementById('tokenInput').value = getToken();
+  document.getElementById('settingsModal').classList.add('open');
+}
+document.getElementById('settingsBtn').addEventListener('click', () => openSettings('Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.'));
+document.getElementById('cancelSettings').addEventListener('click', () => document.getElementById('settingsModal').classList.remove('open'));
+document.getElementById('saveSettings').addEventListener('click', () => {
+  const v = document.getElementById('tokenInput').value.trim();
+  if (v) localStorage.setItem(TOKEN_KEY, v); else localStorage.removeItem(TOKEN_KEY);
+  document.getElementById('settingsModal').classList.remove('open');
+  schedulePush();
+});
+document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('saveSettings').click(); });
+
+// Голосовой ввод
 const micBtn = document.getElementById('micBtn');
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recog = null;
-let listening = false;
-let voiceBase = '';
-
-if (!SpeechRec) {
-  micBtn.classList.add('hidden');
-} else {
+let recog = null, listening = false, voiceBase = '';
+if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
   recog = new SpeechRec();
-  recog.lang = 'ru-RU';
-  recog.interimResults = true;
-  recog.continuous = false;
-  recog.maxAlternatives = 1;
-
+  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = false; recog.maxAlternatives = 1;
   recog.onresult = e => {
     let full = '';
     for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript;
     const qa = document.getElementById('quickAdd');
     qa.value = voiceBase + (voiceBase && !voiceBase.endsWith(' ') ? ' ' : '') + full;
   };
-  recog.onend = () => {
-    listening = false;
-    micBtn.classList.remove('listening');
-  };
+  recog.onend = () => { listening = false; micBtn.classList.remove('listening'); };
   recog.onerror = e => {
-    listening = false;
-    micBtn.classList.remove('listening');
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      alert('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта и попробуйте снова.');
-    }
+    listening = false; micBtn.classList.remove('listening');
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') alert('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта и попробуйте снова.');
   };
-
   micBtn.addEventListener('click', () => {
     if (listening) { recog.stop(); return; }
     const qa = document.getElementById('quickAdd');
     voiceBase = qa.value.trim();
     qa.focus();
-    try {
-      recog.start();
-      listening = true;
-      micBtn.classList.add('listening');
-    } catch (err) {
-      listening = false;
-      micBtn.classList.remove('listening');
-    }
+    try { recog.start(); listening = true; micBtn.classList.add('listening'); } catch (err) { listening = false; micBtn.classList.remove('listening'); }
   });
 }
 
-// Быстрый захват
 document.getElementById('quickAdd').addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     const text = e.target.value.trim();
     if (text) {
-      tasks.push({id: Date.now(), zone: 'other', text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false});
+      tasks.push(migrateTask({id: Date.now(), zone: 'other', text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false}));
       saveTasks(); render();
-      e.target.value = '';
-      voiceBase = '';
+      e.target.value = ''; voiceBase = '';
     }
   }
 });
-
-// Поиск
 document.getElementById('searchInput').addEventListener('input', render);
 
-// Добавление через "+"
 document.querySelectorAll('.add-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     currentAddZone = btn.dataset.zone;
@@ -624,7 +616,7 @@ document.getElementById('cancelAdd').addEventListener('click', () => document.ge
 document.getElementById('confirmAdd').addEventListener('click', () => {
   const text = document.getElementById('addInput').value.trim();
   if (text) {
-    tasks.push({id: Date.now(), zone: currentAddZone, text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false});
+    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone, text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false}));
     saveTasks(); render();
     document.getElementById('addModal').classList.remove('open');
   }
@@ -637,17 +629,13 @@ document.getElementById('cancelEdit').addEventListener('click', () => document.g
 document.getElementById('confirmEdit').addEventListener('click', () => {
   const text = document.getElementById('editInput').value.trim();
   const t = tasks.find(x => x.id === currentEditId);
-  if (text && t) {
-    t.text = text; saveTasks(); render();
-    document.getElementById('editModal').classList.remove('open');
-  }
+  if (text && t) { t.text = text; saveTasks(); render(); document.getElementById('editModal').classList.remove('open'); }
 });
 document.getElementById('editInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('confirmEdit').click();
   if (e.key === 'Escape') document.getElementById('cancelEdit').click();
 });
 
-// Drag-and-drop между зонами
 document.addEventListener('dragstart', e => {
   const note = e.target.closest ? e.target.closest('.note') : null;
   if (!note) return;
@@ -671,7 +659,6 @@ document.querySelectorAll('.zone').forEach(z => {
   });
 });
 
-// Отчёт с датой завершения (выполненные учитываются, даже если уже ушли в корзину)
 document.getElementById('generateReport').addEventListener('click', () => {
   const from = document.getElementById('dateFrom').value;
   const to = document.getElementById('dateTo').value;
@@ -679,31 +666,19 @@ document.getElementById('generateReport').addEventListener('click', () => {
   const fromDate = new Date(from);
   const toDate = new Date(to); toDate.setHours(23, 59, 59, 999);
   const zoneNames = {other: 'Прочее', portal: 'Портал 2.0', aviabit: 'Авиабит'};
-
   const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
   const openTasks = tasks.filter(t => !t.deleted && !t.done && new Date(t.created) <= toDate);
-
   let report = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
   report += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
   report += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
-
   Object.keys(zoneNames).forEach(key => {
     const zoneDone = doneInPeriod.filter(t => t.zone === key);
     const zoneOpen = openTasks.filter(t => t.zone === key);
     if (!zoneDone.length && !zoneOpen.length) return;
     report += '## ' + zoneNames[key] + '\n\n';
-    if (zoneDone.length) {
-      report += '### Выполнено за период\n';
-      zoneDone.forEach(t => report += '- ✅ ' + t.text + ' (' + t.doneAt.split('T')[0] + ')\n');
-      report += '\n';
-    }
-    if (zoneOpen.length) {
-      report += '### В работе\n';
-      zoneOpen.forEach(t => report += '- ' + t.text + '\n');
-      report += '\n';
-    }
+    if (zoneDone.length) { report += '### Выполнено за период\n'; zoneDone.forEach(t => report += '- ✅ ' + t.text + ' (' + t.doneAt.split('T')[0] + ')\n'); report += '\n'; }
+    if (zoneOpen.length) { report += '### В работе\n'; zoneOpen.forEach(t => report += '- ' + t.text + '\n'); report += '\n'; }
   });
-
   navigator.clipboard.writeText(report).then(() => alert('Отчёт скопирован в буфер обмена!'));
 });
 
@@ -716,7 +691,25 @@ document.querySelectorAll('.modal').forEach(modal => {
   modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
 });
 
+// Старт: локальный кэш показан сразу, затем облако перекрывает его
+suppressPush = true;
 render();
+cloudRead()
+  .then(data => {
+    if (data && Array.isArray(data.tasks)) {
+      tasks = data.tasks.map(migrateTask);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } else {
+      return importFromMd();
+    }
+  })
+  .catch(() => {})
+  .then(() => {
+    suppressPush = false;
+    sweepDoneToTrash();
+    render();
+    if (importedFromMd && getToken()) schedulePush();
+  });
 </script>
 </body>
 </html>
