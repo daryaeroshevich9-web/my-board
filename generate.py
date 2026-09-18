@@ -1,11 +1,29 @@
 import html
 
 COLORS = {
-    "Авиабит": "#fff3a3",
-    "Портал 2.0": "#ffc2d1",
-    "Прочее": "#bde0fe",
+    "Авиабит": "linear-gradient(180deg,#fff3b0,#ffd766)",
+    "Портал 2.0": "linear-gradient(180deg,#ffd3dd,#ff9fb2)",
+    "Прочее": "linear-gradient(180deg,#d6ecff,#8ecae6)",
+}
+DOTS = {
+    "Авиабит": "#ffd766",
+    "Портал 2.0": "#ff9fb2",
+    "Прочее": "#8ecae6",
 }
 ORDER = ["Авиабит", "Портал 2.0", "Прочее"]
+
+CORK_FINE = ("url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'>"
+             "<filter id='a'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/>"
+             "<feColorMatrix type='matrix' values='0 0 0 0 0.32 0 0 0 0 0.20 0 0 0 0 0.10 0.5 0.5 0.5 0 0'/></filter>"
+             "<rect width='260' height='260' filter='url(%23a)'/></svg>\")")
+CORK_BLOTCH = ("url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'>"
+               "<filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' stitchTiles='stitch'/>"
+               "<feColorMatrix type='matrix' values='0 0 0 0 0.25 0 0 0 0 0.14 0 0 0 0 0.06 0.35 0.35 0.35 0 0'/></filter>"
+               "<rect width='900' height='900' filter='url(%23b)'/></svg>\")")
+WOOD_NOISE = ("url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'>"
+              "<filter id='c'><feTurbulence type='fractalNoise' baseFrequency='0.02 0.3' numOctaves='4' stitchTiles='stitch'/>"
+              "<feColorMatrix type='matrix' values='0 0 0 0 0.10 0 0 0 0 0.05 0 0 0 0 0.02 0.4 0.4 0.4 0 0'/></filter>"
+              "<rect width='400' height='400' filter='url(%23c)'/></svg>\")")
 
 
 def parse_markdown(md_text):
@@ -31,53 +49,76 @@ def build_html(columns):
         stickies = ""
         for t in columns[name]:
             cls = "sticky done" if t["done"] else "sticky"
-            color = COLORS.get(name, "#d8f3dc")
+            bg = COLORS.get(name, "linear-gradient(180deg,#e7e5e4,#d6d3d1)")
             stickies += (
-                '<div class="' + cls + '" style="background:' + color + '">'
+                '<div class="' + cls + '" style="background:' + bg + '">'
                 + html.escape(t["text"]) + "</div>"
             )
+        dot = DOTS.get(name, "#a3b18a")
         zones += (
-            '<div class="zone"><div class="zone-tag">' + html.escape(name)
+            '<div class="zone" style="--dot:' + dot + '"><div class="zone-tag">'
+            + html.escape(name)
             + '</div><div class="stickies">' + stickies + "</div></div>"
         )
     css = """
-    body { margin:0; padding:24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-      background-color:#b98a5a;
-      background-image:
-        radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1.6px),
-        radial-gradient(rgba(80,50,20,0.20) 1px, transparent 1.6px),
-        radial-gradient(rgba(255,255,255,0.08) 2px, transparent 2.6px);
-      background-size:14px 14px,22px 22px,34px 34px;
-      background-position:0 0,7px 9px,12px 4px;
-      color:#3d2b1f; }
-    h1 { text-align:center; color:#fdf6e3; font-size:22px; margin:4px 0 26px; text-shadow:0 2px 3px rgba(0,0,0,.35); }
-    .zones { display:flex; gap:28px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
-    .zone { width:320px; }
-    .zone-tag { display:inline-block; background:#fdf6e3; padding:8px 16px; font-weight:700; font-size:15px;
-      box-shadow:0 2px 5px rgba(0,0,0,.3); transform:rotate(-1.5deg); position:relative; margin-bottom:20px; }
-    .zone-tag::before { content:''; position:absolute; top:-7px; left:50%; margin-left:-7px; width:14px; height:14px;
-      border-radius:50%; background:radial-gradient(circle at 35% 30%, #868e96, #343a40 70%); box-shadow:0 2px 3px rgba(0,0,0,.4); }
+    *, *::before, *::after { box-sizing:inherit; }
+    body {
+      margin:0; min-height:100vh; padding:32px 20px; box-sizing:border-box;
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+      background-color:#4e2c12;
+      background-image:__WOOD__,
+        repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, rgba(0,0,0,.06) 2px 5px, transparent 5px 90px),
+        linear-gradient(120deg,#6b3f1e,#4e2c12 55%,#5d3619);
+      color:#3b3222;
+    }
+    .board {
+      max-width:1180px; margin:0 auto; border-radius:24px; padding:36px 28px 42px;
+      background-color:#c1935f;
+      background-image:__FINE__, __BLOTCH__,
+        radial-gradient(circle at 18% 12%, rgba(255,236,200,.35), transparent 55%),
+        radial-gradient(circle at 85% 88%, rgba(90,55,20,.28), transparent 50%),
+        linear-gradient(160deg,#cfa06b,#b9854f);
+      box-shadow:inset 0 3px 18px rgba(60,35,10,.5), inset 0 -2px 12px rgba(255,235,200,.22),
+        0 24px 60px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.35);
+    }
+    h1 { margin:0 0 30px; text-align:center; font-size:24px; font-weight:800; letter-spacing:.5px;
+      color:#fff8ec; text-shadow:0 2px 6px rgba(60,35,10,.55); }
+    .zones { display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:28px; align-items:start; }
+    .zone-tag { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.92);
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-radius:999px; padding:8px 16px;
+      font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#54402a;
+      box-shadow:0 4px 12px rgba(60,35,10,.25); margin-bottom:18px; }
+    .zone-tag::before { content:''; width:10px; height:10px; border-radius:50%; background:var(--dot,#a3b18a);
+      box-shadow:0 0 0 3px rgba(255,255,255,.55); }
     .stickies { display:flex; flex-direction:column; gap:18px; }
-    .sticky { padding:16px 14px 18px; min-height:64px; font-size:15px; line-height:1.35; word-break:break-word;
-      border-radius:2px; box-shadow:2px 4px 9px rgba(0,0,0,.3); position:relative; }
-    .sticky::before { content:''; position:absolute; top:-7px; left:50%; margin-left:-7px; width:14px; height:14px;
-      border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff8787, #c92a2a 70%); box-shadow:0 2px 3px rgba(0,0,0,.45); }
-    .sticky:nth-child(odd) { transform:rotate(-1.6deg); }
-    .sticky:nth-child(even) { transform:rotate(1.4deg); }
-    .sticky.done { opacity:.55; text-decoration:line-through; }
+    .sticky { border-radius:14px; padding:16px 16px 18px; min-height:64px; font-size:15px; line-height:1.45;
+      word-break:break-word; position:relative;
+      box-shadow:0 1px 2px rgba(60,35,10,.12), 0 4px 10px rgba(60,35,10,.14), 0 14px 28px rgba(60,35,10,.20);
+      transition:transform .18s ease, box-shadow .18s ease; }
+    .sticky::before { content:''; position:absolute; top:-8px; left:50%; margin-left:-8px; width:16px; height:16px;
+      border-radius:50%; background:radial-gradient(circle at 32% 28%, #ff9d9d, #e03131 55%, #961b1b);
+      box-shadow:0 3px 7px rgba(60,35,10,.4), inset 0 -2px 3px rgba(0,0,0,.28); }
+    .sticky:nth-child(odd) { transform:rotate(-1.2deg); }
+    .sticky:nth-child(even) { transform:rotate(1deg); }
+    .sticky:hover { transform:translateY(-3px) rotate(0deg);
+      box-shadow:0 2px 4px rgba(60,35,10,.14), 0 8px 16px rgba(60,35,10,.18), 0 22px 40px rgba(60,35,10,.26); }
+    .sticky.done { opacity:.55; text-decoration:line-through; filter:saturate(.55); }
     @media (max-width:720px) {
-      body { padding:14px; }
-      .zones { flex-direction:column; gap:24px; }
-      .zone { width:100%; }
-      .sticky:nth-child(odd) { transform:rotate(-0.8deg); }
-      .sticky:nth-child(even) { transform:rotate(0.7deg); }
+      body { padding:14px 10px; }
+      .board { border-radius:18px; padding:24px 16px 30px; }
+      h1 { font-size:20px; margin-bottom:22px; }
+      .zones { grid-template-columns:1fr; gap:22px; }
+      .sticky:nth-child(odd) { transform:rotate(-.6deg); }
+      .sticky:nth-child(even) { transform:rotate(.5deg); }
     }
     """
+    css = css.replace("__WOOD__", WOOD_NOISE).replace("__FINE__", CORK_FINE).replace("__BLOTCH__", CORK_BLOTCH)
     return (
         "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n<meta charset=\"UTF-8\">\n"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
         "<title>Доска Дарьи</title>\n<style>" + css + "</style>\n</head>\n<body>\n"
-        "<h1>Доска Дарьи</h1>\n<div class=\"zones\">" + zones + "</div>\n</body>\n</html>"
+        "<div class=\"board\">\n<h1>Доска Дарьи</h1>\n<div class=\"zones\">" + zones + "</div>\n</div>\n"
+        "</body>\n</html>"
     )
 
 
