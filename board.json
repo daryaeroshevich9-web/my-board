@@ -68,7 +68,7 @@
       "key": "portal",
       "label": "Портал 2.0",
       "emoji": "🚪",
-      "hidden": true,
+      "hidden": false,
       "tint": 1
     },
     {
