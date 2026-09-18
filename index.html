@@ -41,7 +41,7 @@
   ::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:var(--si-total-bg);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:var(--si-total-bg);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default}
   .title-block{min-width:160px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
   .subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
@@ -64,8 +64,6 @@
   .toolbar button:hover{filter:brightness(.88);transform:translateY(-1px)}
   #generateReport{background:var(--accent)}
   #generateReport:hover{filter:brightness(.9)}
-  .icon-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.65);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
-  .icon-btn:hover{background:rgba(255,255,255,.95);transform:translateY(-1px)}
   .summary{max-width:var(--maxw);margin:0 auto;padding:20px 28px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   .summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);display:flex;align-items:center;gap:12px}
   .summary-card.clickable{cursor:pointer;transition:transform .15s, box-shadow .15s}
@@ -109,9 +107,11 @@
   .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
   .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
   .subtask{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
-  .subtask input{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none}
-  .subtask .sub-text{flex:1;word-break:break-word}
+  .subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none}
+  .subtask .sub-text{flex:1;word-break:break-word;cursor:text}
   .subtask.done .sub-text{text-decoration:line-through;opacity:.6}
+  .sub-edit{flex:1;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font:inherit;font-size:13px;color:var(--text);background:var(--card)}
+  .sub-edit:focus{outline:none;border-color:var(--accent)}
   .sub-del{border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1}
   .sub-del:hover{background:rgba(185,60,50,.1);color:#b93c32}
   .sub-add{border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);width:100%}
@@ -173,7 +173,7 @@
 <body>
 <header class="topbar">
   <div class="topbar-inner">
-    <div class="logo">✈️</div>
+    <div class="logo" id="logoBtn" title="Доска Дарьи">✈️</div>
     <div class="title-block">
       <h1>Доска Дарьи</h1>
       <div class="subtitle">Авиабит · Портал 2.0 · Прочее</div>
@@ -189,7 +189,6 @@
       <input type="date" id="dateFrom">
       <input type="date" id="dateTo">
       <button id="generateReport">📊 Отчёт</button>
-      <button class="icon-btn" id="settingsBtn" title="Облачная синхронизация: токен">🔑</button>
     </div>
   </div>
 </header>
@@ -280,11 +279,11 @@
 
 <div class="modal" id="settingsModal">
   <div class="modal-content">
-    <h3>☁️ Облачная синхронизация</h3>
-    <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
+    <h3>☁️ Подключение к облаку</h3>
+    <p class="settings-hint" id="settingsHint">Это окно появляется один раз на каждом устройстве. Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <input type="password" id="tokenInput" placeholder="github_pat_...">
     <div class="modal-actions">
-      <button class="modal-btn secondary" id="cancelSettings">Отмена</button>
+      <button class="modal-btn secondary" id="cancelSettings">Позже</button>
       <button class="modal-btn primary" id="saveSettings">Сохранить</button>
     </div>
   </div>
@@ -303,7 +302,7 @@ let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = fal
 
 function migrateTask(t) {
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
-  if (t.subOpen === undefined) t.subOpen = false;
+  t.subOpen = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
   if (t.deleted === undefined) t.deleted = false;
   if (!t.created) t.created = new Date().toISOString();
@@ -339,7 +338,7 @@ function cloudRead() {
 function cloudWrite() {
   const token = getToken();
   if (!token) {
-    openSettings('Чтобы синхронизировать изменения с облаком, вставь свой токен доступа. Он сохранится только в этом браузере.');
+    openSettings('Без токена изменения останутся только на этом устройстве. Вставь токен, чтобы синхронизироваться с облаком.');
     return Promise.reject('no-token');
   }
   const payload = () => {
@@ -390,7 +389,6 @@ function importFromMd() {
     .catch(() => {});
 }
 
-// Авто-уборка: выполненные уходят в корзину спустя 3 суток
 const DONE_TRASH_DELAY = 3 * 24 * 60 * 60 * 1000;
 function sweepDoneToTrash() {
   const cutoff = Date.now() - DONE_TRASH_DELAY;
@@ -446,11 +444,11 @@ function render() {
           t.subtasks.map(s =>
             '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
             '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
-            '<span class="sub-text">' + escapeHtml(s.text) + '</span>' +
+            '<span class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + escapeHtml(s.text) + '</span>' +
             '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
             '</div>'
           ).join('') +
-          '<input class="sub-add" data-subadd="' + t.id + '" placeholder="+ подзадача" onkeydown="subKey(event,' + t.id + ')">' +
+          (t.subOpen ? '<input class="sub-add" data-subadd="' + t.id + '" placeholder="+ подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
           '</div>';
       }
       return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '" draggable="true">' +
@@ -505,16 +503,11 @@ function permanentDelete(id) {
 }
 function openSubs(id) {
   const t = tasks.find(x => x.id === id);
-  if (t) { t.subOpen = true; saveTasks(); render(); const el = document.querySelector('[data-subadd="' + id + '"]'); if (el) el.focus(); }
-}
-function toggleSub(tid, sid) {
-  const t = tasks.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
-}
-function delSub(event, tid, sid) {
-  event.preventDefault(); event.stopPropagation();
-  const t = tasks.find(x => x.id === tid);
-  if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); saveTasks(); render(); }
+  if (t) {
+    t.subOpen = true; render();
+    const el = document.querySelector('[data-subadd="' + id + '"]');
+    if (el) el.focus();
+  }
 }
 function subKey(event, tid) {
   if (event.key === 'Enter') {
@@ -528,6 +521,61 @@ function subKey(event, tid) {
       }
     }
   }
+}
+function subBlur(event, tid) {
+  const input = event.target;
+  setTimeout(() => {
+    const t = tasks.find(x => x.id === tid);
+    if (!t) return;
+    const v = input.value.trim();
+    if (v) {
+      t.subtasks.push({id: Date.now(), text: v, done: false});
+      t.subOpen = false;
+      saveTasks();
+    } else {
+      t.subOpen = false;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+    render();
+  }, 0);
+}
+function editSubStart(event, tid, sid) {
+  const span = event.currentTarget;
+  const t = tasks.find(x => x.id === tid);
+  if (!t) return;
+  const s = t.subtasks.find(y => y.id === sid);
+  if (!s) return;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'sub-edit';
+  input.value = s.text;
+  span.replaceWith(input);
+  input.focus();
+  let finished = false;
+  const finish = commit => {
+    if (finished) return;
+    finished = true;
+    if (commit) {
+      const v = input.value.trim();
+      if (v) s.text = v;
+      saveTasks();
+    }
+    render();
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') finish(true);
+    if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+function toggleSub(tid, sid) {
+  const t = tasks.find(x => x.id === tid);
+  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
+}
+function delSub(event, tid, sid) {
+  event.preventDefault(); event.stopPropagation();
+  const t = tasks.find(x => x.id === tid);
+  if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); saveTasks(); render(); }
 }
 function openMove(id) { currentMoveId = id; document.getElementById('moveModal').classList.add('open'); }
 function closeMove() { document.getElementById('moveModal').classList.remove('open'); }
@@ -549,13 +597,13 @@ document.getElementById('clearDoneBtn').addEventListener('click', e => {
   }
 });
 
-// Настройки облака
+// Облако: окно токена всплывает само при первом открытии; скрытый вход — двойной клик по логотипу
 function openSettings(hint) {
   if (hint) document.getElementById('settingsHint').textContent = hint;
   document.getElementById('tokenInput').value = getToken();
   document.getElementById('settingsModal').classList.add('open');
 }
-document.getElementById('settingsBtn').addEventListener('click', () => openSettings('Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.'));
+document.getElementById('logoBtn').addEventListener('dblclick', () => openSettings('Служебный вход: заменить токен на этом устройстве.'));
 document.getElementById('cancelSettings').addEventListener('click', () => document.getElementById('settingsModal').classList.remove('open'));
 document.getElementById('saveSettings').addEventListener('click', () => {
   const v = document.getElementById('tokenInput').value.trim();
@@ -691,9 +739,10 @@ document.querySelectorAll('.modal').forEach(modal => {
   modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
 });
 
-// Старт: локальный кэш показан сразу, затем облако перекрывает его
+// Старт
 suppressPush = true;
 render();
+if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже окно не появится, а заменить токен можно двойным кликом по логотипу.');
 cloudRead()
   .then(data => {
     if (data && Array.isArray(data.tasks)) {
