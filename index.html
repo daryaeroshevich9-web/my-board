@@ -133,6 +133,7 @@
   .move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
   .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
   .move-btn:hover{background:var(--soft)}
+  .move-btn .hidden-mark{color:var(--text-muted);font-weight:500;font-size:13px}
   .settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
   .zone-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
   .zone-row-emoji{font-size:18px;flex:none}
@@ -269,6 +270,17 @@
   </div>
 </div>
 
+<div class="modal" id="quickZoneModal">
+  <div class="modal-content">
+    <h3>Куда поместить заметку?</h3>
+    <p class="settings-hint">Раздел «Прочее» сейчас скрыт. Выбери раздел — если он скрыт, он автоматически появится на доске.</p>
+    <div class="move-list" id="quickZoneList"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeQuickZone()">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="settingsModal">
   <div class="modal-content">
     <h3>☁️ Подключение к облаку</h3>
@@ -318,6 +330,7 @@ let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 tasks.forEach(migrateTask);
 let currentAddZone = null, currentEditId = null, currentMoveId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
+let pendingQuickText = '';
 
 function migrateTask(t) {
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
@@ -687,6 +700,42 @@ document.getElementById('addZoneBtn').addEventListener('click', () => {
   document.getElementById('newZoneEmoji').value = '';
 });
 
+// Быстрая заметка: в «Прочее», если оно видимо; иначе выбор раздела с авто-показом скрытого
+function addQuickNote(text, zoneKey) {
+  tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false}));
+  clearLeakedSearch(text);
+  saveTasks(); render();
+}
+function quickAddFlow(text) {
+  const other = zoneByKey('other');
+  if (other && !other.hidden) {
+    addQuickNote(text, 'other');
+    return;
+  }
+  pendingQuickText = text;
+  const wrap = document.getElementById('quickZoneList');
+  wrap.innerHTML = zones.map(z =>
+    '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
+    (z.hidden ? ' <span class="hidden-mark">(скрыт — появится при выборе)</span>' : '') + '</button>'
+  ).join('');
+  document.getElementById('quickZoneModal').classList.add('open');
+}
+function chooseQuickZone(zoneKey) {
+  const z = zoneByKey(zoneKey);
+  if (!z) return;
+  if (z.hidden) { z.hidden = false; saveZones(); }
+  addQuickNote(pendingQuickText, zoneKey);
+  pendingQuickText = '';
+  document.getElementById('quickZoneModal').classList.remove('open');
+}
+function closeQuickZone() {
+  document.getElementById('quickZoneModal').classList.remove('open');
+  if (pendingQuickText) {
+    document.getElementById('quickAdd').value = pendingQuickText;
+    pendingQuickText = '';
+  }
+}
+
 document.getElementById('clearDoneBtn').addEventListener('click', e => {
   e.stopPropagation();
   const doneActive = tasks.filter(t => t.done && !t.deleted);
@@ -884,12 +933,9 @@ if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
 document.getElementById('quickAdd').addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     const text = e.target.value.trim();
-    if (text) {
-      tasks.push(migrateTask({id: Date.now(), zone: 'other', text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false}));
-      clearLeakedSearch(text);
-      saveTasks(); render();
-      e.target.value = ''; voiceBase = '';
-    }
+    if (!text) return;
+    e.target.value = ''; voiceBase = '';
+    quickAddFlow(text);
   }
 });
 document.getElementById('searchInput').addEventListener('input', render);
@@ -947,7 +993,11 @@ document.getElementById('dateFrom').value = weekAgo;
 document.getElementById('dateTo').value = today;
 
 document.querySelectorAll('.modal').forEach(modal => {
+  if (modal.id === 'quickZoneModal') return;
   modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+});
+document.getElementById('quickZoneModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeQuickZone();
 });
 
 // Старт
