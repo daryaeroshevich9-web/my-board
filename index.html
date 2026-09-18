@@ -14,16 +14,6 @@
     --text:#1A1A1A; --text-secondary:#44546A; --text-muted:#9AA0A6;
     --black:#1F3655; --accent:#3A5F8A; --accent-ring:rgba(58,95,138,.18);
     --soft:#F0EDE6; --soft-hover:#E6E2D8; --scroll:rgba(68,84,106,.35);
-    --z-aviabit-bg:#F5EED8; --z-aviabit-bd:#E0D5AE; --z-aviabit-c:#A67C00;
-    --z-portal-bg:#F7E4E8; --z-portal-bd:#E3C4CC; --z-portal-c:#B04A5E;
-    --z-other-bg:#E4EBF3; --z-other-bd:#B9C9DD; --z-other-c:#3A5F8A;
-    --t-aviabit-a:#F8F0DA; --t-aviabit-b:#E7D4A4;
-    --t-portal-a:#FAE9ED; --t-portal-b:#EBC6CF;
-    --t-other-a:#E4EBF3; --t-other-b:#AFC2D8;
-    --si-total-bg:#E8EDF4; --si-total-c:#3A5F8A;
-    --si-progress-bg:#F5EED8; --si-progress-c:#8A6D1B;
-    --si-done-bg:#E2F0E6; --si-done-c:#3E7A5E;
-    --si-trash-bg:#F0EDE6; --si-trash-c:#44546A;
     --maxw:1560px;
   }
   *{box-sizing:border-box;margin:0}
@@ -41,7 +31,7 @@
   ::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:var(--si-total-bg);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default}
+  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:var(--si-total-bg,#E8EDF4);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default}
   .title-block{min-width:160px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
   .subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
@@ -64,6 +54,9 @@
   .toolbar button:hover{filter:brightness(.88);transform:translateY(-1px)}
   #generateReport{background:var(--accent)}
   #generateReport:hover{filter:brightness(.9)}
+  .icon-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.65);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;flex:none}
+  .icon-btn:hover{background:rgba(255,255,255,.95)}
+  .icon-btn svg{width:18px;height:18px;color:var(--text-secondary)}
   .summary{max-width:var(--maxw);margin:0 auto;padding:20px 28px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   .summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);display:flex;align-items:center;gap:12px}
   .summary-card.clickable{cursor:pointer;transition:transform .15s, box-shadow .15s}
@@ -71,34 +64,32 @@
   .clear-done-btn{margin-left:auto;flex:none;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.65);box-shadow:0 1px 2px rgba(0,0,0,.06);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .clear-done-btn:hover{background:var(--soft);transform:scale(1.06)}
   .summary-icon{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .si-total{background:var(--si-total-bg);color:var(--si-total-c)}
-  .si-progress{background:var(--si-progress-bg);color:var(--si-progress-c)}
-  .si-done{background:var(--si-done-bg);color:var(--si-done-c)}
-  .si-trash{background:var(--si-trash-bg);color:var(--si-trash-c)}
+  .si-total{background:#E8EDF4;color:#3A5F8A}
+  .si-progress{background:#F5EED8;color:#8A6D1B}
+  .si-done{background:#E2F0E6;color:#3E7A5E}
+  .si-trash{background:#F0EDE6;color:#44546A}
   .summary-text .num{font-family:'Unbounded',sans-serif;font-weight:700;font-size:22px;line-height:1.1}
   .summary-text .label{font-size:12px;color:var(--text-secondary);font-weight:500}
   .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
   .zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
   .zone.drop-hover{outline:2px dashed var(--black);outline-offset:4px}
   .zone-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-  .zone-emoji{width:38px;height:38px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:20px}
-  .ze-aviabit{background:linear-gradient(135deg,var(--t-aviabit-a),var(--t-aviabit-b))}
-  .ze-portal{background:linear-gradient(135deg,var(--t-portal-a),var(--t-portal-b))}
-  .ze-other{background:linear-gradient(135deg,var(--t-other-a),var(--t-other-b))}
-  .zone-head h2{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:600;letter-spacing:.3px}
-  .count{margin-left:auto;font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:var(--text-secondary);background:var(--soft);min-width:28px;height:28px;padding:0 8px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+  .zone-emoji{width:38px;height:38px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,var(--z-bg),var(--z-bd))}
+  .zone-head h2{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:600;letter-spacing:.3px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .count{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:var(--text-secondary);background:var(--soft);min-width:28px;height:28px;padding:0 8px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex:none}
   .add-btn{width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--black);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:400;line-height:1;transition:all .15s;flex:none}
   .add-btn:hover{transform:scale(1.1);background:var(--soft)}
+  .zone-hide-btn{width:24px;height:24px;border:none;border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;transition:all .15s}
+  .zone-hide-btn:hover{background:var(--soft);color:var(--text-secondary)}
+  .zone-hide-btn svg{width:14px;height:14px}
   .notes{display:flex;flex-direction:column;gap:10px;min-height:40px}
   .note{position:relative;border-radius:12px;padding:12px 14px 12px 44px;font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .18s, box-shadow .18s, opacity .18s;display:flex;align-items:flex-start;cursor:grab;touch-action:pan-y}
+  .zone .note{background:var(--z-bg);border-color:var(--z-bd)}
   .note:active{cursor:grabbing}
   .note.dragging-src{opacity:.35}
   .note:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.10)}
   .drag-ghost{position:fixed;z-index:1200;pointer-events:none;opacity:.95;transform:rotate(2deg);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:12px;margin:0}
   .note::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--zone-color)}
-  .zone-aviabit .note{background:var(--z-aviabit-bg);border-color:var(--z-aviabit-bd);--zone-color:var(--z-aviabit-c)}
-  .zone-portal .note{background:var(--z-portal-bg);border-color:var(--z-portal-bd);--zone-color:var(--z-portal-c)}
-  .zone-other .note{background:var(--z-other-bg);border-color:var(--z-other-bd);--zone-color:var(--z-other-c)}
   .note-checkbox{position:absolute;left:12px;top:12px;width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--zone-color)}
   .note-body{flex:1;min-width:0;display:flex;flex-direction:column}
   .note-content{cursor:text}
@@ -137,12 +128,21 @@
   .modal-btn.primary:hover{filter:brightness(.88)}
   .modal-btn.secondary{background:var(--soft);color:var(--text)}
   .modal-btn.secondary:hover{background:var(--soft-hover)}
+  .move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+  .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
+  .move-btn:hover{background:var(--soft)}
   .settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
+  .zone-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .zone-row-emoji{font-size:18px;flex:none}
+  .zone-row-label{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .zone-row .modal-btn{padding:6px 14px;font-size:13px}
+  .zone-add-row{display:flex;gap:8px;margin-top:14px;align-items:center}
+  .zone-add-row input[type="text"]{margin-bottom:0}
+  #newZoneEmoji{width:56px;flex:none;text-align:center}
+  #newZoneLabel{flex:1}
+  .zone-add-row .modal-btn{flex:none}
   .trash-note{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
   .trash-tag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;flex:none;border:1px solid}
-  .tag-aviabit{background:var(--z-aviabit-bg);border-color:var(--z-aviabit-bd);color:var(--z-aviabit-c)}
-  .tag-portal{background:var(--z-portal-bg);border-color:var(--z-portal-bd);color:var(--z-portal-c)}
-  .tag-other{background:var(--z-other-bg);border-color:var(--z-other-bd);color:var(--z-other-c)}
   .trash-note .note-text{flex:1;font-size:14px;color:var(--text-secondary)}
   .trash-actions{display:flex;gap:8px}
   .trash-btn{padding:6px 14px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
@@ -154,9 +154,12 @@
     .topbar-inner{padding:12px 16px;gap:10px}
     h1{font-size:17px}
     .subtitle{display:none}
-    .quick-wrap{flex:1 1 100%;order:3}
-    .toolbar{margin-left:0;width:100%;order:4}
-    .search-input{flex:1;min-width:0}
+    #dateFrom,#dateTo,#generateReport{display:none}
+    .quick-wrap,.toolbar{display:contents}
+    #quickAdd{order:1;flex:1 1 100%}
+    #searchInput{order:2;flex:1 1 auto;min-width:0}
+    #micBtn{order:3;flex:0 0 auto}
+    #zonesBtn{order:4;flex:0 0 auto}
     .summary{padding:14px 12px 0;gap:8px;grid-template-columns:repeat(4,1fr)}
     .summary-card{flex-direction:column;align-items:center;text-align:center;gap:2px;padding:8px 4px;position:relative}
     .summary-icon{width:22px;height:22px;font-size:13px;border-radius:6px}
@@ -187,6 +190,9 @@
       <input type="date" id="dateFrom">
       <input type="date" id="dateTo">
       <button id="generateReport">📊 Отчёт</button>
+      <button class="icon-btn" id="zonesBtn" title="Разделы: добавить, скрыть, показать">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/></svg>
+      </button>
     </div>
   </div>
 </header>
@@ -202,32 +208,7 @@
   </div>
 </div>
 
-<main class="zones">
-  <section class="zone" data-zone="other">
-    <header class="zone-head">
-      <div class="zone-emoji ze-other">📋</div><h2>Прочее</h2>
-      <span class="count" data-count="other">0</span>
-      <button class="add-btn" data-zone="other" title="Добавить задачу">+</button>
-    </header>
-    <div class="notes" data-notes="other"></div>
-  </section>
-  <section class="zone" data-zone="portal">
-    <header class="zone-head">
-      <div class="zone-emoji ze-portal">🚪</div><h2>Портал 2.0</h2>
-      <span class="count" data-count="portal">0</span>
-      <button class="add-btn" data-zone="portal" title="Добавить задачу">+</button>
-    </header>
-    <div class="notes" data-notes="portal"></div>
-  </section>
-  <section class="zone" data-zone="aviabit">
-    <header class="zone-head">
-      <div class="zone-emoji ze-aviabit">🛩️</div><h2>Авиабит</h2>
-      <span class="count" data-count="aviabit">0</span>
-      <button class="add-btn" data-zone="aviabit" title="Добавить задачу">+</button>
-    </header>
-    <div class="notes" data-notes="aviabit"></div>
-  </section>
-</main>
+<main class="zones" id="zonesWrap"></main>
 
 <div class="modal" id="addModal">
   <div class="modal-content">
@@ -251,12 +232,37 @@
   </div>
 </div>
 
+<div class="modal" id="moveModal">
+  <div class="modal-content">
+    <h3>Переместить задачу</h3>
+    <div class="move-list" id="moveList"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeMove()">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="trashModal">
   <div class="modal-content">
     <h3>🗑️ Корзина</h3>
     <div id="trashContent"></div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeTrash()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="zonesModal">
+  <div class="modal-content">
+    <h3>🗂️ Разделы</h3>
+    <div id="zonesList"></div>
+    <div class="zone-add-row">
+      <input type="text" id="newZoneEmoji" placeholder="🗂️" maxlength="4" autocomplete="off">
+      <input type="text" id="newZoneLabel" placeholder="Название раздела" autocomplete="off">
+      <button class="modal-btn primary" id="addZoneBtn">Добавить</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeZones()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -275,14 +281,40 @@
 
 <script>
 const STORAGE_KEY = 'darya_board_tasks';
+const ZONES_KEY = 'darya_board_zones';
 const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
 const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
 
+const ZONE_PALETTE = [
+  {c:'#3A5F8A', bg:'#E4EBF3', bd:'#B9C9DD'},
+  {c:'#B04A5E', bg:'#F7E4E8', bd:'#E3C4CC'},
+  {c:'#A67C00', bg:'#F5EED8', bd:'#E0D5AE'},
+  {c:'#3E7A5E', bg:'#E2F0E6', bd:'#BBDCC9'},
+  {c:'#6B4FA0', bg:'#ECE6F5', bd:'#D3C6E6'},
+  {c:'#0E7490', bg:'#E0F2F5', bd:'#B5DDE4'}
+];
+const DEFAULT_ZONES = [
+  {key:'other', label:'Прочее', emoji:'📋', hidden:false, tint:0},
+  {key:'portal', label:'Портал 2.0', emoji:'🚪', hidden:false, tint:1},
+  {key:'aviabit', label:'Авиабит', emoji:'🛩️', hidden:false, tint:2}
+];
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+const ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
+
+function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0)}; }
+function loadZones(){
+  try{
+    const raw = localStorage.getItem(ZONES_KEY);
+    if(raw){ const z=JSON.parse(raw); if(Array.isArray(z)&&z.length) return z.map(migrateZone); }
+  }catch(e){}
+  return DEFAULT_ZONES.map(z=>Object.assign({},z));
+}
+let zones = loadZones();
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 tasks.forEach(migrateTask);
-let currentAddZone = null, currentEditId = null;
+let currentAddZone = null, currentEditId = null, currentMoveId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 
 function migrateTask(t) {
@@ -294,6 +326,9 @@ function migrateTask(t) {
   return t;
 }
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function zoneByKey(key){ return zones.find(z=>z.key===key); }
+function tintFor(z){ return ZONE_PALETTE[(z.tint||0) % ZONE_PALETTE.length]; }
+function labelFor(key){ const z=zoneByKey(key); return z? z.label : key; }
 function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
 function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
 
@@ -309,7 +344,6 @@ function clearSearchOnly() {
 }
 window.addEventListener('load', clearTransientInputs);
 window.addEventListener('pageshow', clearTransientInputs);
-// Страховка от поздней подстановки браузером
 setTimeout(clearSearchOnly, 300);
 setTimeout(clearSearchOnly, 1200);
 
@@ -327,6 +361,10 @@ function saveTasks() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   if (!suppressPush) schedulePush();
 }
+function saveZones() {
+  localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+  if (!suppressPush) schedulePush();
+}
 function schedulePush() {
   clearTimeout(pushTimer);
   pushTimer = setTimeout(() => { cloudWrite().catch(() => {}); }, 800);
@@ -342,7 +380,12 @@ function cloudRead() {
     .then(d => {
       if (!d) return null;
       cloudSha = d.sha;
-      return JSON.parse(b64d(d.content));
+      const parsed = JSON.parse(b64d(d.content));
+      if (parsed && Array.isArray(parsed.zones) && parsed.zones.length) {
+        zones = parsed.zones.map(migrateZone);
+        localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+      }
+      return parsed;
     });
 }
 
@@ -353,7 +396,7 @@ function cloudWrite() {
     return Promise.reject('no-token');
   }
   const payload = () => {
-    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks}, null, 2))};
+    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones}, null, 2))};
     if (cloudSha) b.sha = cloudSha;
     return b;
   };
@@ -426,10 +469,40 @@ function matchesQuery(t, q) {
   if (t.text.toLowerCase().includes(q)) return true;
   return t.subtasks.some(s => s.text.toLowerCase().includes(q));
 }
-const zoneLabels = {aviabit: 'Авиабит', portal: 'Портал 2.0', other: 'Прочее'};
+
+function noteHtml(t) {
+  const parts = splitEmoji(t.text);
+  const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
+  const subDone = t.subtasks.filter(s => s.done).length;
+  const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
+  let subBlock = '';
+  if (t.subtasks.length || t.subOpen) {
+    subBlock = '<div class="subtasks">' +
+      t.subtasks.map(s =>
+        '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
+        '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
+        '<span class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + escapeHtml(s.text) + '</span>' +
+        '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
+        '</div>'
+      ).join('') +
+      (t.subOpen ? '<input class="sub-add" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="новая подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
+      '</div>';
+  }
+  return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
+    '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
+    '<div class="note-body">' +
+      '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
+      subBlock +
+    '</div>' +
+    '<div class="note-actions">' +
+      '<button class="note-action" onclick="openSubs(' + t.id + ')" title="Подзадачи">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="editTask(' + t.id + ')" title="Редактировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
+      '<button class="note-action danger" onclick="deleteTask(' + t.id + ')" title="В корзину"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+    '</div>' +
+  '</div>';
+}
 
 function render() {
-  const zones = ['other', 'portal', 'aviabit'];
   const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const active = tasks.filter(t => !t.deleted);
   const trash = tasks.filter(t => t.deleted);
@@ -439,60 +512,41 @@ function render() {
   document.getElementById('doneCount').textContent = active.filter(t => t.done).length;
   document.getElementById('trashCount').textContent = trash.length;
 
-  zones.forEach(zone => {
-    const container = document.querySelector('[data-notes="' + zone + '"]');
-    const zoneActive = active.filter(t => t.zone === zone);
-    const zoneTasks = zoneActive.filter(t => matchesQuery(t, q));
-    document.querySelector('[data-count="' + zone + '"]').textContent = zoneTasks.length;
-    if (zoneTasks.length === 0) {
-      container.innerHTML = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
-      return;
-    }
-    container.innerHTML = zoneTasks.map(t => {
-      const parts = splitEmoji(t.text);
-      const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
-      const subDone = t.subtasks.filter(s => s.done).length;
-      const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
-      let subBlock = '';
-      if (t.subtasks.length || t.subOpen) {
-        subBlock = '<div class="subtasks">' +
-          t.subtasks.map(s =>
-            '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
-            '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
-            '<span class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + escapeHtml(s.text) + '</span>' +
-            '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
-            '</div>'
-          ).join('') +
-          (t.subOpen ? '<input class="sub-add" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="+ подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
-          '</div>';
-      }
-      return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
-        '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
-        '<div class="note-body">' +
-          '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
-          subBlock +
-        '</div>' +
-        '<div class="note-actions">' +
-          '<button class="note-action" onclick="openSubs(' + t.id + ')" title="Добавить подзадачу"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' +
-          '<button class="note-action" onclick="editTask(' + t.id + ')" title="Редактировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
-          '<button class="note-action danger" onclick="deleteTask(' + t.id + ')" title="В корзину"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  });
+  const wrap = document.getElementById('zonesWrap');
+  const visible = zones.filter(z => !z.hidden);
+  wrap.innerHTML = visible.map(z => {
+    const t = tintFor(z);
+    const zoneActive = active.filter(x => x.zone === z.key);
+    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q));
+    let notesHtml;
+    if (zoneTasks.length === 0) notesHtml = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
+    else notesHtml = zoneTasks.map(noteHtml).join('');
+    return '<section class="zone" data-zone="' + z.key + '" style="--zone-color:' + t.c + ';--z-bg:' + t.bg + ';--z-bd:' + t.bd + '">' +
+      '<header class="zone-head">' +
+        '<div class="zone-emoji">' + (z.emoji || '🗂️') + '</div>' +
+        '<h2>' + escapeHtml(z.label) + '</h2>' +
+        '<span class="count">' + zoneTasks.length + '</span>' +
+        '<button class="add-btn" onclick="openAddFor(\'' + z.key + '\')" title="Добавить задачу">+</button>' +
+        '<button class="zone-hide-btn" onclick="hideZone(\'' + z.key + '\')" title="Скрыть раздел">' + EYE_OFF + '</button>' +
+      '</header>' +
+      '<div class="notes">' + notesHtml + '</div>' +
+    '</section>';
+  }).join('');
 
   const trashContent = document.getElementById('trashContent');
   const trashShown = trash.filter(t => matchesQuery(t, q));
   if (trashShown.length === 0) {
     trashContent.innerHTML = '<div class="empty">' + (trash.length ? 'Ничего не найдено' : 'Корзина пуста') + '</div>';
   } else {
-    trashContent.innerHTML = trashShown.map(t =>
-      '<div class="trash-note"><span class="trash-tag tag-' + t.zone + '">' + zoneLabels[t.zone] + '</span><span class="note-text">' + escapeHtml(t.text) + '</span>' +
-      '<div class="trash-actions">' +
-      '<button class="trash-btn restore" onclick="restoreTask(' + t.id + ')">Восстановить</button>' +
-      '<button class="trash-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
-      '</div></div>'
-    ).join('');
+    trashContent.innerHTML = trashShown.map(t => {
+      const z = zoneByKey(t.zone);
+      const tt = z ? tintFor(z) : ZONE_PALETTE[0];
+      return '<div class="trash-note"><span class="trash-tag" style="background:' + tt.bg + ';border-color:' + tt.bd + ';color:' + tt.c + '">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + '</span>' +
+        '<div class="trash-actions">' +
+        '<button class="trash-btn restore" onclick="restoreTask(' + t.id + ')">Восстановить</button>' +
+        '<button class="trash-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
+        '</div></div>';
+    }).join('');
   }
 }
 
@@ -596,6 +650,41 @@ function delSub(event, tid, sid) {
 function openTrash() { document.getElementById('trashModal').classList.add('open'); }
 function closeTrash() { document.getElementById('trashModal').classList.remove('open'); }
 
+// Разделы
+function openAddFor(zoneKey) {
+  currentAddZone = zoneKey;
+  document.getElementById('addInput').value = '';
+  document.getElementById('addModal').classList.add('open');
+  document.getElementById('addInput').focus();
+}
+function hideZone(key) {
+  const z = zoneByKey(key);
+  if (z) { z.hidden = true; saveZones(); render(); }
+}
+function toggleZone(key) {
+  const z = zoneByKey(key);
+  if (z) { z.hidden = !z.hidden; saveZones(); render(); renderZonesList(); }
+}
+function renderZonesList() {
+  const list = document.getElementById('zonesList');
+  list.innerHTML = zones.map(z =>
+    '<div class="zone-row"><span class="zone-row-emoji">' + (z.emoji || '🗂️') + '</span><span class="zone-row-label">' + escapeHtml(z.label) + '</span>' +
+    '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button></div>'
+  ).join('');
+}
+function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); }
+function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
+document.getElementById('zonesBtn').addEventListener('click', openZones);
+document.getElementById('addZoneBtn').addEventListener('click', () => {
+  const label = document.getElementById('newZoneLabel').value.trim();
+  if (!label) { alert('Введите название раздела.'); return; }
+  const emoji = document.getElementById('newZoneEmoji').value.trim() || '🗂️';
+  zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % ZONE_PALETTE.length});
+  saveZones(); render(); renderZonesList();
+  document.getElementById('newZoneLabel').value = '';
+  document.getElementById('newZoneEmoji').value = '';
+});
+
 document.getElementById('clearDoneBtn').addEventListener('click', e => {
   e.stopPropagation();
   const doneActive = tasks.filter(t => t.done && !t.deleted);
@@ -606,6 +695,7 @@ document.getElementById('clearDoneBtn').addEventListener('click', e => {
   }
 });
 
+// Drag-and-drop с сортировкой
 let dragState = null;
 let justDragged = false;
 
@@ -622,6 +712,8 @@ function beginDrag() {
   dragState.ghost = ghost;
   dragState.ox = dragState.x0 - r.left;
   dragState.oy = dragState.y0 - r.top;
+  dragState.lastX = dragState.x0;
+  dragState.lastY = dragState.y0;
   dragState.active = true;
   note.classList.add('dragging-src');
   positionGhost(dragState.x0, dragState.y0);
@@ -647,9 +739,35 @@ function endDrag(commit) {
     document.querySelectorAll('.zone').forEach(z => z.classList.remove('drop-hover'));
     dragState.note.classList.remove('dragging-src');
     if (commit && dragState.zone) {
-      const t = tasks.find(x => x.id === dragState.id);
-      const z = dragState.zone.dataset.zone;
-      if (t && !t.deleted && t.zone !== z) { t.zone = z; saveTasks(); }
+      const draggedId = dragState.id;
+      const targetZone = dragState.zone.dataset.zone;
+      const dropY = dragState.lastY;
+      const t = tasks.find(x => x.id === draggedId);
+      if (t && !t.deleted) {
+        const noteEls = Array.from(dragState.zone.querySelectorAll('.note'))
+          .filter(el => Number(el.dataset.id) !== draggedId);
+        let insertBeforeId = null;
+        for (const el of noteEls) {
+          const r = el.getBoundingClientRect();
+          if (dropY < r.top + r.height / 2) { insertBeforeId = Number(el.dataset.id); break; }
+        }
+        const draggedIdx = tasks.findIndex(x => x.id === draggedId);
+        if (draggedIdx !== -1) {
+          const draggedTask = tasks.splice(draggedIdx, 1)[0];
+          draggedTask.zone = targetZone;
+          if (insertBeforeId !== null) {
+            const refIdx = tasks.findIndex(x => x.id === insertBeforeId);
+            tasks.splice(refIdx === -1 ? tasks.length : refIdx, 0, draggedTask);
+          } else {
+            let lastIdx = -1;
+            for (let i = 0; i < tasks.length; i++) {
+              if (tasks[i].zone === targetZone && !tasks[i].deleted) lastIdx = i;
+            }
+            tasks.splice(lastIdx + 1, 0, draggedTask);
+          }
+          saveTasks();
+        }
+      }
     }
     justDragged = true;
     setTimeout(() => { justDragged = false; }, 0);
@@ -662,7 +780,7 @@ document.addEventListener('pointerdown', e => {
   if (!note) return;
   if (e.target.closest && e.target.closest('input,button,.subtask,.sub-edit')) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
-  dragState = {id: Number(note.dataset.id), x0: e.clientX, y0: e.clientY, active: false, type: e.pointerType, note: note, timer: null, ghost: null, zone: null, ox: 0, oy: 0};
+  dragState = {id: Number(note.dataset.id), x0: e.clientX, y0: e.clientY, active: false, type: e.pointerType, note: note, timer: null, ghost: null, zone: null, ox: 0, oy: 0, lastX: e.clientX, lastY: e.clientY};
   if (e.pointerType !== 'mouse') {
     dragState.timer = setTimeout(() => { if (dragState && !dragState.active) beginDrag(); }, 280);
   }
@@ -676,6 +794,8 @@ document.addEventListener('pointermove', e => {
       else { clearTimeout(dragState.timer); dragState = null; return; }
     } else return;
   }
+  dragState.lastX = e.clientX;
+  dragState.lastY = e.clientY;
   positionGhost(e.clientX, e.clientY);
 });
 document.addEventListener('pointerup', () => endDrag(true));
@@ -686,7 +806,6 @@ document.addEventListener('click', e => {
   if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; }
 }, true);
 
-// Настройки облака: поле токена создаётся только на время открытого окна
 function openSettings(hint) {
   if (hint) document.getElementById('settingsHint').textContent = hint;
   const wrap = document.getElementById('tokenInputWrap');
@@ -718,6 +837,21 @@ function saveSettings() {
 document.getElementById('logoBtn').addEventListener('dblclick', () => openSettings('Служебный вход: заменить токен на этом устройстве.'));
 document.getElementById('cancelSettings').addEventListener('click', closeSettings);
 document.getElementById('saveSettings').addEventListener('click', saveSettings);
+
+function openMove(id) {
+  currentMoveId = id;
+  const wrap = document.getElementById('moveList');
+  wrap.innerHTML = zones.filter(z => !z.hidden).map(z =>
+    '<button class="move-btn" onclick="moveTask(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) + '</button>'
+  ).join('');
+  document.getElementById('moveModal').classList.add('open');
+}
+function closeMove() { document.getElementById('moveModal').classList.remove('open'); }
+function moveTask(zone) {
+  const t = tasks.find(x => x.id === currentMoveId);
+  if (t) { t.zone = zone; saveTasks(); render(); }
+  closeMove();
+}
 
 const micBtn = document.getElementById('micBtn');
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -758,19 +892,11 @@ document.getElementById('quickAdd').addEventListener('keydown', e => {
 });
 document.getElementById('searchInput').addEventListener('input', render);
 
-document.querySelectorAll('.add-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    currentAddZone = btn.dataset.zone;
-    document.getElementById('addInput').value = '';
-    document.getElementById('addModal').classList.add('open');
-    document.getElementById('addInput').focus();
-  });
-});
 document.getElementById('cancelAdd').addEventListener('click', () => document.getElementById('addModal').classList.remove('open'));
 document.getElementById('confirmAdd').addEventListener('click', () => {
   const text = document.getElementById('addInput').value.trim();
   if (text) {
-    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone, text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false}));
+    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, subtasks: [], subOpen: false}));
     clearLeakedSearch(text);
     saveTasks(); render();
     document.getElementById('addModal').classList.remove('open');
@@ -797,17 +923,16 @@ document.getElementById('generateReport').addEventListener('click', () => {
   if (!from || !to) { alert('Выберите период для отчёта'); return; }
   const fromDate = new Date(from);
   const toDate = new Date(to); toDate.setHours(23, 59, 59, 999);
-  const zoneNames = {other: 'Прочее', portal: 'Портал 2.0', aviabit: 'Авиабит'};
   const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
   const openTasks = tasks.filter(t => !t.deleted && !t.done && new Date(t.created) <= toDate);
   let report = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
   report += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
   report += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
-  Object.keys(zoneNames).forEach(key => {
-    const zoneDone = doneInPeriod.filter(t => t.zone === key);
-    const zoneOpen = openTasks.filter(t => t.zone === key);
+  zones.forEach(z => {
+    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
+    const zoneOpen = openTasks.filter(t => t.zone === z.key);
     if (!zoneDone.length && !zoneOpen.length) return;
-    report += '## ' + zoneNames[key] + '\n\n';
+    report += '## ' + z.label + '\n\n';
     if (zoneDone.length) { report += '### Выполнено за период\n'; zoneDone.forEach(t => report += '- ✅ ' + t.text + ' (' + t.doneAt.split('T')[0] + ')\n'); report += '\n'; }
     if (zoneOpen.length) { report += '### В работе\n'; zoneOpen.forEach(t => report += '- ' + t.text + '\n'); report += '\n'; }
   });
