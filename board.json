@@ -62,7 +62,7 @@
       "done": false,
       "created": "2026-09-19T08:22:10.497Z",
       "doneAt": null,
-      "deleted": false,
+      "deleted": true,
       "subtasks": [],
       "subOpen": false
     }
