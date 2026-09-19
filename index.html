@@ -37,10 +37,6 @@
     --tint-c-4:#A88FD0; --tint-bg-4:rgba(107,79,160,.16); --tint-bd-4:rgba(168,143,208,.35);
     --tint-c-5:#66AFC4; --tint-bg-5:rgba(14,116,144,.16); --tint-bd-5:rgba(102,175,196,.35);
   }
-  body.dark .si-total{background:rgba(58,95,138,.30);color:#9FC0E4}
-  body.dark .si-progress{background:rgba(138,109,27,.30);color:#E3C878}
-  body.dark .si-done{background:rgba(62,122,94,.30);color:#9ED4B6}
-  body.dark .si-trash{background:rgba(140,140,140,.18);color:#B6BDC9}
   body.dark .logo{background:rgba(58,95,138,.3)}
   *{box-sizing:border-box;margin:0}
   body{
@@ -93,8 +89,8 @@
   .title-block{min-width:120px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
   .subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
-  .quick-wrap{display:flex;gap:8px;align-items:center;flex:1 1 260px}
-  .quick-add{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:var(--input-bg);color:var(--text)}
+  .quick-wrap{display:flex;gap:8px;align-items:center;flex:1 1 320px;flex-wrap:wrap}
+  .quick-add{flex:1;min-width:180px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:var(--input-bg);color:var(--text)}
   .quick-add:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:var(--card)}
   .mic-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;flex:none;background:var(--input-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .mic-btn svg{width:18px;height:18px;color:var(--text-secondary)}
@@ -104,20 +100,11 @@
   .mic-btn.hidden{display:none}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(185,60,50,.35)}70%{box-shadow:0 0 0 10px rgba(185,60,50,0)}100%{box-shadow:0 0 0 0 rgba(185,60,50,0)}}
   .quick-add::placeholder{color:var(--text-muted)}
-
-  .summary{max-width:var(--maxw);margin:0 auto;padding:20px 28px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
-  .summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);display:flex;align-items:center;gap:12px}
-  .summary-card.clickable{cursor:pointer;transition:transform .15s, box-shadow .15s}
-  .summary-card.clickable:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
-  .clear-done-btn{margin-left:auto;flex:none;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.06);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
-  .clear-done-btn:hover{background:var(--soft);transform:scale(1.06)}
-  .summary-icon{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .si-total{background:#E8EDF4;color:#3A5F8A}
-  .si-progress{background:#F5EED8;color:#8A6D1B}
-  .si-done{background:#E2F0E6;color:#3E7A5E}
-  .si-trash{background:#F0EDE6;color:#44546A}
-  .summary-text .num{font-family:'Unbounded',sans-serif;font-weight:700;font-size:22px;line-height:1.1}
-  .summary-text .label{font-size:12px;color:var(--text-secondary);font-weight:500}
+  .mini-stats{display:flex;align-items:center;gap:6px;flex:none;flex-wrap:wrap}
+  .mini-stat{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--text-secondary);white-space:nowrap}
+  .mini-stat b{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;color:var(--text)}
+  .mini-broom{border:1px solid var(--border);background:var(--card);border-radius:999px;width:30px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .mini-broom:hover{background:var(--soft)}
 
   .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
   .zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
@@ -150,7 +137,6 @@
   .due-o{background:rgba(240,150,50,.20);border-color:rgba(210,120,30,.5);color:#b45309}
   .due-r{background:rgba(220,60,50,.16);border-color:rgba(200,50,40,.5);color:#b93c32}
   .due-done{background:var(--soft);border-color:var(--border);color:var(--text-muted)}
-  .rep-mark{font-size:11px;margin-left:6px;opacity:.85}
   .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
   .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
   .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
@@ -170,6 +156,11 @@
   .note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none;color:var(--text-secondary);font-weight:700;font-size:15px}
   .note-action:hover{background:var(--card);transform:scale(1.1)}
   .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
+
+  .popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
+  .popmenu.open{display:block}
+  .pop-item{display:flex;gap:8px;align-items:center;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;color:var(--text);text-align:left;white-space:nowrap}
+  .pop-item:hover{background:var(--soft)}
 
   .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px}
   .modal.open{display:flex}
@@ -205,14 +196,14 @@
   .results-item.done-item{color:var(--text-secondary)}
   .results-item .item-date{color:var(--text-muted);font-size:12px;margin-left:6px}
   .list-note{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
-  .trash-tag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;flex:none;border:1px solid}
+  .zone-tag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;flex:none;border:1px solid}
   .list-note .note-text{flex:1;font-size:14px;color:var(--text-secondary)}
-  .trash-actions{display:flex;gap:8px}
-  .trash-btn{padding:6px 14px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
-  .trash-btn.restore{background:rgba(4,120,87,.10);color:#047857}
-  .trash-btn.restore:hover{background:rgba(4,120,87,.18)}
-  .trash-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
-  .trash-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
+  .list-actions{display:flex;gap:8px}
+  .list-btn{padding:6px 14px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+  .list-btn.restore{background:rgba(4,120,87,.10);color:#047857}
+  .list-btn.restore:hover{background:rgba(4,120,87,.18)}
+  .list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
+  .list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
 
   @media (max-width:720px){
     .topbar-inner{padding:12px 16px;gap:10px}
@@ -221,12 +212,6 @@
     .sb-toggle{display:flex}
     .sidebar{width:260px;transform:translateX(-100%);transition:transform .2s}
     .sidebar.open{transform:none}
-    .summary{padding:14px 12px 0;gap:8px;grid-template-columns:repeat(4,1fr)}
-    .summary-card{flex-direction:column;align-items:center;text-align:center;gap:2px;padding:8px 4px;position:relative}
-    .summary-icon{width:22px;height:22px;font-size:13px;border-radius:6px}
-    .summary-text .num{font-size:16px}
-    .summary-text .label{font-size:8.5px;line-height:1.15;letter-spacing:.2px}
-    .clear-done-btn{position:absolute;top:-7px;right:-7px;width:24px;height:24px;font-size:12px;margin:0}
     .zones{padding:14px 16px 40px;gap:14px;grid-template-columns:1fr}
     .zone{border-radius:16px;padding:14px}
   }
@@ -243,7 +228,6 @@
   <button class="sb-item" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item" onclick="openBackup()"><span class="sb-ico">💾</span><span class="sb-label">Резервные копии</span></button>
   <button class="sb-item" onclick="openSettings()"><span class="sb-ico">☁️</span><span class="sb-label">Облако и токен</span></button>
-  <button class="sb-item" onclick="cycleTheme()"><span class="sb-ico">🌓</span><span class="sb-label" id="themeLabel">Тема: авто</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
 </aside>
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
@@ -261,22 +245,19 @@
       <button class="mic-btn" id="micBtn" title="Голосовой ввод">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
       </button>
+      <div class="mini-stats">
+        <span class="mini-stat" title="Всего задач">📋 <b id="totalCount">0</b></span>
+        <span class="mini-stat" title="В работе">⚡ <b id="progressCount">0</b></span>
+        <span class="mini-stat" title="Выполнено">✅ <b id="doneCount">0</b></span>
+        <button class="mini-broom" id="clearDoneBtn" title="Отправить выполненные в архив">🧹</button>
+      </div>
     </div>
   </div>
 </header>
 
-<div class="summary">
-  <div class="summary-card"><div class="summary-icon si-total">📋</div><div class="summary-text"><div class="num" id="totalCount">0</div><div class="label">Всего задач</div></div></div>
-  <div class="summary-card"><div class="summary-icon si-progress">⚡</div><div class="summary-text"><div class="num" id="progressCount">0</div><div class="label">В работе</div></div></div>
-  <div class="summary-card"><div class="summary-icon si-done">✅</div><div class="summary-text"><div class="num" id="doneCount">0</div><div class="label">Выполнено</div></div></div>
-  <div class="summary-card clickable" onclick="openTrash()" title="Открыть корзину">
-    <div class="summary-icon si-trash">🗑️</div>
-    <div class="summary-text"><div class="num" id="trashCount">0</div><div class="label">В корзине</div></div>
-    <button class="clear-done-btn" id="clearDoneBtn" title="Отправить выполненные в архив">🧹</button>
-  </div>
-</div>
-
 <main class="zones" id="zonesWrap"></main>
+
+<div class="popmenu" id="notePop"></div>
 
 <div class="modal" id="addModal">
   <div class="modal-content">
@@ -300,34 +281,6 @@
   </div>
 </div>
 
-<div class="modal" id="moveModal">
-  <div class="modal-content">
-    <h3>Переместить задачу</h3>
-    <div class="move-list" id="moveList"></div>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeMove()">Отмена</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="noteMenuModal">
-  <div class="modal-content">
-    <h3 id="noteMenuTitle">Задача</h3>
-    <div class="move-list">
-      <button class="move-btn" onclick="noteMenuSubs()">📝 Подзадачи</button>
-      <button class="move-btn" onclick="noteMenuEdit()">✏️ Редактировать</button>
-      <button class="move-btn" id="nmDue" onclick="noteMenuDue()">🔔 Срок</button>
-      <button class="move-btn" id="nmRepeat" onclick="noteMenuRepeat()">⏰ Повтор</button>
-      <button class="move-btn" onclick="noteMenuMove()">🔀 Переместить</button>
-      <button class="move-btn" onclick="noteMenuArchive()">📦 В архив</button>
-      <button class="move-btn" onclick="noteMenuTrash()">🗑️ В корзину</button>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeNoteMenu()">Закрыть</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal" id="dueModal">
   <div class="modal-content">
     <h3>🔔 Срок задачи</h3>
@@ -336,26 +289,6 @@
       <button class="modal-btn secondary" onclick="clearDue()">Убрать дату</button>
       <button class="modal-btn secondary" onclick="closeDue()">Отмена</button>
       <button class="modal-btn primary" onclick="saveDue()">Сохранить</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="repeatModal">
-  <div class="modal-content">
-    <h3>⏰ Повтор задачи</h3>
-    <div class="move-list" id="repeatList"></div>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeRepeat()">Отмена</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="trashModal">
-  <div class="modal-content">
-    <h3>🗑️ Корзина</h3>
-    <div id="trashContent"></div>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeTrash()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -473,18 +406,18 @@ function loadZones(){
 let zones = loadZones();
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 tasks.forEach(migrateTask);
-let currentAddZone = null, currentEditId = null, currentMoveId = null, currentNoteId = null;
+let currentAddZone = null, currentEditId = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 let pendingQuickText = '';
 
 function migrateTask(t) {
+  if (t.deleted) t.archived = true;
+  t.deleted = false;
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
   t.subOpen = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
-  if (t.deleted === undefined) t.deleted = false;
   if (t.archived === undefined) t.archived = false;
   if (t.due === undefined) t.due = null;
-  if (t.repeat === undefined) t.repeat = null;
   if (!t.created) t.created = new Date().toISOString();
   return t;
 }
@@ -495,18 +428,10 @@ function labelFor(key){ const z=zoneByKey(key); return z? z.label : key; }
 function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
 function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
 
-// Даты
 function isoOf(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function todayISO(){ return isoOf(new Date()); }
 function parseLocal(s){ const p = s.split('-'); return new Date(Number(p[0]), Number(p[1])-1, Number(p[2])); }
 function fmtDate(s){ return s.slice(8,10) + '.' + s.slice(5,7); }
-function shiftDate(dateStr, repeat){
-  const d = parseLocal(dateStr);
-  if (repeat === 'daily') d.setDate(d.getDate() + 1);
-  else if (repeat === 'weekly') d.setDate(d.getDate() + 7);
-  else if (repeat === 'monthly') d.setMonth(d.getMonth() + 1);
-  return isoOf(d);
-}
 function dueState(t){
   if (!t.due) return null;
   if (t.done) return 'done';
@@ -518,26 +443,16 @@ function dueState(t){
   if (diff === 1) return 'tomorrow';
   return 'later';
 }
-function repeatName(r){ return r === 'daily' ? 'ежедневно' : r === 'weekly' ? 'еженедельно' : r === 'monthly' ? 'ежемесячно' : 'нет'; }
 
-// Тема
+// Тема: только авто, переключателя нет
 let themeMode = localStorage.getItem(THEME_KEY) || 'auto';
 const darkMq = window.matchMedia('(prefers-color-scheme: dark)');
 function applyTheme(){
   const dark = themeMode === 'dark' || (themeMode === 'auto' && darkMq.matches);
   document.body.classList.toggle('dark', dark);
-  const lbl = document.getElementById('themeLabel');
-  if (lbl) lbl.textContent = 'Тема: ' + (themeMode === 'light' ? 'светлая' : themeMode === 'dark' ? 'тёмная' : 'авто');
-}
-function cycleTheme(){
-  themeMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
-  localStorage.setItem(THEME_KEY, themeMode);
-  applyTheme();
-  closeSbMobile();
 }
 if (darkMq.addEventListener) darkMq.addEventListener('change', () => { if (themeMode === 'auto') applyTheme(); });
 
-// Боковое меню
 const sidebarEl = document.getElementById('sidebar');
 const backdropEl = document.getElementById('sbBackdrop');
 function togglePin(){
@@ -649,7 +564,7 @@ function parseMdTasks(md) {
     else if (s.startsWith('- [ ]') || s.startsWith('- [x]')) {
       const done = s.startsWith('- [x]');
       const now = new Date().toISOString();
-      out.push(migrateTask({id: Date.now() + i, zone: zone, text: s.slice(5).trim(), done: done, created: now, doneAt: done ? now : null, deleted: false, subtasks: [], subOpen: false}));
+      out.push(migrateTask({id: Date.now() + i, zone: zone, text: s.slice(5).trim(), done: done, created: now, doneAt: done ? now : null, deleted: false, archived: false, subtasks: [], subOpen: false}));
     }
   });
   return out;
@@ -677,7 +592,7 @@ function sweepDoneToArchive() {
   const cutoff = Date.now() - DONE_ARCHIVE_DELAY;
   let changed = false;
   tasks.forEach(t => {
-    if (t.done && t.doneAt && !t.deleted && !t.archived && new Date(t.doneAt).getTime() <= cutoff) { t.archived = true; changed = true; }
+    if (t.done && t.doneAt && !t.archived && new Date(t.doneAt).getTime() <= cutoff) { t.archived = true; changed = true; }
   });
   if (changed) saveTasks();
 }
@@ -701,21 +616,16 @@ function noteHtml(t) {
   const subDone = t.subtasks.filter(s => s.done).length;
   const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
   let dueRow = '';
-  if (t.due || t.repeat) {
+  if (t.due) {
     const st = dueState(t);
-    let dueChipHtml = '';
-    if (t.due) {
-      let cls = 'due-chip ';
-      let content = '';
-      if (st === 'done') { cls += 'due-done'; content = '🔕 ' + fmtDate(t.due); }
-      else if (st === 'over') { cls += 'due-r'; content = '🔔 ' + fmtDate(t.due) + ' · просрочено'; }
-      else if (st === 'today') { cls += 'due-r'; content = '🔔 ' + fmtDate(t.due) + ' · сегодня'; }
-      else if (st === 'tomorrow') { cls += 'due-o'; content = '🔔 ' + fmtDate(t.due) + ' · завтра'; }
-      else { cls += 'due-y'; content = '🔔 ' + fmtDate(t.due); }
-      dueChipHtml = '<span class="' + cls + '">' + content + '</span>';
-    }
-    const rep = t.repeat ? '<span class="rep-mark" title="Повтор: ' + repeatName(t.repeat) + '">🔁</span>' : '';
-    dueRow = '<div class="due-row">' + dueChipHtml + rep + '</div>';
+    let cls = 'due-chip ';
+    let content = '';
+    if (st === 'done') { cls += 'due-done'; content = '🔕 ' + fmtDate(t.due); }
+    else if (st === 'over') { cls += 'due-r'; content = '🔔 ' + fmtDate(t.due) + ' · просрочено'; }
+    else if (st === 'today') { cls += 'due-r'; content = '🔔 ' + fmtDate(t.due) + ' · сегодня'; }
+    else if (st === 'tomorrow') { cls += 'due-o'; content = '🔔 ' + fmtDate(t.due) + ' · завтра'; }
+    else { cls += 'due-y'; content = '🔔 ' + fmtDate(t.due); }
+    dueRow = '<div class="due-row"><span class="' + cls + '">' + content + '</span></div>';
   }
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
@@ -738,20 +648,18 @@ function noteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openNoteMenu(' + t.id + ')" title="Действия">' + ELLIPSIS + '</button>' +
+      '<button class="note-action" onclick="openNoteMenu(' + t.id + ', event)" title="Действия">' + ELLIPSIS + '</button>' +
     '</div>' +
   '</div>';
 }
 
 function render() {
   const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-  const active = tasks.filter(t => !t.deleted && !t.archived);
-  const trash = tasks.filter(t => t.deleted);
+  const active = tasks.filter(t => !t.archived);
 
   document.getElementById('totalCount').textContent = active.length;
   document.getElementById('progressCount').textContent = active.filter(t => !t.done).length;
   document.getElementById('doneCount').textContent = active.filter(t => t.done).length;
-  document.getElementById('trashCount').textContent = trash.length;
 
   const wrap = document.getElementById('zonesWrap');
   const visible = zones.filter(z => !z.hidden);
@@ -773,22 +681,6 @@ function render() {
       '<div class="notes">' + notesHtml + '</div>' +
     '</section>';
   }).join('');
-
-  const trashContent = document.getElementById('trashContent');
-  const trashShown = trash.filter(t => matchesQuery(t, q));
-  if (trashShown.length === 0) {
-    trashContent.innerHTML = '<div class="empty">' + (trash.length ? 'Ничего не найдено' : 'Корзина пуста') + '</div>';
-  } else {
-    trashContent.innerHTML = trashShown.map(t => {
-      const z = zoneByKey(t.zone);
-      const n = z ? tintIndex(z) : 0;
-      return '<div class="list-note"><span class="trash-tag" style="background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + '</span>' +
-        '<div class="trash-actions">' +
-        '<button class="trash-btn restore" onclick="restoreTask(' + t.id + ')">Восстановить</button>' +
-        '<button class="trash-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
-        '</div></div>';
-    }).join('');
-  }
 }
 
 function toggleDone(id) {
@@ -796,26 +688,11 @@ function toggleDone(id) {
   if (!t) return;
   t.done = !t.done;
   t.doneAt = t.done ? new Date().toISOString() : null;
-  if (t.done && t.repeat) {
-    const base = t.due || todayISO();
-    tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*1000), zone: t.zone, text: t.text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, archived: false, due: shiftDate(base, t.repeat), repeat: t.repeat, subtasks: [], subOpen: false}));
-  }
   saveTasks(); render();
 }
 function editTask(id) {
   const t = tasks.find(x => x.id === id);
   if (t) { currentEditId = id; document.getElementById('editInput').value = t.text; document.getElementById('editModal').classList.add('open'); document.getElementById('editInput').focus(); }
-}
-function deleteTask(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) { t.deleted = true; saveTasks(); render(); }
-}
-function restoreTask(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) { t.deleted = false; saveTasks(); render(); }
-}
-function permanentDelete(id) {
-  if (confirm('Удалить задачу навсегда?')) { tasks = tasks.filter(x => x.id !== id); saveTasks(); render(); if (document.getElementById('archiveModal').classList.contains('open')) renderArchList(); }
 }
 function archiveTask(id) {
   const t = tasks.find(x => x.id === id);
@@ -824,6 +701,9 @@ function archiveTask(id) {
 function unarchiveTask(id) {
   const t = tasks.find(x => x.id === id);
   if (t) { t.archived = false; saveTasks(); render(); renderArchList(); }
+}
+function permanentDelete(id) {
+  if (confirm('Удалить задачу навсегда?')) { tasks = tasks.filter(x => x.id !== id); saveTasks(); render(); renderArchList(); }
 }
 function openSubs(id) {
   const t = tasks.find(x => x.id === id);
@@ -903,27 +783,39 @@ function delSub(event, tid, sid) {
   const t = tasks.find(x => x.id === tid);
   if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); saveTasks(); render(); }
 }
-function openTrash() { document.getElementById('trashModal').classList.add('open'); }
-function closeTrash() { document.getElementById('trashModal').classList.remove('open'); }
 
-// Меню карточки «…»
-function openNoteMenu(id) {
+// Всплывающее меню карточки
+const popEl = document.getElementById('notePop');
+function closeNoteMenu() { popEl.classList.remove('open'); }
+function openNoteMenu(id, ev) {
+  ev.stopPropagation();
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
-  const title = document.getElementById('noteMenuTitle');
-  title.textContent = t ? (t.text.length > 60 ? t.text.slice(0, 60) + '…' : t.text) : 'Задача';
-  document.getElementById('nmDue').textContent = '🔔 Срок' + (t && t.due ? ': ' + fmtDate(t.due) : '');
-  document.getElementById('nmRepeat').textContent = '⏰ Повтор: ' + (t ? repeatName(t.repeat) : 'нет');
-  document.getElementById('noteMenuModal').classList.add('open');
+  const dueLabel = t && t.due ? ': ' + fmtDate(t.due) : '';
+  popEl.innerHTML =
+    '<button class="pop-item" onclick="popSubs()">📝 Подзадачи</button>' +
+    '<button class="pop-item" onclick="popEdit()">✏️ Редактировать</button>' +
+    '<button class="pop-item" onclick="popDue()">🔔 Срок' + dueLabel + '</button>' +
+    '<button class="pop-item" onclick="popArchive()">📦 В архив</button>';
+  popEl.classList.add('open');
+  const r = ev.currentTarget.getBoundingClientRect();
+  const pw = popEl.offsetWidth, ph = popEl.offsetHeight;
+  let left = r.left;
+  if (left + pw > window.innerWidth - 8) left = Math.max(8, window.innerWidth - pw - 8);
+  let top = r.bottom + 6;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+  popEl.style.left = left + 'px';
+  popEl.style.top = top + 'px';
 }
-function closeNoteMenu() { document.getElementById('noteMenuModal').classList.remove('open'); }
-function noteMenuSubs(){ const id=currentNoteId; closeNoteMenu(); openSubs(id); }
-function noteMenuEdit(){ const id=currentNoteId; closeNoteMenu(); editTask(id); }
-function noteMenuMove(){ const id=currentNoteId; closeNoteMenu(); openMove(id); }
-function noteMenuArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id); }
-function noteMenuTrash(){ const id=currentNoteId; closeNoteMenu(); deleteTask(id); }
-function noteMenuDue(){ const id=currentNoteId; closeNoteMenu(); openDue(id); }
-function noteMenuRepeat(){ const id=currentNoteId; closeNoteMenu(); openRepeat(id); }
+function popSubs(){ const id=currentNoteId; closeNoteMenu(); openSubs(id); }
+function popEdit(){ const id=currentNoteId; closeNoteMenu(); editTask(id); }
+function popDue(){ const id=currentNoteId; closeNoteMenu(); openDue(id); }
+function popArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id); }
+document.addEventListener('click', e => {
+  if (popEl.classList.contains('open') && !e.target.closest('#notePop') && !e.target.closest('.note-action')) closeNoteMenu();
+});
+window.addEventListener('scroll', () => { if (popEl.classList.contains('open')) closeNoteMenu(); }, true);
+window.addEventListener('resize', closeNoteMenu);
 
 // Срок
 function openDue(id) {
@@ -944,24 +836,6 @@ function clearDue() {
   closeDue();
 }
 
-// Повтор
-function openRepeat(id) {
-  currentNoteId = id;
-  const t = tasks.find(x => x.id === id);
-  const cur = t ? (t.repeat || '') : '';
-  const opts = [['', 'Не повторять'], ['daily', 'Ежедневно'], ['weekly', 'Еженедельно'], ['monthly', 'Ежемесячно']];
-  document.getElementById('repeatList').innerHTML = opts.map(o =>
-    '<button class="move-btn" onclick="setRepeat(\'' + o[0] + '\')">' + (cur === o[0] ? '✓ ' : '') + o[1] + '</button>'
-  ).join('');
-  document.getElementById('repeatModal').classList.add('open');
-}
-function closeRepeat() { document.getElementById('repeatModal').classList.remove('open'); }
-function setRepeat(v) {
-  const t = tasks.find(x => x.id === currentNoteId);
-  if (t) { t.repeat = v || null; saveTasks(); render(); }
-  closeRepeat();
-}
-
 // Архив
 function openArchive() {
   document.getElementById('archSearch').value = '';
@@ -973,8 +847,8 @@ function closeArchive() { document.getElementById('archiveModal').classList.remo
 function renderArchList() {
   const q = (document.getElementById('archSearch').value || '').trim().toLowerCase();
   const list = document.getElementById('archList');
-  const arch = tasks.filter(t => t.archived && !t.deleted && matchesQuery(t, q))
-    .sort((a, b) => (b.doneAt || '').localeCompare(a.doneAt || ''));
+  const arch = tasks.filter(t => t.archived && matchesQuery(t, q))
+    .sort((a, b) => (b.doneAt || b.created || '').localeCompare(a.doneAt || a.created || ''));
   if (!arch.length) {
     list.innerHTML = '<div class="empty">' + (q ? 'Ничего не найдено' : 'Архив пуст') + '</div>';
     return;
@@ -982,10 +856,11 @@ function renderArchList() {
   list.innerHTML = arch.map(t => {
     const z = zoneByKey(t.zone);
     const n = z ? tintIndex(z) : 0;
-    return '<div class="list-note"><span class="trash-tag" style="background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + (t.doneAt ? ' <span style="color:var(--text-muted);font-size:12px">(' + t.doneAt.slice(0, 10) + ')</span>' : '') + '</span>' +
-      '<div class="trash-actions">' +
-      '<button class="trash-btn restore" onclick="unarchiveTask(' + t.id + ')">Вернуть</button>' +
-      '<button class="trash-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
+    const dateLabel = t.done ? (t.doneAt ? ' (' + t.doneAt.slice(0, 10) + ')' : '') : '';
+    return '<div class="list-note"><span class="zone-tag" style="background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + ' <span style="color:var(--text-muted);font-size:12px">' + dateLabel + '</span></span>' +
+      '<div class="list-actions">' +
+      '<button class="list-btn restore" onclick="unarchiveTask(' + t.id + ')">Вернуть</button>' +
+      '<button class="list-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
       '</div></div>';
   }).join('');
 }
@@ -1027,7 +902,7 @@ document.getElementById('addZoneBtn').addEventListener('click', () => {
 
 // Быстрая заметка
 function addQuickNote(text, zoneKey) {
-  tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, archived: false, due: null, repeat: null, subtasks: [], subOpen: false}));
+  tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: null, subtasks: [], subOpen: false}));
   clearLeakedSearch(text);
   saveTasks(); render();
 }
@@ -1084,8 +959,8 @@ function renderResults() {
   if (!from || !to) return;
   const fromDate = parseLocal(from);
   const toDate = parseLocal(to); toDate.setHours(23, 59, 59, 999);
-  const doneInPeriod = tasks.filter(t => t.done && !t.deleted && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
-  const openTasks = tasks.filter(t => !t.deleted && !t.archived && !t.done && new Date(t.created) <= toDate);
+  const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
+  const openTasks = tasks.filter(t => !t.archived && !t.done && new Date(t.created) <= toDate);
 
   document.getElementById('resStats').innerHTML =
     '<span class="results-chip">✅ Выполнено: ' + doneInPeriod.length + '</span>' +
@@ -1179,9 +1054,8 @@ document.getElementById('backupFile').addEventListener('change', e => {
   });
 });
 
-document.getElementById('clearDoneBtn').addEventListener('click', e => {
-  e.stopPropagation();
-  const doneActive = tasks.filter(t => t.done && !t.deleted && !t.archived);
+document.getElementById('clearDoneBtn').addEventListener('click', () => {
+  const doneActive = tasks.filter(t => t.done && !t.archived);
   if (!doneActive.length) { alert('Нет выполненных задач для отправки в архив.'); return; }
   if (confirm('Отправить все выполненные задачи (' + doneActive.length + ') в архив?')) {
     doneActive.forEach(t => { t.archived = true; });
@@ -1189,7 +1063,7 @@ document.getElementById('clearDoneBtn').addEventListener('click', e => {
   }
 });
 
-// Drag-and-drop с сортировкой
+// Drag-and-drop с сортировкой (единственный способ перемещения между разделами)
 let dragState = null;
 let justDragged = false;
 
@@ -1237,7 +1111,7 @@ function endDrag(commit) {
       const targetZone = dragState.zone.dataset.zone;
       const dropY = dragState.lastY;
       const t = tasks.find(x => x.id === draggedId);
-      if (t && !t.deleted && !t.archived) {
+      if (t && !t.archived) {
         const noteEls = Array.from(dragState.zone.querySelectorAll('.note'))
           .filter(el => Number(el.dataset.id) !== draggedId);
         let insertBeforeId = null;
@@ -1255,7 +1129,7 @@ function endDrag(commit) {
           } else {
             let lastIdx = -1;
             for (let i = 0; i < tasks.length; i++) {
-              if (tasks[i].zone === targetZone && !tasks[i].deleted && !tasks[i].archived) lastIdx = i;
+              if (tasks[i].zone === targetZone && !tasks[i].archived) lastIdx = i;
             }
             tasks.splice(lastIdx + 1, 0, draggedTask);
           }
@@ -1333,21 +1207,6 @@ document.getElementById('logoBtn').addEventListener('dblclick', () => openSettin
 document.getElementById('cancelSettings').addEventListener('click', closeSettings);
 document.getElementById('saveSettings').addEventListener('click', saveSettings);
 
-function openMove(id) {
-  currentMoveId = id;
-  const wrap = document.getElementById('moveList');
-  wrap.innerHTML = zones.filter(z => !z.hidden).map(z =>
-    '<button class="move-btn" onclick="moveTask(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) + '</button>'
-  ).join('');
-  document.getElementById('moveModal').classList.add('open');
-}
-function closeMove() { document.getElementById('moveModal').classList.remove('open'); }
-function moveTask(zone) {
-  const t = tasks.find(x => x.id === currentMoveId);
-  if (t) { t.zone = zone; saveTasks(); render(); }
-  closeMove();
-}
-
 const micBtn = document.getElementById('micBtn');
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog = null, listening = false, voiceBase = '';
@@ -1388,7 +1247,7 @@ document.getElementById('cancelAdd').addEventListener('click', () => document.ge
 document.getElementById('confirmAdd').addEventListener('click', () => {
   const text = document.getElementById('addInput').value.trim();
   if (text) {
-    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: text, done: false, created: new Date().toISOString(), doneAt: null, deleted: false, archived: false, due: null, repeat: null, subtasks: [], subOpen: false}));
+    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: null, subtasks: [], subOpen: false}));
     clearLeakedSearch(text);
     saveTasks(); render();
     document.getElementById('addModal').classList.remove('open');
