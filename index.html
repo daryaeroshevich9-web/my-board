@@ -159,12 +159,6 @@
   .note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none;color:var(--text-secondary);font-weight:700;font-size:15px}
   .note-action:hover{background:var(--card);transform:scale(1.1)}
   .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
-  .fact-wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px 48px}
-  .fact-card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 44px 16px 18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
-  .fact-title{font-family:'Unbounded',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:.4px;text-transform:uppercase}
-  .fact-text{font-size:14px;line-height:1.55;color:var(--text-secondary)}
-  .fact-close{position:absolute;top:10px;right:10px;width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px}
-  .fact-close:hover{background:var(--soft);color:var(--text)}
   .personal-wrap{max-width:900px;margin:0 auto;padding:24px 28px 40px}
   .personal-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
   .personal-head h2{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600}
@@ -233,7 +227,6 @@
     .sidebar.open{transform:none}
     .zones{padding:14px 16px 24px;gap:14px;grid-template-columns:1fr}
     .zone{border-radius:16px;padding:14px}
-    .fact-wrap{padding:0 16px 40px}
     .personal-wrap{padding:14px 16px 32px}
   }
 </style>
@@ -277,13 +270,6 @@
 </header>
 <div id="boardPage">
   <main class="zones" id="zonesWrap"></main>
-  <div class="fact-wrap" id="factWrap" style="display:none">
-    <div class="fact-card">
-      <button class="fact-close" id="factClose" title="Скрыть до завтра">✕</button>
-      <div class="fact-title">☕ Факт дня</div>
-      <div class="fact-text" id="factText"></div>
-    </div>
-  </div>
 </div>
 <div id="personalPage" class="page-hidden">
   <div class="personal-wrap">
@@ -426,11 +412,9 @@ const ZONES_KEY = 'darya_board_zones';
 const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
 const PIN_KEY = 'darya_board_sbpinned';
-const FACT_CLOSED_KEY = 'factClosed';
 const PAGE_KEY = 'darya_board_page';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
 const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
-const FACTS_URL = 'facts.json';
 const TINT_COUNT = 6;
 const TINT_HEX = ['#3A5F8A', '#B04A5E', '#A67C00', '#3E7A5E', '#6B4FA0', '#0E7490'];
 const DEFAULT_ZONES = [
@@ -440,39 +424,6 @@ const DEFAULT_ZONES = [
 ];
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 const ELLIPSIS = '⋯';
-// Встроенные факты как запасной источник, если facts.json не загрузится
-const BUILTIN_FACTS = [
-  'Southwest держит оборот 15–20 минут не героизмом, а ролевой моделью: у каждой стоянки есть координатор оборота, который дирижирует параллельными работами и имеет право остановить выпуск борта при нарушении чек-листа готовности.',
-  'В европейских хабах A-CDM означает, что авиакомпания, аэропорт и хендлер смотрят в одни данные: целевое время выруливания (TOBT) и слот-время (TSAT) согласуются автоматически, а не звонками между службами.',
-  'Haneda использует модель joint service: одна бригада наземного обслуживания работает на нескольких перевозчиков на стоянке, убирая дублирование техники и простои между рейсами разных авиакомпаний.',
-  'Changi сглаживает пик багажа через early bag store: чемоданы, сданные заранее, уходят в буфер и подаются на комплектацию ближе к вылету, выравнивая нагрузку сортировки.',
-  'Delta превратила багаж в продукт: RFID-метка на каждом месте и публичный трекинг в приложении снизили поток обращений в поддержку сильнее, чем сами инвестиции в обработку.',
-  'Lufthansa Technik строит предиктивное ТО на трендах параметров двигателя (EGT margin, вибрации): решение о снятии принимается по прогнозу состояния, а не по формальной наработке.',
-  'Schiphol перераспределяет слоты в пике при систематических опозданиях перевозчика: слот трактуется как возобновляемый ресурс с KPI punctuality, а не как собственность авиакомпании.',
-  'Emirates включает управление усталостью (FRMS) прямо в rostering: пары экипажей оптимизируются по модели усталости, что сокращает размер резерва и отмены по усталости.',
-  'Alaska Airlines летает RNP с required time of arrival: экипаж держит не скорость, а окно времени снижения — непрерывный профиль экономит топливо и даёт диспетчеру предсказуемость.',
-  'Ryanair стандартизировал оборот 25 минут через минимизацию интерфейсов с инфраструктурой: один тип ВС, минимум согласований, чек-лист на одну страницу.',
-  'ANA применяет remote expert: техник на станции с AR-очками и эксперт MRO в центре видят одно и то же изображение — дефицитная экспертиза распределена по всей сети станций.',
-  'Heathrow планирует зимние операции моделью предзаказа: мощности деайсинга рассчитываются по прогнозу трафика за 72 часа, а выбор «на стоянке или на паде» считается через стоимость задержки.',
-  'Air France–KLM при сбоях использует оптимизатор перестановок экипажей: система предлагает обмены, минимизирующие каскад задержек, а не закрывающие локальную дыру в расписании.',
-  'Zurich синхронизирует сортировку багажа с волнами рейсов: логика сортировки выводится из структуры пересадок банка, а не из времени сдачи багажа пассажиром.',
-  'IAG считает tankering по каждому рейсу: везти ли дополнительное топливо из дешёвого аэропорта против цены и веса — решает модель, а не диспетчер вручную.',
-  'Munich зашил minimum connect time в инфраструктуру: people mover и планировка терминала рассчитаны как часть гарантии пересадки, а не как сервис поверх неё.',
-  'Korean Air продлевает время двигателя «на крыле» через trend monitoring: планирование on-wing работ по трендам вместо жёстких календарных интервалов.',
-  'JetBlue ускорял оборот процессными изменениями — зонированная посадка и предполётные проверки у гейта — без инвестиций в новое оборудование.',
-  'Hamad возит багаж индивидуальными тележками (DCV): сортировка становится высокоскоростной и не зависит от узких мест конвейера.',
-  'Etihad держит экономию топлива через кросс-функциональный fuel council: пилоты, диспетчеры и MRO совместно владеют программой burn reduction, а не получают директивы сверху.',
-  'Atlanta держит пропускную способность дисциплиной movement area: правила пересечения активных зон и тайминги буксировки формализованы до секунд и контролируются централизованно.',
-  'Helsinki строил хаб на тонких потоках: короткая пересадка как продукт позволяет собирать маршруты, которые прямым перелётом не окупаются.',
-  'British Airways при иррегулярке перекладывает пассажиров алгоритмом по всему альянсу: стоимость переразмещения сравнивается со стоимостью задержки в реальном времени.',
-  'Narita управляет комендантским часом как процессом: слот-комплаенс и санкции за ночные вылеты встроены в расписание, а не разбираются постфактум.',
-  'Qantas на сверхдальних маршрутах управляет циркадными ритмами: сценарии освещения салона и питания синхронизированы с часовым поясом назначения ещё до посадки.',
-  'Amsterdam мотивирует наземные бригады через приоритет на стоянку: бригады с лучшим on-time KPI получают лучшие слоты стоянок — геймификация процесса без денежных премий.',
-  'United считает cost of delay по минутам и причинам: приоритеты инвестиций в наземное обслуживание выводятся из этой модели, а не из бюджетного цикла.',
-  'Finnair монетизирует belly-cargo на транзитных плечах: загрузка багажных отсеков планируется совместно с сетевым расписанием, повышая маржу тонких маршрутов.',
-  'Copenhagen назначает стоянки по стоимости оборота: stand allocation оптимизирует суммарные задержки сети, а не удобство конкретных бригад.',
-  'Singapore Airlines кормит сценарии тренажёра данными линии: события FOQA/QAR заменяют часть нормативных часов целевыми сессиями (evidence-based training).'
-];
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -496,7 +447,6 @@ let currentAddZone = null, currentEditId = null, currentNoteId = null;
 let editContext = 'board';
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 let pendingQuickLines = [];
-let FACTS = BUILTIN_FACTS.slice();
 let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
@@ -760,27 +710,6 @@ function sweepDoneToArchive() {
   });
   if (changed) saveTasks();
 }
-function loadFacts() {
-  return fetch(FACTS_URL + '?t=' + Date.now())
-    .then(r => (r.ok ? r.json() : null))
-    .then(d => { if (d && Array.isArray(d.facts) && d.facts.length) FACTS = d.facts; })
-    .catch(() => {});
-}
-function dayOfYear(){
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  return Math.floor((now - start) / 86400000);
-}
-function renderFact(){
-  if (localStorage.getItem(FACT_CLOSED_KEY) === todayISO()) return;
-  if (!FACTS.length) return;
-  document.getElementById('factText').textContent = FACTS[dayOfYear() % FACTS.length];
-  document.getElementById('factWrap').style.display = 'block';
-}
-document.getElementById('factClose').addEventListener('click', () => {
-  localStorage.setItem(FACT_CLOSED_KEY, todayISO());
-  document.getElementById('factWrap').style.display = 'none';
-});
 function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 function splitEmoji(text) {
   const re = /^\s*(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u;
@@ -1567,7 +1496,6 @@ if ('serviceWorker' in navigator) {
 clearTransientInputs();
 switchPage(currentPage);
 render();
-loadFacts().then(() => renderFact());
 if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по логотипу.');
 cloudRead()
   .then(data => {
