@@ -89,6 +89,20 @@
       "subtasks": [],
       "subOpen": false,
       "tags": []
+    },
+    {
+      "id": 1789810390422,
+      "zone": "other",
+      "text": "Справочники софи по ценам ТГО",
+      "done": false,
+      "created": "2026-09-19T09:33:10.422Z",
+      "doneAt": null,
+      "archived": false,
+      "due": null,
+      "tags": [],
+      "subtasks": [],
+      "subOpen": false,
+      "deleted": false
     }
   ],
   "zones": [
