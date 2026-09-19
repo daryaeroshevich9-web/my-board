@@ -12,10 +12,36 @@
     --bg-top:#FDFCFA; --dot:rgba(150,145,125,.14);
     --card:#FDFDFC; --topbar:rgba(253,253,252,.85); --border:rgba(80,76,60,.12); --dash:rgba(80,76,60,.30);
     --text:#1A1A1A; --text-secondary:#44546A; --text-muted:#9AA0A6;
-    --black:#1F3655; --accent:#3A5F8A; --accent-ring:rgba(58,95,138,.18);
+    --black:#1F3655; --on-black:#ffffff; --accent:#3A5F8A; --accent-ring:rgba(58,95,138,.18);
     --soft:#F0EDE6; --soft-hover:#E6E2D8; --scroll:rgba(68,84,106,.35);
+    --input-bg:rgba(255,255,255,.65); --note-btn-bg:rgba(255,255,255,.5);
     --maxw:1560px;
+    --tint-c-0:#3A5F8A; --tint-bg-0:rgba(228,235,243,.50); --tint-bd-0:rgba(185,201,221,.55);
+    --tint-c-1:#B04A5E; --tint-bg-1:rgba(247,228,232,.50); --tint-bd-1:rgba(227,196,204,.55);
+    --tint-c-2:#A67C00; --tint-bg-2:rgba(245,238,216,.45); --tint-bd-2:rgba(224,213,174,.55);
+    --tint-c-3:#3E7A5E; --tint-bg-3:rgba(226,240,230,.45); --tint-bd-3:rgba(187,220,201,.55);
+    --tint-c-4:#6B4FA0; --tint-bg-4:rgba(236,230,245,.45); --tint-bd-4:rgba(211,198,230,.55);
+    --tint-c-5:#0E7490; --tint-bg-5:rgba(224,242,245,.45); --tint-bd-5:rgba(181,221,228,.55);
   }
+  body.dark{
+    --bg-top:#1b1e24; --dot:rgba(255,255,255,.06);
+    --card:#242830; --topbar:rgba(27,30,36,.85); --border:rgba(255,255,255,.10); --dash:rgba(255,255,255,.30);
+    --text:#E8EAED; --text-secondary:#B6BDC9; --text-muted:#8A93A3;
+    --black:#C7D3E3; --on-black:#171a20; --accent:#8FB3DA; --accent-ring:rgba(143,179,218,.25);
+    --soft:#2d323c; --soft-hover:#363c48; --scroll:rgba(255,255,255,.2);
+    --input-bg:rgba(255,255,255,.08); --note-btn-bg:rgba(20,24,30,.5);
+    --tint-c-0:#8FB3DA; --tint-bg-0:rgba(91,131,174,.16); --tint-bd-0:rgba(140,170,205,.35);
+    --tint-c-1:#D98A9B; --tint-bg-1:rgba(176,74,94,.16); --tint-bd-1:rgba(217,138,155,.35);
+    --tint-c-2:#CBA84F; --tint-bg-2:rgba(166,124,0,.14); --tint-bd-2:rgba(203,168,79,.35);
+    --tint-c-3:#84B59D; --tint-bg-3:rgba(62,122,94,.16); --tint-bd-3:rgba(132,181,157,.35);
+    --tint-c-4:#A88FD0; --tint-bg-4:rgba(107,79,160,.16); --tint-bd-4:rgba(168,143,208,.35);
+    --tint-c-5:#66AFC4; --tint-bg-5:rgba(14,116,144,.16); --tint-bd-5:rgba(102,175,196,.35);
+  }
+  body.dark .si-total{background:rgba(58,95,138,.30);color:#9FC0E4}
+  body.dark .si-progress{background:rgba(138,109,27,.30);color:#E3C878}
+  body.dark .si-done{background:rgba(62,122,94,.30);color:#9ED4B6}
+  body.dark .si-trash{background:rgba(140,140,140,.18);color:#B6BDC9}
+  body.dark .logo{background:rgba(58,95,138,.3)}
   *{box-sizing:border-box;margin:0}
   body{
     min-height:100vh;
@@ -27,43 +53,64 @@
     font-family:'Onest',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     -webkit-font-smoothing:antialiased;
   }
+  @media (min-width:721px){
+    body{margin-left:56px}
+    body.sb-pinned{margin-left:230px}
+  }
   ::-webkit-scrollbar{width:8px;height:8px}
   ::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
+
+  /* Боковое меню */
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;width:56px;z-index:200;
+    background:var(--card);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;gap:4px;padding:12px 8px;overflow:hidden;
+    transition:width .18s ease;
+  }
+  .sidebar:hover{width:230px}
+  .sidebar.pinned{width:230px}
+  .sb-item{
+    display:flex;align-items:center;gap:10px;padding:9px 10px;border:none;border-radius:8px;
+    background:transparent;cursor:pointer;color:var(--text-secondary);font:inherit;font-size:13px;white-space:nowrap;text-align:left;
+  }
+  .sb-item:hover{background:var(--soft)}
+  .sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .sb-label{opacity:0;transition:opacity .15s}
+  .sidebar:hover .sb-label,.sidebar.pinned .sb-label{opacity:1}
+  .sb-search{padding:2px 4px 8px}
+  .sb-search input{
+    width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
+    background:var(--input-bg);color:var(--text);font:inherit;font-size:13px;
+  }
+  .sb-search input:focus{outline:none;border-color:var(--accent)}
+  .sb-pin{margin-top:auto}
+  .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190}
+  .sb-backdrop.show{display:block}
+
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .sb-toggle{display:none;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);flex:none}
   .logo{width:40px;height:40px;border-radius:12px;flex:none;background:#E8EDF4;border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default}
-  .title-block{min-width:160px}
+  .title-block{min-width:120px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
   .subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
   .quick-wrap{display:flex;gap:8px;align-items:center;flex:1 1 260px}
-  .quick-add{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:rgba(255,255,255,.65);color:var(--text)}
+  .quick-add{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:var(--input-bg);color:var(--text)}
   .quick-add:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:var(--card)}
-  .mic-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;flex:none;background:rgba(255,255,255,.65);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .mic-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;flex:none;background:var(--input-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .mic-btn svg{width:18px;height:18px;color:var(--text-secondary)}
-  .mic-btn:hover{background:rgba(255,255,255,.95)}
+  .mic-btn:hover{background:var(--card)}
   .mic-btn.listening{background:#b93c32;border-color:#b93c32;animation:pulse 1.2s infinite}
   .mic-btn.listening svg{color:#fff}
   .mic-btn.hidden{display:none}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(185,60,50,.35)}70%{box-shadow:0 0 0 10px rgba(185,60,50,0)}100%{box-shadow:0 0 0 0 rgba(185,60,50,0)}}
-  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
-  .search-input{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:13px;background:rgba(255,255,255,.65);min-width:150px;color:var(--text)}
-  .search-input:focus{outline:none;border-color:var(--accent);background:var(--card)}
-  .quick-add::placeholder,.search-input::placeholder{color:var(--text-muted)}
-  .toolbar input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;background:rgba(255,255,255,.65);cursor:pointer;color:var(--text-secondary)}
-  .toolbar button{padding:8px 14px;border:none;border-radius:8px;background:var(--black);color:#fff;font-family:inherit;font-weight:600;cursor:pointer;font-size:13px;transition:all .15s}
-  .toolbar button:hover{filter:brightness(.88);transform:translateY(-1px)}
-  #generateReport{background:var(--accent)}
-  #generateReport:hover{filter:brightness(.9)}
-  .icon-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.65);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;flex:none}
-  .icon-btn:hover{background:rgba(255,255,255,.95)}
-  .icon-btn svg{width:18px;height:18px;color:var(--text-secondary)}
-  .toolbar .icon-btn{background:rgba(255,255,255,.65);color:inherit;padding:0}
-  .toolbar .icon-btn:hover{filter:none;background:rgba(255,255,255,.95)}
+  .quick-add::placeholder{color:var(--text-muted)}
+
   .summary{max-width:var(--maxw);margin:0 auto;padding:20px 28px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   .summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);display:flex;align-items:center;gap:12px}
   .summary-card.clickable{cursor:pointer;transition:transform .15s, box-shadow .15s}
   .summary-card.clickable:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
-  .clear-done-btn{margin-left:auto;flex:none;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.65);box-shadow:0 1px 2px rgba(0,0,0,.06);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .clear-done-btn{margin-left:auto;flex:none;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.06);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .clear-done-btn:hover{background:var(--soft);transform:scale(1.06)}
   .summary-icon{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px}
   .si-total{background:#E8EDF4;color:#3A5F8A}
@@ -72,6 +119,7 @@
   .si-trash{background:#F0EDE6;color:#44546A}
   .summary-text .num{font-family:'Unbounded',sans-serif;font-weight:700;font-size:22px;line-height:1.1}
   .summary-text .label{font-size:12px;color:var(--text-secondary);font-weight:500}
+
   .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
   .zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
   .zone.drop-hover{outline:2px dashed var(--black);outline-offset:4px}
@@ -97,8 +145,8 @@
   .note-content{cursor:text}
   .note.done{opacity:.5}
   .note.done .note-text{text-decoration:line-through}
-  .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.75);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
-  .sub-count{font-size:11px;color:var(--text-muted);background:rgba(255,255,255,.7);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
+  .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
+  .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
   .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
   .subtask{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
   .subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none}
@@ -113,27 +161,24 @@
   .note-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;flex:none;margin-left:8px}
   .note:hover .note-actions{opacity:1}
   @media (hover:none){.note-actions{opacity:1}}
-  .note-action{width:28px;height:28px;border:none;border-radius:6px;background:rgba(255,255,255,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none}
-  .note-action:hover{background:rgba(255,255,255,.92);transform:scale(1.1)}
-  .note-action svg{width:16px;height:16px;color:var(--text-secondary)}
-  .note-action.danger:hover{background:rgba(185,60,50,.12)}
-  .note-action.danger svg{color:#b93c32}
+  .note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none;color:var(--text-secondary);font-weight:700;font-size:15px}
+  .note-action:hover{background:var(--card);transform:scale(1.1)}
   .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
+
   .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px}
   .modal.open{display:flex}
   .modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;overflow-y:auto}
   .modal h3{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600;margin-bottom:16px}
-  .modal input[type="text"],.modal input[type="password"]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:16px}
-  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  .modal input[type="text"],.modal input[type="password"]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:16px;background:var(--input-bg);color:var(--text)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
   .modal-btn{padding:10px 20px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
-  .modal-btn.primary{background:var(--black);color:#fff}
+  .modal-btn.primary{background:var(--black);color:var(--on-black)}
   .modal-btn.primary:hover{filter:brightness(.88)}
   .modal-btn.secondary{background:var(--soft);color:var(--text)}
   .modal-btn.secondary:hover{background:var(--soft-hover)}
   .move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-  .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
+  .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--text)}
   .move-btn:hover{background:var(--soft)}
-  .move-btn .hidden-mark{color:var(--text-muted);font-weight:500;font-size:13px}
   .settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
   .zone-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
   .zone-row-emoji{font-size:18px;flex:none}
@@ -144,6 +189,15 @@
   #newZoneEmoji{width:56px;flex:none;text-align:center}
   #newZoneLabel{flex:1}
   .zone-add-row .modal-btn{flex:none}
+  .results-period{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .results-period input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font:inherit;font-size:13px}
+  .results-stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .results-chip{background:var(--soft);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-secondary)}
+  .results-block{margin-bottom:14px}
+  .results-block h4{font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .results-item{font-size:14px;padding:4px 0;border-bottom:1px dashed var(--border)}
+  .results-item.done-item{color:var(--text-secondary)}
+  .results-item .item-date{color:var(--text-muted);font-size:12px;margin-left:6px}
   .trash-note{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
   .trash-tag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;flex:none;border:1px solid}
   .trash-note .note-text{flex:1;font-size:14px;color:var(--text-secondary)}
@@ -153,16 +207,14 @@
   .trash-btn.restore:hover{background:rgba(4,120,87,.18)}
   .trash-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
   .trash-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
+
   @media (max-width:720px){
     .topbar-inner{padding:12px 16px;gap:10px}
     h1{font-size:17px}
     .subtitle{display:none}
-    #dateFrom,#dateTo,#generateReport{display:none}
-    .quick-wrap,.toolbar{display:contents}
-    #quickAdd{order:1;flex:1 1 100%}
-    #searchInput{order:2;flex:1 1 auto;min-width:0}
-    #micBtn{order:3;flex:0 0 auto}
-    #zonesBtn{order:4;flex:0 0 auto}
+    .sb-toggle{display:flex}
+    .sidebar{width:260px;transform:translateX(-100%);transition:transform .2s}
+    .sidebar.open{transform:none}
     .summary{padding:14px 12px 0;gap:8px;grid-template-columns:repeat(4,1fr)}
     .summary-card{flex-direction:column;align-items:center;text-align:center;gap:2px;padding:8px 4px;position:relative}
     .summary-icon{width:22px;height:22px;font-size:13px;border-radius:6px}
@@ -175,8 +227,23 @@
 </style>
 </head>
 <body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-search">
+    <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
+  </div>
+  <button class="sb-item" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
+  <button class="sb-item" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
+  <button class="sb-item" onclick="openBackup()"><span class="sb-ico">💾</span><span class="sb-label">Резервные копии</span></button>
+  <button class="sb-item" onclick="openSettings()"><span class="sb-ico">☁️</span><span class="sb-label">Облако и токен</span></button>
+  <button class="sb-item" onclick="cycleTheme()"><span class="sb-ico">🌓</span><span class="sb-label" id="themeLabel">Тема: авто</span></button>
+  <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
+</aside>
+<div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
+
 <header class="topbar">
   <div class="topbar-inner">
+    <button class="sb-toggle" id="sbToggle" title="Меню">☰</button>
     <div class="logo" id="logoBtn" title="Доска Дарьи">✈️</div>
     <div class="title-block">
       <h1>Доска Дарьи</h1>
@@ -186,15 +253,6 @@
       <input type="text" class="quick-add" id="quickAdd" name="darya_quick" placeholder="Быстрая задача" autocomplete="off">
       <button class="mic-btn" id="micBtn" title="Голосовой ввод">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-      </button>
-    </div>
-    <div class="toolbar">
-      <input type="text" class="search-input" id="searchInput" name="darya_search" placeholder="🔍 Поиск по доске и корзине" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
-      <input type="date" id="dateFrom">
-      <input type="date" id="dateTo">
-      <button id="generateReport">📊 Отчёт</button>
-      <button class="icon-btn" id="zonesBtn" title="Разделы: добавить, скрыть, показать">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/></svg>
       </button>
     </div>
   </div>
@@ -245,6 +303,21 @@
   </div>
 </div>
 
+<div class="modal" id="noteMenuModal">
+  <div class="modal-content">
+    <h3 id="noteMenuTitle">Задача</h3>
+    <div class="move-list">
+      <button class="move-btn" onclick="noteMenuSubs()">📝 Подзадачи</button>
+      <button class="move-btn" onclick="noteMenuEdit()">✏️ Редактировать</button>
+      <button class="move-btn" onclick="noteMenuMove()">🔀 Переместить</button>
+      <button class="move-btn" onclick="noteMenuTrash()">🗑️ В корзину</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeNoteMenu()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="trashModal">
   <div class="modal-content">
     <h3>🗑️ Корзина</h3>
@@ -266,6 +339,40 @@
     </div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeZones()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="resultsModal">
+  <div class="modal-content">
+    <h3>📊 Итоги недели</h3>
+    <div class="results-period">
+      <input type="date" id="resFrom">
+      <span style="color:var(--text-muted)">—</span>
+      <input type="date" id="resTo">
+    </div>
+    <div class="results-stats" id="resStats"></div>
+    <div id="resBody"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать</button>
+      <button class="modal-btn secondary" onclick="downloadResultsMd()">⬇ Markdown</button>
+      <button class="modal-btn secondary" onclick="downloadResultsCsv()">⬇ CSV</button>
+      <button class="modal-btn primary" onclick="closeResults()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="backupModal">
+  <div class="modal-content">
+    <h3>💾 Резервные копии</h3>
+    <p class="settings-hint">Скачайте копию всех задач и разделов в файл, или загрузите сохранённую копию на это устройство.</p>
+    <div class="move-list">
+      <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
+      <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
+    </div>
+    <input type="file" id="backupFile" accept=".json,application/json" style="display:none">
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeBackup()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -298,24 +405,19 @@ const STORAGE_KEY = 'darya_board_tasks';
 const ZONES_KEY = 'darya_board_zones';
 const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
+const THEME_KEY = 'darya_board_theme';
+const PIN_KEY = 'darya_board_sbpinned';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
 const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
 
-const ZONE_PALETTE = [
-  {c:'#3A5F8A', bg:'rgba(228,235,243,.50)', bd:'rgba(185,201,221,.55)'},
-  {c:'#B04A5E', bg:'rgba(247,228,232,.50)', bd:'rgba(227,196,204,.55)'},
-  {c:'#A67C00', bg:'rgba(245,238,216,.45)', bd:'rgba(224,213,174,.55)'},
-  {c:'#3E7A5E', bg:'rgba(226,240,230,.45)', bd:'rgba(187,220,201,.55)'},
-  {c:'#6B4FA0', bg:'rgba(236,230,245,.45)', bd:'rgba(211,198,230,.55)'},
-  {c:'#0E7490', bg:'rgba(224,242,245,.45)', bd:'rgba(181,221,228,.55)'}
-];
+const TINT_COUNT = 6;
 const DEFAULT_ZONES = [
   {key:'other', label:'Прочее', emoji:'📋', hidden:false, tint:0},
   {key:'portal', label:'Портал 2.0', emoji:'🚪', hidden:false, tint:1},
   {key:'aviabit', label:'Авиабит', emoji:'🛩️', hidden:false, tint:2}
 ];
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-const ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
+const ELLIPSIS = '⋯';
 
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0)}; }
 function loadZones(){
@@ -328,7 +430,7 @@ function loadZones(){
 let zones = loadZones();
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 tasks.forEach(migrateTask);
-let currentAddZone = null, currentEditId = null, currentMoveId = null;
+let currentAddZone = null, currentEditId = null, currentMoveId = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 let pendingQuickText = '';
 
@@ -342,10 +444,46 @@ function migrateTask(t) {
 }
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 function zoneByKey(key){ return zones.find(z=>z.key===key); }
-function tintFor(z){ return ZONE_PALETTE[(z.tint||0) % ZONE_PALETTE.length]; }
+function tintIndex(z){ return (z.tint||0) % TINT_COUNT; }
 function labelFor(key){ const z=zoneByKey(key); return z? z.label : key; }
 function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
 function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
+
+// Тема
+let themeMode = localStorage.getItem(THEME_KEY) || 'auto';
+const darkMq = window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(){
+  const dark = themeMode === 'dark' || (themeMode === 'auto' && darkMq.matches);
+  document.body.classList.toggle('dark', dark);
+  const lbl = document.getElementById('themeLabel');
+  if (lbl) lbl.textContent = 'Тема: ' + (themeMode === 'light' ? 'светлая' : themeMode === 'dark' ? 'тёмная' : 'авто');
+}
+function cycleTheme(){
+  themeMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
+  localStorage.setItem(THEME_KEY, themeMode);
+  applyTheme();
+  closeSbMobile();
+}
+if (darkMq.addEventListener) darkMq.addEventListener('change', () => { if (themeMode === 'auto') applyTheme(); });
+
+// Боковое меню
+const sidebarEl = document.getElementById('sidebar');
+const backdropEl = document.getElementById('sbBackdrop');
+function togglePin(){
+  const pinned = sidebarEl.classList.toggle('pinned');
+  document.body.classList.toggle('sb-pinned', pinned);
+  localStorage.setItem(PIN_KEY, pinned ? '1' : '0');
+}
+function openSbMobile(){ sidebarEl.classList.add('open'); backdropEl.classList.add('show'); }
+function closeSb(){ sidebarEl.classList.remove('open'); backdropEl.classList.remove('show'); }
+function closeSbMobile(){ if (window.innerWidth <= 720) closeSb(); }
+document.getElementById('sbToggle').addEventListener('click', () => {
+  if (sidebarEl.classList.contains('open')) closeSb(); else openSbMobile();
+});
+if (localStorage.getItem(PIN_KEY) === '1') {
+  sidebarEl.classList.add('pinned');
+  document.body.classList.add('sb-pinned');
+}
 
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
@@ -510,9 +648,7 @@ function noteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openSubs(' + t.id + ')" title="Подзадачи">' + ARROW_DOWN + '</button>' +
-      '<button class="note-action" onclick="editTask(' + t.id + ')" title="Редактировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
-      '<button class="note-action danger" onclick="deleteTask(' + t.id + ')" title="В корзину"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+      '<button class="note-action" onclick="openNoteMenu(' + t.id + ')" title="Действия">' + ELLIPSIS + '</button>' +
     '</div>' +
   '</div>';
 }
@@ -530,13 +666,13 @@ function render() {
   const wrap = document.getElementById('zonesWrap');
   const visible = zones.filter(z => !z.hidden);
   wrap.innerHTML = visible.map(z => {
-    const t = tintFor(z);
+    const n = tintIndex(z);
     const zoneActive = active.filter(x => x.zone === z.key);
     const zoneTasks = zoneActive.filter(x => matchesQuery(x, q));
     let notesHtml;
     if (zoneTasks.length === 0) notesHtml = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
     else notesHtml = zoneTasks.map(noteHtml).join('');
-    return '<section class="zone" data-zone="' + z.key + '" style="--zone-color:' + t.c + ';--z-bg:' + t.bg + ';--z-bd:' + t.bd + '">' +
+    return '<section class="zone" data-zone="' + z.key + '" style="--zone-color:var(--tint-c-' + n + ');--z-bg:var(--tint-bg-' + n + ');--z-bd:var(--tint-bd-' + n + ')">' +
       '<header class="zone-head">' +
         '<div class="zone-emoji">' + (z.emoji || '🗂️') + '</div>' +
         '<h2>' + escapeHtml(z.label) + '</h2>' +
@@ -555,8 +691,8 @@ function render() {
   } else {
     trashContent.innerHTML = trashShown.map(t => {
       const z = zoneByKey(t.zone);
-      const tt = z ? tintFor(z) : ZONE_PALETTE[0];
-      return '<div class="trash-note"><span class="trash-tag" style="background:' + tt.bg + ';border-color:' + tt.bd + ';color:' + tt.c + '">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + '</span>' +
+      const n = z ? tintIndex(z) : 0;
+      return '<div class="trash-note"><span class="trash-tag" style="background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + '</span>' +
         '<div class="trash-actions">' +
         '<button class="trash-btn restore" onclick="restoreTask(' + t.id + ')">Восстановить</button>' +
         '<button class="trash-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
@@ -665,6 +801,20 @@ function delSub(event, tid, sid) {
 function openTrash() { document.getElementById('trashModal').classList.add('open'); }
 function closeTrash() { document.getElementById('trashModal').classList.remove('open'); }
 
+// Меню карточки «…»
+function openNoteMenu(id) {
+  currentNoteId = id;
+  const t = tasks.find(x => x.id === id);
+  const title = document.getElementById('noteMenuTitle');
+  title.textContent = t ? (t.text.length > 60 ? t.text.slice(0, 60) + '…' : t.text) : 'Задача';
+  document.getElementById('noteMenuModal').classList.add('open');
+}
+function closeNoteMenu() { document.getElementById('noteMenuModal').classList.remove('open'); }
+function noteMenuSubs(){ const id=currentNoteId; closeNoteMenu(); openSubs(id); }
+function noteMenuEdit(){ const id=currentNoteId; closeNoteMenu(); editTask(id); }
+function noteMenuMove(){ const id=currentNoteId; closeNoteMenu(); openMove(id); }
+function noteMenuTrash(){ const id=currentNoteId; closeNoteMenu(); deleteTask(id); }
+
 // Разделы
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
@@ -687,14 +837,13 @@ function renderZonesList() {
     '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button></div>'
   ).join('');
 }
-function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); }
+function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); closeSbMobile(); }
 function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
-document.getElementById('zonesBtn').addEventListener('click', openZones);
 document.getElementById('addZoneBtn').addEventListener('click', () => {
   const label = document.getElementById('newZoneLabel').value.trim();
   if (!label) { alert('Введите название раздела.'); return; }
   const emoji = document.getElementById('newZoneEmoji').value.trim() || '🗂️';
-  zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % ZONE_PALETTE.length});
+  zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % TINT_COUNT});
   saveZones(); render(); renderZonesList();
   document.getElementById('newZoneLabel').value = '';
   document.getElementById('newZoneEmoji').value = '';
@@ -716,7 +865,7 @@ function quickAddFlow(text) {
   const wrap = document.getElementById('quickZoneList');
   wrap.innerHTML = zones.map(z =>
     '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
-    (z.hidden ? ' <span class="hidden-mark">(скрыт — появится при выборе)</span>' : '') + '</button>'
+    (z.hidden ? ' (скрыт — появится при выборе)' : '') + '</button>'
   ).join('');
   document.getElementById('quickZoneModal').classList.add('open');
 }
@@ -735,6 +884,124 @@ function closeQuickZone() {
     pendingQuickText = '';
   }
 }
+
+// Итоги недели
+let lastResults = {md: '', csv: '', rows: []};
+function mondayOf(dateStr) {
+  const x = new Date(dateStr);
+  const day = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - day);
+  return x.toISOString().slice(0, 10);
+}
+function openResults() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('resFrom').value = mondayOf(today);
+  document.getElementById('resTo').value = today;
+  renderResults();
+  document.getElementById('resultsModal').classList.add('open');
+  closeSbMobile();
+}
+function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
+function renderResults() {
+  const from = document.getElementById('resFrom').value;
+  const to = document.getElementById('resTo').value;
+  if (!from || !to) return;
+  const fromDate = new Date(from);
+  const toDate = new Date(to); toDate.setHours(23, 59, 59, 999);
+  const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
+  const openTasks = tasks.filter(t => !t.deleted && !t.done && new Date(t.created) <= toDate);
+
+  document.getElementById('resStats').innerHTML =
+    '<span class="results-chip">✅ Выполнено: ' + doneInPeriod.length + '</span>' +
+    '<span class="results-chip">⚡ В работе: ' + openTasks.length + '</span>';
+
+  let bodyHtml = '';
+  zones.forEach(z => {
+    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
+    const zoneOpen = openTasks.filter(t => t.zone === z.key);
+    if (!zoneDone.length && !zoneOpen.length) return;
+    bodyHtml += '<div class="results-block"><h4>' + escapeHtml(z.label) + '</h4>';
+    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(t.text) + '<span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
+    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(t.text) + '</div>'; });
+    bodyHtml += '</div>';
+  });
+  if (!bodyHtml) bodyHtml = '<div class="empty">За период данных нет</div>';
+  document.getElementById('resBody').innerHTML = bodyHtml;
+
+  let md = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
+  md += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
+  md += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
+  zones.forEach(z => {
+    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
+    const zoneOpen = openTasks.filter(t => t.zone === z.key);
+    if (!zoneDone.length && !zoneOpen.length) return;
+    md += '## ' + z.label + '\n\n';
+    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + t.text + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
+    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + t.text + '\n'); md += '\n'; }
+  });
+
+  const rows = [];
+  doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
+  openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'В работе', created: t.created.slice(0, 10), done: ''}));
+  lastResults = {md: md, rows: rows};
+}
+function resultsCsv() {
+  const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  let csv = 'Зона;Задача;Статус;Создана;Выполнена\n';
+  lastResults.rows.forEach(r => { csv += [r.zone, r.text, r.status, r.created, r.done].map(esc).join(';') + '\n'; });
+  return csv;
+}
+function downloadBlob(content, name, mime) {
+  const blob = new Blob([content], {type: mime});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+function copyResultsMd() {
+  navigator.clipboard.writeText(lastResults.md).then(() => alert('Отчёт скопирован в буфер обмена!'));
+}
+function downloadResultsMd() {
+  downloadBlob(lastResults.md, 'itogi-nedeli-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
+}
+function downloadResultsCsv() {
+  downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
+}
+document.getElementById('resFrom').addEventListener('change', renderResults);
+document.getElementById('resTo').addEventListener('change', renderResults);
+
+// Резервные копии
+function openBackup() { document.getElementById('backupModal').classList.add('open'); closeSbMobile(); }
+function closeBackup() { document.getElementById('backupModal').classList.remove('open'); }
+function backupDownload() {
+  const data = JSON.stringify({tasks: tasks, zones: zones}, null, 2);
+  downloadBlob(data, 'darya-board-backup-' + new Date().toISOString().slice(0, 10) + '.json', 'application/json;charset=utf-8');
+}
+function backupUploadClick() { document.getElementById('backupFile').click(); }
+document.getElementById('backupFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  file.text().then(raw => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.tasks)) { alert('Файл не похож на резервную копию доски.'); return; }
+      if (!confirm('Заменить текущие задачи данными из файла (' + parsed.tasks.length + ' шт.)?')) return;
+      tasks = parsed.tasks.map(migrateTask);
+      if (Array.isArray(parsed.zones) && parsed.zones.length) {
+        zones = parsed.zones.map(migrateZone);
+        localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+      }
+      saveTasks(); render();
+      closeBackup();
+    } catch (err) {
+      alert('Не удалось прочитать файл: ' + err.message);
+    }
+    e.target.value = '';
+  });
+});
 
 document.getElementById('clearDoneBtn').addEventListener('click', e => {
   e.stopPropagation();
@@ -872,6 +1139,7 @@ function openSettings(hint) {
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
   document.getElementById('settingsModal').classList.add('open');
   setTimeout(() => inp.focus(), 0);
+  closeSbMobile();
 }
 function closeSettings() {
   document.getElementById('settingsModal').classList.remove('open');
@@ -965,32 +1233,7 @@ document.getElementById('editInput').addEventListener('keydown', e => {
   if (e.key === 'Escape') document.getElementById('cancelEdit').click();
 });
 
-document.getElementById('generateReport').addEventListener('click', () => {
-  const from = document.getElementById('dateFrom').value;
-  const to = document.getElementById('dateTo').value;
-  if (!from || !to) { alert('Выберите период для отчёта'); return; }
-  const fromDate = new Date(from);
-  const toDate = new Date(to); toDate.setHours(23, 59, 59, 999);
-  const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
-  const openTasks = tasks.filter(t => !t.deleted && !t.done && new Date(t.created) <= toDate);
-  let report = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
-  report += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
-  report += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
-  zones.forEach(z => {
-    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
-    const zoneOpen = openTasks.filter(t => t.zone === z.key);
-    if (!zoneDone.length && !zoneOpen.length) return;
-    report += '## ' + z.label + '\n\n';
-    if (zoneDone.length) { report += '### Выполнено за период\n'; zoneDone.forEach(t => report += '- ✅ ' + t.text + ' (' + t.doneAt.split('T')[0] + ')\n'); report += '\n'; }
-    if (zoneOpen.length) { report += '### В работе\n'; zoneOpen.forEach(t => report += '- ' + t.text + '\n'); report += '\n'; }
-  });
-  navigator.clipboard.writeText(report).then(() => alert('Отчёт скопирован в буфер обмена!'));
-});
-
-const today = new Date().toISOString().split('T')[0];
-const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-document.getElementById('dateFrom').value = weekAgo;
-document.getElementById('dateTo').value = today;
+const today = new Date().toISOString().slice(0, 10);
 
 document.querySelectorAll('.modal').forEach(modal => {
   if (modal.id === 'quickZoneModal') return;
@@ -1001,6 +1244,7 @@ document.getElementById('quickZoneModal').addEventListener('click', e => {
 });
 
 // Старт
+applyTheme();
 suppressPush = true;
 clearTransientInputs();
 render();
