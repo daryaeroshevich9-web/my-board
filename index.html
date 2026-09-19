@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Доска Дарьи</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FDFCFA">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
@@ -131,6 +135,7 @@
   .notes{display:flex;flex-direction:column;gap:10px;min-height:40px;max-height:322px;overflow-y:auto;padding-right:2px}
   .note{position:relative;border-radius:12px;padding:12px 14px 12px 44px;font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .18s, box-shadow .18s, opacity .18s;display:flex;align-items:flex-start;cursor:grab;touch-action:pan-y}
   .zone .note{background:var(--z-bg);border-color:var(--z-bd)}
+  .note.pinned{box-shadow:0 4px 14px rgba(0,0,0,.12)}
   .note:active{cursor:grabbing}
   .note.dragging-src{opacity:.35}
   .note:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.10)}
@@ -141,6 +146,7 @@
   .note-content{cursor:text}
   .note.done{opacity:.5}
   .note.done .note-text{text-decoration:line-through}
+  .pin-mark{font-size:12px;margin-right:6px;vertical-align:middle}
   .due-row{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
   .due-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid}
   .due-y{background:rgba(240,200,60,.18);border-color:rgba(200,160,20,.45);color:#8a6d1b}
@@ -306,6 +312,17 @@
   </div>
 </div>
 
+<div class="modal" id="broomModal">
+  <div class="modal-content">
+    <h3>🧹 Уборка выполненных</h3>
+    <p class="settings-hint" id="broomText"></p>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeBroom()">Отмена</button>
+      <button class="modal-btn primary" onclick="confirmBroom()">Отправить в архив</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="archiveModal">
   <div class="modal-content">
     <h3>📦 Архив</h3>
@@ -425,6 +442,7 @@ function migrateTask(t) {
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
   if (t.archived === undefined) t.archived = false;
   if (t.due === undefined) t.due = null;
+  if (t.pinned === undefined) t.pinned = false;
   if (!t.created) t.created = new Date().toISOString();
   return t;
 }
@@ -534,7 +552,6 @@ if (localStorage.getItem(PIN_KEY) === '1') {
   document.body.classList.add('sb-pinned');
 }
 
-// Поиск в свёрнутом меню: иконка вместо обрезанного поля
 const sbSearchIco = document.getElementById('sbSearchIco');
 const sbSearchInput = document.getElementById('searchInput');
 sbSearchIco.addEventListener('click', () => {
@@ -688,6 +705,7 @@ const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 function noteHtml(t) {
   const parts = splitEmoji(t.text);
   const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
+  const pinMark = t.pinned ? '<span class="pin-mark" title="Закреплено">📌</span>' : '';
   const subDone = t.subtasks.filter(s => s.done).length;
   const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
   let dueChip = '';
@@ -717,10 +735,10 @@ function noteHtml(t) {
       (t.subOpen ? '<div class="sub-add-row"><input class="sub-add" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="новая подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' + subMic + '</div>' : '') +
       '</div>';
   }
-  return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
+  return '<div class="note ' + (t.done ? 'done' : '') + (t.pinned ? ' pinned' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + pinMark + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
       metaRow +
       subBlock +
     '</div>' +
@@ -742,7 +760,7 @@ function render() {
   const visible = zones.filter(z => !z.hidden);
   wrap.innerHTML = visible.map(z => {
     const zoneActive = active.filter(x => x.zone === z.key);
-    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q));
+    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q)).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
     let notesHtml;
     if (zoneTasks.length === 0) notesHtml = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
     else notesHtml = zoneTasks.map(noteHtml).join('');
@@ -780,6 +798,10 @@ function unarchiveTask(id) {
 }
 function permanentDelete(id) {
   if (confirm('Удалить задачу навсегда?')) { tasks = tasks.filter(x => x.id !== id); saveTasks(); render(); renderArchList(); }
+}
+function togglePinTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (t) { t.pinned = !t.pinned; saveTasks(); render(); }
 }
 function openSubs(id) {
   const t = tasks.find(x => x.id === id);
@@ -869,10 +891,12 @@ function openNoteMenu(id, ev) {
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
   const dueLabel = t && t.due ? ': ' + fmtDate(t.due) : '';
+  const pinLabel = t && t.pinned ? 'Открепить' : 'Закрепить';
   popEl.innerHTML =
     '<button class="pop-item" onclick="popSubs()">📝 Подзадачи</button>' +
     '<button class="pop-item" onclick="popEdit()">✏️ Редактировать</button>' +
     '<button class="pop-item" onclick="popDue()">🔔 Срок' + dueLabel + '</button>' +
+    '<button class="pop-item" onclick="popPin()">📌 ' + pinLabel + '</button>' +
     '<button class="pop-item" onclick="popArchive()">📦 В архив</button>';
   popEl.classList.add('open');
   const r = ev.currentTarget.getBoundingClientRect();
@@ -887,6 +911,7 @@ function openNoteMenu(id, ev) {
 function popSubs(){ const id=currentNoteId; closeNoteMenu(); openSubs(id); }
 function popEdit(){ const id=currentNoteId; closeNoteMenu(); editTask(id); }
 function popDue(){ const id=currentNoteId; closeNoteMenu(); openDue(id); }
+function popPin(){ const id=currentNoteId; closeNoteMenu(); togglePinTask(id); }
 function popArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id); }
 document.addEventListener('click', e => {
   if (popEl.classList.contains('open') && !e.target.closest('#notePop') && !e.target.closest('.note-action')) closeNoteMenu();
@@ -911,6 +936,19 @@ function clearDue() {
   const t = tasks.find(x => x.id === currentNoteId);
   if (t) { t.due = null; saveTasks(); render(); }
   closeDue();
+}
+
+// Метла: окно подтверждения в стиле доски
+document.getElementById('clearDoneBtn').addEventListener('click', () => {
+  const n = tasks.filter(t => t.done && !t.archived).length;
+  if (!n) { alert('Нет выполненных задач для отправки в архив.'); return; }
+  document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
+  document.getElementById('broomModal').classList.add('open');
+});
+function closeBroom() { document.getElementById('broomModal').classList.remove('open'); }
+function confirmBroom() {
+  tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
+  saveTasks(); render(); closeBroom();
 }
 
 // Архив
@@ -1158,15 +1196,6 @@ document.getElementById('backupFile').addEventListener('change', e => {
   });
 });
 
-document.getElementById('clearDoneBtn').addEventListener('click', () => {
-  const doneActive = tasks.filter(t => t.done && !t.archived);
-  if (!doneActive.length) { alert('Нет выполненных задач для отправки в архив.'); return; }
-  if (confirm('Отправить все выполненные задачи (' + doneActive.length + ') в архив?')) {
-    doneActive.forEach(t => { t.archived = true; });
-    saveTasks(); render();
-  }
-});
-
 // Голос: общий механизм для быстрого поля и подзадач
 const micBtn = document.getElementById('micBtn');
 let recog = null, listening = false, voiceBase = '', voiceTarget = null;
@@ -1382,6 +1411,13 @@ document.querySelectorAll('.modal').forEach(modal => {
 document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
+
+// PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 
 // Старт
 applyTheme();
