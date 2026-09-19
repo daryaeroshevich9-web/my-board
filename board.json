@@ -137,5 +137,14 @@
       "tint": 2,
       "color": "#a3c3e6"
     }
+  ],
+  "personal": [
+    {
+      "id": 1789817628354,
+      "text": "Взломали assasin credd shadows",
+      "created": "2026-09-19T11:33:45.013Z",
+      "done": false,
+      "doneAt": null
+    }
   ]
 }
