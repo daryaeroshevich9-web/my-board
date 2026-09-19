@@ -69,6 +69,7 @@
     background:transparent;cursor:pointer;color:var(--text-secondary);font:inherit;font-size:13px;white-space:nowrap;text-align:left;
   }
   .sb-item:hover{background:var(--soft)}
+  .sb-item.sb-filter-active{background:var(--soft);color:var(--text)}
   .sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
   .sb-label{opacity:0;transition:opacity .15s}
   .sidebar:hover .sb-label,.sidebar.pinned .sb-label{opacity:1}
@@ -131,12 +132,13 @@
   .note-content{cursor:text}
   .note.done{opacity:.5}
   .note.done .note-text{text-decoration:line-through}
-  .due-row{margin-top:6px}
+  .due-row{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
   .due-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid}
   .due-y{background:rgba(240,200,60,.18);border-color:rgba(200,160,20,.45);color:#8a6d1b}
   .due-o{background:rgba(240,150,50,.20);border-color:rgba(210,120,30,.5);color:#b45309}
   .due-r{background:rgba(220,60,50,.16);border-color:rgba(200,50,40,.5);color:#b93c32}
   .due-done{background:var(--soft);border-color:var(--border);color:var(--text-muted)}
+  .tag-chip{display:inline-flex;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid var(--border);background:var(--soft);color:var(--text-secondary)}
   .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
   .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
   .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
@@ -148,8 +150,10 @@
   .sub-edit:focus{outline:none;border-color:var(--accent)}
   .sub-del{border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1}
   .sub-del:hover{background:rgba(185,60,50,.1);color:#b93c32}
-  .sub-add{border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);width:100%}
+  .sub-add-row{display:flex;gap:6px}
+  .sub-add{flex:1;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);min-width:0}
   .sub-add:focus{outline:none;border-color:var(--accent);background:var(--card)}
+  .sub-mic{flex:none;width:34px;border:1px dashed var(--dash);border-radius:8px;background:transparent;cursor:pointer;font-size:14px}
   .note-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;flex:none;margin-left:8px}
   .note:hover .note-actions{opacity:1}
   @media (hover:none){.note-actions{opacity:1}}
@@ -173,14 +177,16 @@
   .modal-btn.primary:hover{filter:brightness(.88)}
   .modal-btn.secondary{background:var(--soft);color:var(--text)}
   .modal-btn.secondary:hover{background:var(--soft-hover)}
+  .modal-btn.mini{padding:6px 10px;font-size:13px}
   .move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
   .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--text)}
   .move-btn:hover{background:var(--soft)}
   .settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
-  .zone-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .zone-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
   .zone-row-emoji{font-size:18px;flex:none}
-  .zone-row-label{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .zone-row .modal-btn{padding:6px 14px;font-size:13px}
+  .zone-row-label{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px}
+  .zone-row .modal-btn{padding:6px 12px;font-size:13px}
+  .zone-color-pick{width:34px;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--card);padding:2px;cursor:pointer;flex:none}
   .zone-add-row{display:flex;gap:8px;margin-top:14px;align-items:center}
   .zone-add-row input[type="text"]{margin-bottom:0}
   #newZoneEmoji{width:56px;flex:none;text-align:center}
@@ -223,8 +229,10 @@
   <div class="sb-search">
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
+  <button class="sb-item" id="tagFilterChip" onclick="clearTagFilter()" style="display:none"><span class="sb-ico">🏷️</span><span class="sb-label" id="tagFilterLabel"></span></button>
   <button class="sb-item" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
   <button class="sb-item" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
+  <button class="sb-item" onclick="openTags()"><span class="sb-ico">🏷️</span><span class="sb-label">Теги</span></button>
   <button class="sb-item" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item" onclick="openBackup()"><span class="sb-ico">💾</span><span class="sb-label">Резервные копии</span></button>
   <button class="sb-item" onclick="openSettings()"><span class="sb-ico">☁️</span><span class="sb-label">Облако и токен</span></button>
@@ -262,7 +270,7 @@
 <div class="modal" id="addModal">
   <div class="modal-content">
     <h3>Новая задача</h3>
-    <input type="text" id="addInput" name="darya_add" placeholder="Описание задачи..." autocomplete="off">
+    <input type="text" id="addInput" name="darya_add" placeholder="Описание задачи... (#теги и даты распознаются)" autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
@@ -289,6 +297,17 @@
       <button class="modal-btn secondary" onclick="clearDue()">Убрать дату</button>
       <button class="modal-btn secondary" onclick="closeDue()">Отмена</button>
       <button class="modal-btn primary" onclick="saveDue()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="tagsModal">
+  <div class="modal-content">
+    <h3>🏷️ Теги</h3>
+    <p class="settings-hint">Клик по 🔍 — фильтр доски по тегу. ✏️ — переименовать тег во всех задачах. × — удалить тег отовсюду.</p>
+    <div id="tagsList"></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="closeTags()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -387,15 +406,16 @@ const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/cont
 const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
 
 const TINT_COUNT = 6;
+const TINT_HEX = ['#3A5F8A', '#B04A5E', '#A67C00', '#3E7A5E', '#6B4FA0', '#0E7490'];
 const DEFAULT_ZONES = [
-  {key:'other', label:'Прочее', emoji:'📋', hidden:false, tint:0},
-  {key:'portal', label:'Портал 2.0', emoji:'🚪', hidden:false, tint:1},
-  {key:'aviabit', label:'Авиабит', emoji:'🛩️', hidden:false, tint:2}
+  {key:'other', label:'Прочее', emoji:'📋', hidden:false, tint:0, color:null},
+  {key:'portal', label:'Портал 2.0', emoji:'🚪', hidden:false, tint:1, color:null},
+  {key:'aviabit', label:'Авиабит', emoji:'🛩️', hidden:false, tint:2, color:null}
 ];
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 const ELLIPSIS = '⋯';
 
-function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0)}; }
+function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
     const raw = localStorage.getItem(ZONES_KEY);
@@ -408,12 +428,14 @@ let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 tasks.forEach(migrateTask);
 let currentAddZone = null, currentEditId = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
-let pendingQuickText = '';
+let pendingQuickLines = [];
+let activeTagFilter = null;
 
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
+  if (!Array.isArray(t.tags)) t.tags = [];
   t.subOpen = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
   if (t.archived === undefined) t.archived = false;
@@ -428,10 +450,30 @@ function labelFor(key){ const z=zoneByKey(key); return z? z.label : key; }
 function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
 function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
 
+function hexA(hex, a){
+  let h = String(hex||'').replace('#','');
+  if (h.length === 3) h = h.split('').map(x=>x+x).join('');
+  if (h.length !== 6) return 'rgba(127,127,127,' + a + ')';
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+function zoneStyle(z){
+  if (z.color) return '--zone-color:' + z.color + ';--z-bg:' + hexA(z.color,.22) + ';--z-bd:' + hexA(z.color,.5);
+  const n = tintIndex(z);
+  return '--zone-color:var(--tint-c-' + n + ');--z-bg:var(--tint-bg-' + n + ');--z-bd:var(--tint-bd-' + n + ')';
+}
+function zoneTagStyle(z){
+  if (z.color) return 'background:' + hexA(z.color,.22) + ';border-color:' + hexA(z.color,.5) + ';color:' + z.color;
+  const n = tintIndex(z);
+  return 'background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')';
+}
+
+// Даты
 function isoOf(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function todayISO(){ return isoOf(new Date()); }
 function parseLocal(s){ const p = s.split('-'); return new Date(Number(p[0]), Number(p[1])-1, Number(p[2])); }
 function fmtDate(s){ return s.slice(8,10) + '.' + s.slice(5,7); }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function dueState(t){
   if (!t.due) return null;
   if (t.done) return 'done';
@@ -444,7 +486,45 @@ function dueState(t){
   return 'later';
 }
 
-// Тема: только авто, переключателя нет
+// Магическая строка: #теги и даты
+const WEEKDAYS = {'понедельник':1,'вторник':2,'среда':3,'четверг':4,'пятница':5,'суббота':6,'воскресенье':0};
+function parseMagic(raw){
+  let text = String(raw||'');
+  const tags = [];
+  text = text.replace(/#([\p{L}\p{N}_\-]+)/gu, (m, tag) => { tags.push(tag.toLowerCase()); return ' '; });
+  let due = null;
+  const today = parseLocal(todayISO());
+  if (/\bпослезавтра\b/i.test(text)) { due = isoOf(addDays(today,2)); text = text.replace(/послезавтра/ig,' '); }
+  else if (/\bзавтра\b/i.test(text)) { due = isoOf(addDays(today,1)); text = text.replace(/завтра/ig,' '); }
+  else if (/\bсегодня\b/i.test(text)) { due = isoOf(today); text = text.replace(/сегодня/ig,' '); }
+  if (!due) {
+    const wdRe = /\b(?:в|во)\s+(понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\b/i;
+    const m = text.match(wdRe);
+    if (m) {
+      const target = WEEKDAYS[m[1].toLowerCase()];
+      const cur = today.getDay();
+      const diff = (target - cur + 7) % 7;
+      due = isoOf(addDays(today, diff));
+      text = text.replace(wdRe, ' ');
+    }
+  }
+  if (!due) {
+    const dm = text.match(/\b(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\b/);
+    if (dm) {
+      const day = +dm[1], mon = +dm[2];
+      let year = dm[3] ? +dm[3] : today.getFullYear();
+      if (year < 100) year += 2000;
+      let d = new Date(year, mon-1, day);
+      if (!dm[3] && d < today) d = new Date(year+1, mon-1, day);
+      due = isoOf(d);
+      text = text.replace(/\b\d{1,2}\.\d{1,2}(?:\.\d{2,4})?\b/, ' ');
+    }
+  }
+  text = text.replace(/\s{2,}/g,' ').trim();
+  return {text: text, tags: [...new Set(tags)], due: due};
+}
+
+// Тема: только авто
 let themeMode = localStorage.getItem(THEME_KEY) || 'auto';
 const darkMq = window.matchMedia('(prefers-color-scheme: dark)');
 function applyTheme(){
@@ -469,6 +549,67 @@ document.getElementById('sbToggle').addEventListener('click', () => {
 if (localStorage.getItem(PIN_KEY) === '1') {
   sidebarEl.classList.add('pinned');
   document.body.classList.add('sb-pinned');
+}
+
+// Фильтр по тегу
+function updateTagFilterChip(){
+  const chip = document.getElementById('tagFilterChip');
+  if (activeTagFilter) {
+    document.getElementById('tagFilterLabel').textContent = '#' + activeTagFilter + ' ✖';
+    chip.style.display = 'flex';
+    chip.classList.add('sb-filter-active');
+  } else {
+    chip.style.display = 'none';
+    chip.classList.remove('sb-filter-active');
+  }
+}
+function clearTagFilter(){ activeTagFilter = null; updateTagFilterChip(); render(); }
+function filterByTag(tag){
+  activeTagFilter = (activeTagFilter === tag) ? null : tag;
+  updateTagFilterChip();
+  render();
+  closeTags();
+}
+function allTags(){
+  const map = {};
+  tasks.forEach(t => (t.tags||[]).forEach(tg => { map[tg] = (map[tg]||0) + 1; }));
+  return map;
+}
+function openTags(){
+  renderTagsList();
+  document.getElementById('tagsModal').classList.add('open');
+  closeSbMobile();
+}
+function closeTags(){ document.getElementById('tagsModal').classList.remove('open'); }
+function renderTagsList(){
+  const list = document.getElementById('tagsList');
+  const map = allTags();
+  const names = Object.keys(map).sort((a,b)=>a.localeCompare(b,'ru'));
+  if (!names.length) { list.innerHTML = '<div class="empty">Тегов пока нет — добавьте через #тег в быстрой задаче</div>'; return; }
+  list.innerHTML = names.map(tg =>
+    '<div class="zone-row">' +
+      '<span class="zone-row-label">#' + escapeHtml(tg) + '</span>' +
+      '<span class="count">' + map[tg] + '</span>' +
+      '<button class="modal-btn secondary mini" onclick="filterByTag(\'' + escapeHtml(tg).replace(/'/g,"\\'") + '\')" title="Фильтр доски">🔍</button>' +
+      '<button class="modal-btn secondary mini" onclick="renameTag(\'' + escapeHtml(tg).replace(/'/g,"\\'") + '\')" title="Переименовать">✏️</button>' +
+      '<button class="modal-btn secondary mini" onclick="deleteTag(\'' + escapeHtml(tg).replace(/'/g,"\\'") + '\')" title="Удалить тег">×</button>' +
+    '</div>'
+  ).join('');
+}
+function renameTag(old){
+  const nw = prompt('Новое имя тега #' + old + ':', old);
+  if (!nw) return;
+  const clean = nw.trim().replace(/^#/,'').toLowerCase();
+  if (!clean || clean === old) return;
+  tasks.forEach(t => { t.tags = (t.tags||[]).map(x => x === old ? clean : x); t.tags = [...new Set(t.tags)]; });
+  if (activeTagFilter === old) activeTagFilter = clean;
+  saveTasks(); render(); renderTagsList(); updateTagFilterChip();
+}
+function deleteTag(tag){
+  if (!confirm('Удалить тег #' + tag + ' из всех задач?')) return;
+  tasks.forEach(t => { t.tags = (t.tags||[]).filter(x => x !== tag); });
+  if (activeTagFilter === tag) { activeTagFilter = null; updateTagFilterChip(); }
+  saveTasks(); render(); renderTagsList();
 }
 
 function clearTransientInputs() {
@@ -564,7 +705,7 @@ function parseMdTasks(md) {
     else if (s.startsWith('- [ ]') || s.startsWith('- [x]')) {
       const done = s.startsWith('- [x]');
       const now = new Date().toISOString();
-      out.push(migrateTask({id: Date.now() + i, zone: zone, text: s.slice(5).trim(), done: done, created: now, doneAt: done ? now : null, deleted: false, archived: false, subtasks: [], subOpen: false}));
+      out.push(migrateTask({id: Date.now() + i, zone: zone, text: s.slice(5).trim(), done: done, created: now, doneAt: done ? now : null, archived: false, due: null, tags: [], subtasks: [], subOpen: false}));
     }
   });
   return out;
@@ -586,7 +727,6 @@ function importFromMd() {
     .catch(() => {});
 }
 
-// Выполненные задачи через 3 суток уходят в архив
 const DONE_ARCHIVE_DELAY = 3 * 24 * 60 * 60 * 1000;
 function sweepDoneToArchive() {
   const cutoff = Date.now() - DONE_ARCHIVE_DELAY;
@@ -609,13 +749,19 @@ function matchesQuery(t, q) {
   if (t.text.toLowerCase().includes(q)) return true;
   return t.subtasks.some(s => s.text.toLowerCase().includes(q));
 }
+function matchesTag(t){
+  if (!activeTagFilter) return true;
+  return (t.tags||[]).includes(activeTagFilter);
+}
+
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function noteHtml(t) {
   const parts = splitEmoji(t.text);
   const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
   const subDone = t.subtasks.filter(s => s.done).length;
   const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
-  let dueRow = '';
+  let dueChip = '';
   if (t.due) {
     const st = dueState(t);
     let cls = 'due-chip ';
@@ -625,10 +771,13 @@ function noteHtml(t) {
     else if (st === 'today') { cls += 'due-r'; content = '🔔 ' + fmtDate(t.due) + ' · сегодня'; }
     else if (st === 'tomorrow') { cls += 'due-o'; content = '🔔 ' + fmtDate(t.due) + ' · завтра'; }
     else { cls += 'due-y'; content = '🔔 ' + fmtDate(t.due); }
-    dueRow = '<div class="due-row"><span class="' + cls + '">' + content + '</span></div>';
+    dueChip = '<span class="' + cls + '">' + content + '</span>';
   }
+  const tagChips = (t.tags||[]).map(tg => '<span class="tag-chip">#' + escapeHtml(tg) + '</span>').join('');
+  const metaRow = (dueChip || tagChips) ? '<div class="due-row">' + dueChip + tagChips + '</div>' : '';
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
+    const subMic = SpeechRec ? '<button class="sub-mic" onclick="startSubVoice(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
     subBlock = '<div class="subtasks">' +
       t.subtasks.map(s =>
         '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
@@ -637,14 +786,14 @@ function noteHtml(t) {
         '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
-      (t.subOpen ? '<input class="sub-add" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="новая подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' : '') +
+      (t.subOpen ? '<div class="sub-add-row"><input class="sub-add" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="новая подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' + subMic + '</div>' : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
     '<div class="note-body">' +
       '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
-      dueRow +
+      metaRow +
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
@@ -664,13 +813,12 @@ function render() {
   const wrap = document.getElementById('zonesWrap');
   const visible = zones.filter(z => !z.hidden);
   wrap.innerHTML = visible.map(z => {
-    const n = tintIndex(z);
     const zoneActive = active.filter(x => x.zone === z.key);
-    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q));
+    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q) && matchesTag(x));
     let notesHtml;
     if (zoneTasks.length === 0) notesHtml = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
     else notesHtml = zoneTasks.map(noteHtml).join('');
-    return '<section class="zone" data-zone="' + z.key + '" style="--zone-color:var(--tint-c-' + n + ');--z-bg:var(--tint-bg-' + n + ');--z-bd:var(--tint-bd-' + n + ')">' +
+    return '<section class="zone" data-zone="' + z.key + '" style="' + zoneStyle(z) + '">' +
       '<header class="zone-head">' +
         '<div class="zone-emoji">' + (z.emoji || '🗂️') + '</div>' +
         '<h2>' + escapeHtml(z.label) + '</h2>' +
@@ -729,6 +877,7 @@ function subKey(event, tid) {
 function subBlur(event, tid) {
   const input = event.target;
   setTimeout(() => {
+    if (listening && voiceTarget === input) return;
     const t = tasks.find(x => x.id === tid);
     if (!t) return;
     const v = input.value.trim();
@@ -855,9 +1004,8 @@ function renderArchList() {
   }
   list.innerHTML = arch.map(t => {
     const z = zoneByKey(t.zone);
-    const n = z ? tintIndex(z) : 0;
     const dateLabel = t.done ? (t.doneAt ? ' (' + t.doneAt.slice(0, 10) + ')' : '') : '';
-    return '<div class="list-note"><span class="zone-tag" style="background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + ' <span style="color:var(--text-muted);font-size:12px">' + dateLabel + '</span></span>' +
+    return '<div class="list-note"><span class="zone-tag" style="' + (z ? zoneTagStyle(z) : '') + '">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + ' <span style="color:var(--text-muted);font-size:12px">' + dateLabel + '</span></span>' +
       '<div class="list-actions">' +
       '<button class="list-btn restore" onclick="unarchiveTask(' + t.id + ')">Вернуть</button>' +
       '<button class="list-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
@@ -866,7 +1014,7 @@ function renderArchList() {
 }
 document.getElementById('archSearch').addEventListener('input', renderArchList);
 
-// Разделы
+// Разделы (с ручным цветом)
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
   document.getElementById('addInput').value = '';
@@ -881,11 +1029,24 @@ function toggleZone(key) {
   const z = zoneByKey(key);
   if (z) { z.hidden = !z.hidden; saveZones(); render(); renderZonesList(); }
 }
+function setZoneColor(key, val) {
+  const z = zoneByKey(key);
+  if (z) { z.color = val; saveZones(); render(); renderZonesList(); }
+}
+function resetZoneColor(key) {
+  const z = zoneByKey(key);
+  if (z) { z.color = null; saveZones(); render(); renderZonesList(); }
+}
 function renderZonesList() {
   const list = document.getElementById('zonesList');
   list.innerHTML = zones.map(z =>
-    '<div class="zone-row"><span class="zone-row-emoji">' + (z.emoji || '🗂️') + '</span><span class="zone-row-label">' + escapeHtml(z.label) + '</span>' +
-    '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button></div>'
+    '<div class="zone-row">' +
+      '<span class="zone-row-emoji">' + (z.emoji || '🗂️') + '</span>' +
+      '<span class="zone-row-label">' + escapeHtml(z.label) + '</span>' +
+      '<input type="color" class="zone-color-pick" value="' + (z.color || TINT_HEX[tintIndex(z)]) + '" onchange="setZoneColor(\'' + z.key + '\', this.value)" title="Цвет раздела">' +
+      (z.color ? '<button class="modal-btn secondary" onclick="resetZoneColor(\'' + z.key + '\')">Авто</button>' : '') +
+      '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button>' +
+    '</div>'
   ).join('');
 }
 function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); closeSbMobile(); }
@@ -894,25 +1055,27 @@ document.getElementById('addZoneBtn').addEventListener('click', () => {
   const label = document.getElementById('newZoneLabel').value.trim();
   if (!label) { alert('Введите название раздела.'); return; }
   const emoji = document.getElementById('newZoneEmoji').value.trim() || '🗂️';
-  zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % TINT_COUNT});
+  zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % TINT_COUNT, color: null});
   saveZones(); render(); renderZonesList();
   document.getElementById('newZoneLabel').value = '';
   document.getElementById('newZoneEmoji').value = '';
 });
 
-// Быстрая заметка
-function addQuickNote(text, zoneKey) {
-  tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: null, subtasks: [], subOpen: false}));
+// Быстрая заметка с магической строкой и вставкой списком
+function createParsed(line, zoneKey) {
+  const p = parseMagic(line);
+  const text = p.text || line.trim();
+  tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: p.tags, subtasks: [], subOpen: false}));
   clearLeakedSearch(text);
   saveTasks(); render();
 }
-function quickAddFlow(text) {
+function quickAddMany(lines) {
   const other = zoneByKey('other');
   if (other && !other.hidden) {
-    addQuickNote(text, 'other');
+    lines.forEach(l => createParsed(l, 'other'));
     return;
   }
-  pendingQuickText = text;
+  pendingQuickLines = lines;
   const wrap = document.getElementById('quickZoneList');
   wrap.innerHTML = zones.map(z =>
     '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
@@ -924,17 +1087,33 @@ function chooseQuickZone(zoneKey) {
   const z = zoneByKey(zoneKey);
   if (!z) return;
   if (z.hidden) { z.hidden = false; saveZones(); }
-  addQuickNote(pendingQuickText, zoneKey);
-  pendingQuickText = '';
+  pendingQuickLines.forEach(l => createParsed(l, zoneKey));
+  pendingQuickLines = [];
   document.getElementById('quickZoneModal').classList.remove('open');
 }
 function closeQuickZone() {
   document.getElementById('quickZoneModal').classList.remove('open');
-  if (pendingQuickText) {
-    document.getElementById('quickAdd').value = pendingQuickText;
-    pendingQuickText = '';
+  if (pendingQuickLines.length) {
+    document.getElementById('quickAdd').value = pendingQuickLines.join('\n');
+    pendingQuickLines = [];
   }
 }
+document.getElementById('quickAdd').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const text = e.target.value.trim();
+    if (!text) return;
+    e.target.value = ''; voiceBase = '';
+    quickAddMany([text]);
+  }
+});
+document.getElementById('quickAdd').addEventListener('paste', e => {
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (text && text.includes('\n')) {
+    e.preventDefault();
+    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
+  }
+});
 
 // Итоги недели
 let lastResults = {md: '', rows: []};
@@ -1063,7 +1242,42 @@ document.getElementById('clearDoneBtn').addEventListener('click', () => {
   }
 });
 
-// Drag-and-drop с сортировкой (единственный способ перемещения между разделами)
+// Голос: общий механизм для быстрого поля и подзадач
+const micBtn = document.getElementById('micBtn');
+let recog = null, listening = false, voiceBase = '', voiceTarget = null;
+function startVoice(el) {
+  if (!SpeechRec || !el) return;
+  if (listening) { recog.stop(); return; }
+  voiceTarget = el;
+  voiceBase = el.value.trim();
+  el.focus();
+  try { recog.start(); listening = true; updateMicUI(); } catch (err) { listening = false; updateMicUI(); }
+}
+function startSubVoice(tid) {
+  const el = document.querySelector('[data-subadd="' + tid + '"]');
+  startVoice(el);
+}
+function updateMicUI() {
+  micBtn.classList.toggle('listening', listening && voiceTarget === document.getElementById('quickAdd'));
+}
+if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
+  recog = new SpeechRec();
+  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = false; recog.maxAlternatives = 1;
+  recog.onresult = e => {
+    let full = '';
+    for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript;
+    const el = voiceTarget || document.getElementById('quickAdd');
+    el.value = voiceBase + (voiceBase && !voiceBase.endsWith(' ') ? ' ' : '') + full;
+  };
+  recog.onend = () => { listening = false; voiceTarget = null; updateMicUI(); };
+  recog.onerror = e => {
+    listening = false; voiceTarget = null; updateMicUI();
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') alert('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта и попробуйте снова.');
+  };
+  micBtn.addEventListener('click', () => startVoice(document.getElementById('quickAdd')));
+}
+
+// Drag-and-drop с сортировкой
 let dragState = null;
 let justDragged = false;
 
@@ -1207,47 +1421,14 @@ document.getElementById('logoBtn').addEventListener('dblclick', () => openSettin
 document.getElementById('cancelSettings').addEventListener('click', closeSettings);
 document.getElementById('saveSettings').addEventListener('click', saveSettings);
 
-const micBtn = document.getElementById('micBtn');
-const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recog = null, listening = false, voiceBase = '';
-if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
-  recog = new SpeechRec();
-  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = false; recog.maxAlternatives = 1;
-  recog.onresult = e => {
-    let full = '';
-    for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript;
-    const qa = document.getElementById('quickAdd');
-    qa.value = voiceBase + (voiceBase && !voiceBase.endsWith(' ') ? ' ' : '') + full;
-  };
-  recog.onend = () => { listening = false; micBtn.classList.remove('listening'); };
-  recog.onerror = e => {
-    listening = false; micBtn.classList.remove('listening');
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') alert('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта и попробуйте снова.');
-  };
-  micBtn.addEventListener('click', () => {
-    if (listening) { recog.stop(); return; }
-    const qa = document.getElementById('quickAdd');
-    voiceBase = qa.value.trim();
-    qa.focus();
-    try { recog.start(); listening = true; micBtn.classList.add('listening'); } catch (err) { listening = false; micBtn.classList.remove('listening'); }
-  });
-}
-
-document.getElementById('quickAdd').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const text = e.target.value.trim();
-    if (!text) return;
-    e.target.value = ''; voiceBase = '';
-    quickAddFlow(text);
-  }
-});
 document.getElementById('searchInput').addEventListener('input', render);
 
 document.getElementById('cancelAdd').addEventListener('click', () => document.getElementById('addModal').classList.remove('open'));
 document.getElementById('confirmAdd').addEventListener('click', () => {
   const text = document.getElementById('addInput').value.trim();
   if (text) {
-    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: null, subtasks: [], subOpen: false}));
+    const p = parseMagic(text);
+    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: p.text || text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: p.tags, subtasks: [], subOpen: false}));
     clearLeakedSearch(text);
     saveTasks(); render();
     document.getElementById('addModal').classList.remove('open');
@@ -1280,6 +1461,7 @@ document.getElementById('quickZoneModal').addEventListener('click', e => {
 applyTheme();
 suppressPush = true;
 clearTransientInputs();
+updateTagFilterChip();
 render();
 if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже окно не появится, а заменить токен можно двойным кликом по логотипу.');
 cloudRead()
