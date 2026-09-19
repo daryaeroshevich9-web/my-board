@@ -54,6 +54,17 @@
       "deleted": false,
       "subtasks": [],
       "subOpen": false
+    },
+    {
+      "id": 1789806130497,
+      "zone": "other",
+      "text": "тестирование",
+      "done": false,
+      "created": "2026-09-19T08:22:10.497Z",
+      "doneAt": null,
+      "deleted": false,
+      "subtasks": [],
+      "subOpen": false
     }
   ],
   "zones": [
@@ -61,7 +72,7 @@
       "key": "other",
       "label": "Прочее",
       "emoji": "📋",
-      "hidden": true,
+      "hidden": false,
       "tint": 0
     },
     {
