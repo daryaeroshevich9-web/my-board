@@ -66,16 +66,16 @@
   .sidebar.pinned{width:230px}
   .sidebar.search-open{width:230px}
   .sb-item{
-    display:flex;align-items:center;gap:10px;padding:9px 10px;border:none;border-radius:8px;
+    display:flex;align-items:center;gap:10px;height:40px;flex:none;padding:0 10px;border:none;border-radius:8px;
     background:transparent;cursor:pointer;color:var(--text-secondary);font:inherit;font-size:13px;white-space:nowrap;text-align:left;
   }
   .sb-item:hover{background:var(--soft)}
   .sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
   .sb-label{opacity:0;transition:opacity .15s}
   .sidebar:hover .sb-label,.sidebar.pinned .sb-label,.sidebar.search-open .sb-label{opacity:1}
-  .sb-search{padding:2px 4px 8px;display:flex}
+  .sb-search{padding:2px 4px 8px;display:flex;align-items:center;height:48px;flex:none}
   .sb-search input{
-    width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
+    width:100%;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:8px;
     background:var(--input-bg);color:var(--text);font:inherit;font-size:13px;
   }
   .sb-search input:focus{outline:none;border-color:var(--accent)}
@@ -93,7 +93,8 @@
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .sb-toggle{display:none;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);flex:none}
-  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:#E8EDF4;border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default}
+  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:#E8EDF4;border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:transform .15s}
+  .logo:hover{transform:scale(1.06)}
   .title-block{min-width:120px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
   .subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
@@ -240,7 +241,6 @@
   <button class="sb-item" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
   <button class="sb-item" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
   <button class="sb-item" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
-  <button class="sb-item" onclick="openSettings()"><span class="sb-ico">☁️</span><span class="sb-label">Облако и копии</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
 </aside>
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
@@ -248,7 +248,7 @@
 <header class="topbar">
   <div class="topbar-inner">
     <button class="sb-toggle" id="sbToggle" title="Меню">☰</button>
-    <div class="logo" id="logoBtn" title="Доска Дарьи">✈️</div>
+    <div class="logo" id="logoBtn" title="Облако, токен и резервные копии">✈️</div>
     <div class="title-block">
       <h1>Доска Дарьи</h1>
       <div class="subtitle">Авиабит · Портал 2.0 · Прочее</div>
@@ -368,7 +368,7 @@
     <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <div id="tokenInputWrap"></div>
     <hr class="settings-sep">
-    <p class="settings-hint">Резервная копия — полный снимок доски (задачи, подзадачи, сроки, разделы, цвета). Отчёт из «Итогов» для этого не подходит: это документ, а не снимок данных.</p>
+    <p class="settings-hint">Резервная копия — полный снимок доски (задачи, подзадачи, сроки, разделы, цвета).</p>
     <div class="move-list">
       <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
       <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
@@ -1131,7 +1131,7 @@ function downloadResultsCsv() {
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
 
-// Облако и резервные копии (единое окно)
+// Облако и резервные копии — только через клик по самолётику
 function backupDownload() {
   const data = JSON.stringify({tasks: tasks, zones: zones}, null, 2);
   downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
@@ -1343,7 +1343,7 @@ function saveSettings() {
   closeSettings();
   schedulePush();
 }
-document.getElementById('logoBtn').addEventListener('dblclick', () => openSettings('Служебный вход: заменить токен на этом устройстве.'));
+document.getElementById('logoBtn').addEventListener('click', () => openSettings());
 document.getElementById('cancelSettings').addEventListener('click', closeSettings);
 document.getElementById('saveSettings').addEventListener('click', saveSettings);
 
@@ -1388,7 +1388,7 @@ applyTheme();
 suppressPush = true;
 clearTransientInputs();
 render();
-if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже окно не появится, а заменить токен можно двойным кликом по логотипу.');
+if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по самолётику.');
 cloudRead()
   .then(data => {
     if (data && Array.isArray(data.tasks)) {
