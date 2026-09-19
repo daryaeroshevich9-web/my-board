@@ -26,6 +26,7 @@
     --tint-c-3:#3E7A5E; --tint-bg-3:rgba(226,240,230,.45); --tint-bd-3:rgba(187,220,201,.55);
     --tint-c-4:#6B4FA0; --tint-bg-4:rgba(236,230,245,.45); --tint-bd-4:rgba(211,198,230,.55);
     --tint-c-5:#0E7490; --tint-bg-5:rgba(224,242,245,.45); --tint-bd-5:rgba(181,221,228,.55);
+    --personal-bg:#ECEEF0; --personal-bd:#D5D9DD;
   }
   *{box-sizing:border-box;margin:0}
   body{
@@ -58,6 +59,7 @@
     background:transparent;cursor:pointer;color:var(--text-secondary);font:inherit;font-size:13px;white-space:nowrap;text-align:left;
   }
   .sb-item:hover{background:var(--soft)}
+  .sb-item.active{background:var(--soft);color:var(--text);font-weight:600}
   .sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
   .sb-label{opacity:0;transition:opacity .15s}
   .sidebar:hover .sb-label,.sidebar.pinned .sb-label,.sidebar.search-open .sb-label{opacity:1}
@@ -74,6 +76,7 @@
   .sb-search-ico:hover{background:var(--card)}
   .sidebar:not(:hover):not(.pinned):not(.search-open):not(.open) .sb-search input{display:none}
   .sidebar:not(:hover):not(.pinned):not(.search-open):not(.open) .sb-search-ico{display:flex}
+  .sb-sep{height:1px;background:var(--border);margin:6px 4px}
   .sb-pin{margin-top:auto}
   .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190}
   .sb-backdrop.show{display:block}
@@ -162,6 +165,14 @@
   .fact-text{font-size:14px;line-height:1.55;color:var(--text-secondary)}
   .fact-close{position:absolute;top:10px;right:10px;width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px}
   .fact-close:hover{background:var(--soft);color:var(--text)}
+  .personal-wrap{max-width:900px;margin:0 auto;padding:24px 28px 40px}
+  .personal-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .personal-head h2{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600}
+  .personal-count{color:var(--text-muted);font-size:13px}
+  .personal-zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+  .personal-zone .note{background:var(--personal-bg);border-color:var(--personal-bd);--zone-color:var(--text-muted)}
+  .personal-zone .note-checkbox{accent-color:var(--text-muted)}
+  .personal-notes{display:flex;flex-direction:column;gap:10px;min-height:40px}
   .popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
   .popmenu.open{display:block}
   .pop-item{display:flex;gap:8px;align-items:center;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;color:var(--text);text-align:left;white-space:nowrap}
@@ -212,6 +223,7 @@
   .list-btn.restore:hover{background:rgba(4,120,87,.18)}
   .list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
   .list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
+  .page-hidden{display:none !important}
   @media (max-width:720px){
     .topbar-inner{padding:12px 16px;gap:10px}
     h1{font-size:17px}
@@ -222,18 +234,22 @@
     .zones{padding:14px 16px 24px;gap:14px;grid-template-columns:1fr}
     .zone{border-radius:16px;padding:14px}
     .fact-wrap{padding:0 16px 40px}
+    .personal-wrap{padding:14px 16px 32px}
   }
 </style>
 </head>
 <body>
 <aside class="sidebar" id="sidebar">
+  <button class="sb-item" id="navBoard" onclick="switchPage('board')"><span class="sb-ico">🏠</span><span class="sb-label">Доска</span></button>
+  <button class="sb-item" id="navPersonal" onclick="switchPage('personal')"><span class="sb-ico">📝</span><span class="sb-label">Личное</span></button>
+  <div class="sb-sep"></div>
   <div class="sb-search">
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
-  <button class="sb-item" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
-  <button class="sb-item" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
-  <button class="sb-item" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
+  <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
+  <button class="sb-item sb-board-only" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
+  <button class="sb-item sb-board-only" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
 </aside>
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
@@ -242,15 +258,15 @@
     <button class="sb-toggle" id="sbToggle" title="Меню">☰</button>
     <img class="logo" id="logoBtn" src="icon.svg" alt="" title="Облако, токен и резервные копии">
     <div class="title-block">
-      <h1>Доска Дарьи</h1>
-      <div class="subtitle">Авиабит · Портал 2.0 · Прочее</div>
+      <h1 id="pageTitle">Доска Дарьи</h1>
+      <div class="subtitle" id="pageSubtitle">Авиабит · Портал 2.0 · Прочее</div>
     </div>
     <div class="quick-wrap">
       <input type="text" class="quick-add" id="quickAdd" name="darya_quick" placeholder="Быстрая задача" autocomplete="off">
       <button class="mic-btn" id="micBtn" title="Голосовой ввод">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
       </button>
-      <div class="mini-stats">
+      <div class="mini-stats sb-board-only">
         <span class="mini-stat" title="Всего задач">📋 <b id="totalCount">0</b></span>
         <span class="mini-stat" title="В работе">⚡ <b id="progressCount">0</b></span>
         <span class="mini-stat" title="Выполнено">✅ <b id="doneCount">0</b></span>
@@ -259,12 +275,25 @@
     </div>
   </div>
 </header>
-<main class="zones" id="zonesWrap"></main>
-<div class="fact-wrap" id="factWrap" style="display:none">
-  <div class="fact-card">
-    <button class="fact-close" id="factClose" title="Скрыть до завтра">✕</button>
-    <div class="fact-title">☕ Факт дня</div>
-    <div class="fact-text" id="factText"></div>
+<div id="boardPage">
+  <main class="zones" id="zonesWrap"></main>
+  <div class="fact-wrap" id="factWrap" style="display:none">
+    <div class="fact-card">
+      <button class="fact-close" id="factClose" title="Скрыть до завтра">✕</button>
+      <div class="fact-title">☕ Факт дня</div>
+      <div class="fact-text" id="factText"></div>
+    </div>
+  </div>
+</div>
+<div id="personalPage" class="page-hidden">
+  <div class="personal-wrap">
+    <div class="personal-head">
+      <h2>📝 Личное</h2>
+      <span class="personal-count" id="personalCount">0 заметок</span>
+    </div>
+    <div class="personal-zone">
+      <div class="personal-notes" id="personalNotes"></div>
+    </div>
   </div>
 </div>
 <div class="popmenu" id="notePop"></div>
@@ -281,7 +310,7 @@
 </div>
 <div class="modal" id="editModal">
   <div class="modal-content">
-    <h3>Редактировать задачу</h3>
+    <h3 id="editTitle">Редактировать задачу</h3>
     <input type="text" id="editInput" name="darya_edit" placeholder="Описание задачи..." autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelEdit">Отмена</button>
@@ -378,7 +407,7 @@
     <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <div id="tokenInputWrap"></div>
     <hr class="settings-sep">
-    <p class="settings-hint">Резервная копия — полный снимок доски (задачи, подзадачи, сроки, разделы, цвета).</p>
+    <p class="settings-hint">Резервная копия — полный снимок доски и личных заметок (задачи, подзадачи, сроки, разделы, цвета).</p>
     <div class="move-list">
       <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
       <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
@@ -392,11 +421,13 @@
 </div>
 <script>
 const STORAGE_KEY = 'darya_board_tasks';
+const PERSONAL_KEY = 'darya_personal_notes';
 const ZONES_KEY = 'darya_board_zones';
 const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
 const PIN_KEY = 'darya_board_sbpinned';
 const FACT_CLOSED_KEY = 'factClosed';
+const PAGE_KEY = 'darya_board_page';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
 const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
 const FACTS_URL = 'facts.json';
@@ -409,6 +440,39 @@ const DEFAULT_ZONES = [
 ];
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 const ELLIPSIS = '⋯';
+// Встроенные факты как запасной источник, если facts.json не загрузится
+const BUILTIN_FACTS = [
+  'Southwest держит оборот 15–20 минут не героизмом, а ролевой моделью: у каждой стоянки есть координатор оборота, который дирижирует параллельными работами и имеет право остановить выпуск борта при нарушении чек-листа готовности.',
+  'В европейских хабах A-CDM означает, что авиакомпания, аэропорт и хендлер смотрят в одни данные: целевое время выруливания (TOBT) и слот-время (TSAT) согласуются автоматически, а не звонками между службами.',
+  'Haneda использует модель joint service: одна бригада наземного обслуживания работает на нескольких перевозчиков на стоянке, убирая дублирование техники и простои между рейсами разных авиакомпаний.',
+  'Changi сглаживает пик багажа через early bag store: чемоданы, сданные заранее, уходят в буфер и подаются на комплектацию ближе к вылету, выравнивая нагрузку сортировки.',
+  'Delta превратила багаж в продукт: RFID-метка на каждом месте и публичный трекинг в приложении снизили поток обращений в поддержку сильнее, чем сами инвестиции в обработку.',
+  'Lufthansa Technik строит предиктивное ТО на трендах параметров двигателя (EGT margin, вибрации): решение о снятии принимается по прогнозу состояния, а не по формальной наработке.',
+  'Schiphol перераспределяет слоты в пике при систематических опозданиях перевозчика: слот трактуется как возобновляемый ресурс с KPI punctuality, а не как собственность авиакомпании.',
+  'Emirates включает управление усталостью (FRMS) прямо в rostering: пары экипажей оптимизируются по модели усталости, что сокращает размер резерва и отмены по усталости.',
+  'Alaska Airlines летает RNP с required time of arrival: экипаж держит не скорость, а окно времени снижения — непрерывный профиль экономит топливо и даёт диспетчеру предсказуемость.',
+  'Ryanair стандартизировал оборот 25 минут через минимизацию интерфейсов с инфраструктурой: один тип ВС, минимум согласований, чек-лист на одну страницу.',
+  'ANA применяет remote expert: техник на станции с AR-очками и эксперт MRO в центре видят одно и то же изображение — дефицитная экспертиза распределена по всей сети станций.',
+  'Heathrow планирует зимние операции моделью предзаказа: мощности деайсинга рассчитываются по прогнозу трафика за 72 часа, а выбор «на стоянке или на паде» считается через стоимость задержки.',
+  'Air France–KLM при сбоях использует оптимизатор перестановок экипажей: система предлагает обмены, минимизирующие каскад задержек, а не закрывающие локальную дыру в расписании.',
+  'Zurich синхронизирует сортировку багажа с волнами рейсов: логика сортировки выводится из структуры пересадок банка, а не из времени сдачи багажа пассажиром.',
+  'IAG считает tankering по каждому рейсу: везти ли дополнительное топливо из дешёвого аэропорта против цены и веса — решает модель, а не диспетчер вручную.',
+  'Munich зашил minimum connect time в инфраструктуру: people mover и планировка терминала рассчитаны как часть гарантии пересадки, а не как сервис поверх неё.',
+  'Korean Air продлевает время двигателя «на крыле» через trend monitoring: планирование on-wing работ по трендам вместо жёстких календарных интервалов.',
+  'JetBlue ускорял оборот процессными изменениями — зонированная посадка и предполётные проверки у гейта — без инвестиций в новое оборудование.',
+  'Hamad возит багаж индивидуальными тележками (DCV): сортировка становится высокоскоростной и не зависит от узких мест конвейера.',
+  'Etihad держит экономию топлива через кросс-функциональный fuel council: пилоты, диспетчеры и MRO совместно владеют программой burn reduction, а не получают директивы сверху.',
+  'Atlanta держит пропускную способность дисциплиной movement area: правила пересечения активных зон и тайминги буксировки формализованы до секунд и контролируются централизованно.',
+  'Helsinki строил хаб на тонких потоках: короткая пересадка как продукт позволяет собирать маршруты, которые прямым перелётом не окупаются.',
+  'British Airways при иррегулярке перекладывает пассажиров алгоритмом по всему альянсу: стоимость переразмещения сравнивается со стоимостью задержки в реальном времени.',
+  'Narita управляет комендантским часом как процессом: слот-комплаенс и санкции за ночные вылеты встроены в расписание, а не разбираются постфактум.',
+  'Qantas на сверхдальних маршрутах управляет циркадными ритмами: сценарии освещения салона и питания синхронизированы с часовым поясом назначения ещё до посадки.',
+  'Amsterdam мотивирует наземные бригады через приоритет на стоянку: бригады с лучшим on-time KPI получают лучшие слоты стоянок — геймификация процесса без денежных премий.',
+  'United считает cost of delay по минутам и причинам: приоритеты инвестиций в наземное обслуживание выводятся из этой модели, а не из бюджетного цикла.',
+  'Finnair монетизирует belly-cargo на транзитных плечах: загрузка багажных отсеков планируется совместно с сетевым расписанием, повышая маржу тонких маршрутов.',
+  'Copenhagen назначает стоянки по стоимости оборота: stand allocation оптимизирует суммарные задержки сети, а не удобство конкретных бригад.',
+  'Singapore Airlines кормит сценарии тренажёра данными линии: события FOQA/QAR заменяют часть нормативных часов целевыми сессиями (evidence-based training).'
+];
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -417,13 +481,23 @@ function loadZones(){
   }catch(e){}
   return DEFAULT_ZONES.map(z=>Object.assign({},z));
 }
+function migratePersonalNote(t){
+  if (!t.id) t.id = Date.now() + Math.floor(Math.random()*10000);
+  if (!t.created) t.created = new Date().toISOString();
+  if (t.done === undefined) t.done = false;
+  if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
+  return t;
+}
 let zones = loadZones();
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let personal = (JSON.parse(localStorage.getItem(PERSONAL_KEY) || '[]')).map(migratePersonalNote);
 tasks.forEach(migrateTask);
 let currentAddZone = null, currentEditId = null, currentNoteId = null;
+let editContext = 'board';
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 let pendingQuickLines = [];
-let FACTS = [];
+let FACTS = BUILTIN_FACTS.slice();
+let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
@@ -587,6 +661,10 @@ function saveTasks() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   if (!suppressPush) schedulePush();
 }
+function savePersonal() {
+  localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
+  if (!suppressPush) schedulePush();
+}
 function saveZones() {
   localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
   if (!suppressPush) schedulePush();
@@ -610,6 +688,10 @@ function cloudRead() {
         zones = parsed.zones.map(migrateZone);
         localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
       }
+      if (parsed && Array.isArray(parsed.personal)) {
+        personal = parsed.personal.map(migratePersonalNote);
+        localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
+      }
       return parsed;
     });
 }
@@ -620,7 +702,7 @@ function cloudWrite() {
     return Promise.reject('no-token');
   }
   const payload = () => {
-    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones}, null, 2))};
+    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones, personal: personal}, null, 2))};
     if (cloudSha) b.sha = cloudSha;
     return b;
   };
@@ -757,6 +839,20 @@ function noteHtml(t) {
     '</div>' +
   '</div>';
 }
+function personalNoteHtml(t) {
+  const parts = splitEmoji(t.text);
+  const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
+  return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
+    '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="togglePersonalDone(' + t.id + ')">' +
+    '<div class="note-body">' +
+      '<div class="note-content" ondblclick="editPersonal(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span></div>' +
+    '</div>' +
+    '<div class="note-actions">' +
+      '<button class="note-action" onclick="editPersonal(' + t.id + ')" title="Редактировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
+      '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+    '</div>' +
+  '</div>';
+}
 function render() {
   const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const active = tasks.filter(t => !t.archived);
@@ -782,6 +878,30 @@ function render() {
       '<div class="notes">' + notesHtml + '</div>' +
     '</section>';
   }).join('');
+  renderPersonal();
+}
+function renderPersonal() {
+  const list = document.getElementById('personalNotes');
+  const n = personal.length;
+  document.getElementById('personalCount').textContent = n + (n === 1 ? ' заметка' : (n > 1 && n < 5 ? ' заметки' : ' заметок'));
+  if (!n) {
+    list.innerHTML = '<div class="empty">Пока нет личных заметок — добавьте через поле в шапке</div>';
+    return;
+  }
+  list.innerHTML = personal.slice().reverse().map(personalNoteHtml).join('');
+}
+function switchPage(page) {
+  currentPage = page;
+  localStorage.setItem(PAGE_KEY, page);
+  const isBoard = page === 'board';
+  document.getElementById('boardPage').classList.toggle('page-hidden', !isBoard);
+  document.getElementById('personalPage').classList.toggle('page-hidden', isBoard);
+  document.getElementById('navBoard').classList.toggle('active', isBoard);
+  document.getElementById('navPersonal').classList.toggle('active', !isBoard);
+  document.querySelectorAll('.sb-board-only').forEach(el => el.classList.toggle('page-hidden', !isBoard));
+  document.getElementById('pageTitle').textContent = isBoard ? 'Доска Дарьи' : 'Личное';
+  document.getElementById('pageSubtitle').textContent = isBoard ? 'Авиабит · Портал 2.0 · Прочее' : 'Заметки только для меня';
+  document.getElementById('quickAdd').placeholder = isBoard ? 'Быстрая задача' : 'Личная заметка';
 }
 function toggleDone(id) {
   const t = tasks.find(x => x.id === id);
@@ -790,9 +910,26 @@ function toggleDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   saveTasks(); render();
 }
+function togglePersonalDone(id) {
+  const t = personal.find(x => x.id === id);
+  if (!t) return;
+  t.done = !t.done;
+  t.doneAt = t.done ? new Date().toISOString() : null;
+  savePersonal(); renderPersonal();
+}
 function editTask(id) {
   const t = tasks.find(x => x.id === id);
-  if (t) { currentEditId = id; document.getElementById('editInput').value = t.text; document.getElementById('editModal').classList.add('open'); document.getElementById('editInput').focus(); }
+  if (t) { currentEditId = id; editContext = 'board'; document.getElementById('editTitle').textContent = 'Редактировать задачу'; document.getElementById('editInput').value = t.text; document.getElementById('editModal').classList.add('open'); document.getElementById('editInput').focus(); }
+}
+function editPersonal(id) {
+  const t = personal.find(x => x.id === id);
+  if (t) { currentEditId = id; editContext = 'personal'; document.getElementById('editTitle').textContent = 'Редактировать заметку'; document.getElementById('editInput').value = t.text; document.getElementById('editModal').classList.add('open'); document.getElementById('editInput').focus(); }
+}
+function deletePersonal(id) {
+  askConfirm('Удалить личную заметку навсегда? Это действие необратимо.', () => {
+    personal = personal.filter(x => x.id !== id);
+    savePersonal(); renderPersonal();
+  }, 'Удалить');
 }
 function archiveTask(id) {
   const t = tasks.find(x => x.id === id);
@@ -1032,7 +1169,17 @@ function createParsed(line, zoneKey) {
   clearLeakedSearch(text);
   saveTasks(); render();
 }
+function addPersonalNote(line) {
+  const text = line.trim();
+  if (!text) return;
+  personal.push(migratePersonalNote({id: Date.now() + Math.floor(Math.random()*10000), text: text, created: new Date().toISOString(), done: false, doneAt: null}));
+  savePersonal(); renderPersonal();
+}
 function quickAddMany(lines) {
+  if (currentPage === 'personal') {
+    lines.forEach(l => addPersonalNote(l));
+    return;
+  }
   const other = zoneByKey('other');
   if (other && !other.hidden) {
     lines.forEach(l => createParsed(l, 'other'));
@@ -1162,7 +1309,7 @@ function downloadResultsCsv() {
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
 function backupDownload() {
-  const data = JSON.stringify({tasks: tasks, zones: zones}, null, 2);
+  const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal}, null, 2);
   downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
   notify('Резервная копия сохранена.');
 }
@@ -1176,11 +1323,16 @@ document.getElementById('backupFile').addEventListener('change', e => {
       if (!parsed || !Array.isArray(parsed.tasks)) { notify('Файл не похож на резервную копию доски.'); return; }
       const count = parsed.tasks.length;
       const zonesBackup = Array.isArray(parsed.zones) && parsed.zones.length ? parsed.zones : null;
-      askConfirm('Заменить текущие задачи данными из файла (' + count + ' шт.)?', () => {
+      const personalBackup = Array.isArray(parsed.personal) ? parsed.personal : null;
+      askConfirm('Заменить текущие данные данными из файла (' + count + ' задач)?', () => {
         tasks = parsed.tasks.map(migrateTask);
         if (zonesBackup) {
           zones = zonesBackup.map(migrateZone);
           localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+        }
+        if (personalBackup) {
+          personal = personalBackup.map(migratePersonalNote);
+          localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
         }
         saveTasks(); render();
         notify('Копия загружена.');
@@ -1384,8 +1536,13 @@ document.getElementById('addInput').addEventListener('keydown', e => {
 document.getElementById('cancelEdit').addEventListener('click', () => document.getElementById('editModal').classList.remove('open'));
 document.getElementById('confirmEdit').addEventListener('click', () => {
   const text = document.getElementById('editInput').value.trim();
-  const t = tasks.find(x => x.id === currentEditId);
-  if (text && t) { t.text = text; saveTasks(); render(); document.getElementById('editModal').classList.remove('open'); }
+  if (editContext === 'personal') {
+    const t = personal.find(x => x.id === currentEditId);
+    if (text && t) { t.text = text; savePersonal(); renderPersonal(); document.getElementById('editModal').classList.remove('open'); }
+  } else {
+    const t = tasks.find(x => x.id === currentEditId);
+    if (text && t) { t.text = text; saveTasks(); render(); document.getElementById('editModal').classList.remove('open'); }
+  }
 });
 document.getElementById('editInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('confirmEdit').click();
@@ -1408,6 +1565,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 clearTransientInputs();
+switchPage(currentPage);
 render();
 loadFacts().then(() => renderFact());
 if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по логотипу.');
