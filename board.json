@@ -61,7 +61,7 @@
       "key": "other",
       "label": "Прочее",
       "emoji": "📋",
-      "hidden": false,
+      "hidden": true,
       "tint": 0
     },
     {
