@@ -27,21 +27,6 @@
     --tint-c-4:#6B4FA0; --tint-bg-4:rgba(236,230,245,.45); --tint-bd-4:rgba(211,198,230,.55);
     --tint-c-5:#0E7490; --tint-bg-5:rgba(224,242,245,.45); --tint-bd-5:rgba(181,221,228,.55);
   }
-  body.dark{
-    --bg-top:#1b1e24; --dot:rgba(255,255,255,.06);
-    --card:#242830; --topbar:rgba(27,30,36,.85); --border:rgba(255,255,255,.10); --dash:rgba(255,255,255,.30);
-    --text:#E8EAED; --text-secondary:#B6BDC9; --text-muted:#8A93A3;
-    --black:#C7D3E3; --on-black:#171a20; --accent:#8FB3DA; --accent-ring:rgba(143,179,218,.25);
-    --soft:#2d323c; --soft-hover:#363c48; --scroll:rgba(255,255,255,.2);
-    --input-bg:rgba(255,255,255,.08); --note-btn-bg:rgba(20,24,30,.5);
-    --tint-c-0:#8FB3DA; --tint-bg-0:rgba(91,131,174,.16); --tint-bd-0:rgba(140,170,205,.35);
-    --tint-c-1:#D98A9B; --tint-bg-1:rgba(176,74,94,.16); --tint-bd-1:rgba(217,138,155,.35);
-    --tint-c-2:#CBA84F; --tint-bg-2:rgba(166,124,0,.14); --tint-bd-2:rgba(203,168,79,.35);
-    --tint-c-3:#84B59D; --tint-bg-3:rgba(62,122,94,.16); --tint-bd-3:rgba(132,181,157,.35);
-    --tint-c-4:#A88FD0; --tint-bg-4:rgba(107,79,160,.16); --tint-bd-4:rgba(168,143,208,.35);
-    --tint-c-5:#66AFC4; --tint-bg-5:rgba(14,116,144,.16); --tint-bd-5:rgba(102,175,196,.35);
-  }
-  body.dark .logo{background:rgba(58,95,138,.3)}
   *{box-sizing:border-box;margin:0}
   body{
     min-height:100vh;
@@ -59,7 +44,6 @@
   }
   ::-webkit-scrollbar{width:8px;height:8px}
   ::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
-
   .sidebar{
     position:fixed;left:0;top:0;bottom:0;width:56px;z-index:200;
     background:var(--card);border-right:1px solid var(--border);
@@ -93,11 +77,10 @@
   .sb-pin{margin-top:auto}
   .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190}
   .sb-backdrop.show{display:block}
-
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .sb-toggle{display:none;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);flex:none}
-  .logo{width:40px;height:40px;border-radius:12px;flex:none;background:#E8EDF4;border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:transform .15s}
+  .logo{width:40px;height:40px;border-radius:10px;flex:none;cursor:pointer;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.08);object-fit:cover}
   .logo:hover{transform:scale(1.06)}
   .title-block{min-width:120px}
   h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
@@ -118,8 +101,7 @@
   .mini-stat b{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;color:var(--text)}
   .mini-broom{border:1px solid var(--border);background:var(--card);border-radius:999px;width:30px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .mini-broom:hover{background:var(--soft)}
-
-  .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 64px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+  .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
   @media (max-width:1100px){ .zones{grid-template-columns:repeat(2,1fr)} }
   .zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
   .zone.drop-hover{outline:2px dashed var(--black);outline-offset:4px}
@@ -174,12 +156,18 @@
   .note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none;color:var(--text-secondary);font-weight:700;font-size:15px}
   .note-action:hover{background:var(--card);transform:scale(1.1)}
   .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
-
+  .fact-wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px 48px}
+  .fact-card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 44px 16px 18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+  .fact-title{font-family:'Unbounded',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:.4px;text-transform:uppercase}
+  .fact-text{font-size:14px;line-height:1.55;color:var(--text-secondary)}
+  .fact-close{position:absolute;top:10px;right:10px;width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px}
+  .fact-close:hover{background:var(--soft);color:var(--text)}
   .popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
   .popmenu.open{display:block}
   .pop-item{display:flex;gap:8px;align-items:center;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;color:var(--text);text-align:left;white-space:nowrap}
   .pop-item:hover{background:var(--soft)}
-
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 18px;font-size:14px;color:var(--text);opacity:0;pointer-events:none;transition:all .25s;z-index:1300;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px}
   .modal.open{display:flex}
   .modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;overflow-y:auto}
@@ -224,7 +212,6 @@
   .list-btn.restore:hover{background:rgba(4,120,87,.18)}
   .list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
   .list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
-
   @media (max-width:720px){
     .topbar-inner{padding:12px 16px;gap:10px}
     h1{font-size:17px}
@@ -232,13 +219,13 @@
     .sb-toggle{display:flex}
     .sidebar{width:260px;transform:translateX(-100%);transition:transform .2s}
     .sidebar.open{transform:none}
-    .zones{padding:14px 16px 40px;gap:14px;grid-template-columns:1fr}
+    .zones{padding:14px 16px 24px;gap:14px;grid-template-columns:1fr}
     .zone{border-radius:16px;padding:14px}
+    .fact-wrap{padding:0 16px 40px}
   }
 </style>
 </head>
 <body>
-
 <aside class="sidebar" id="sidebar">
   <div class="sb-search">
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
@@ -250,11 +237,10 @@
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
 </aside>
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
-
 <header class="topbar">
   <div class="topbar-inner">
     <button class="sb-toggle" id="sbToggle" title="Меню">☰</button>
-    <div class="logo" id="logoBtn" title="Облако, токен и резервные копии">✈️</div>
+    <img class="logo" id="logoBtn" src="icon.svg" alt="" title="Облако, токен и резервные копии">
     <div class="title-block">
       <h1>Доска Дарьи</h1>
       <div class="subtitle">Авиабит · Портал 2.0 · Прочее</div>
@@ -273,11 +259,16 @@
     </div>
   </div>
 </header>
-
 <main class="zones" id="zonesWrap"></main>
-
+<div class="fact-wrap" id="factWrap" style="display:none">
+  <div class="fact-card">
+    <button class="fact-close" id="factClose" title="Скрыть до завтра">✕</button>
+    <div class="fact-title">☕ Факт дня</div>
+    <div class="fact-text" id="factText"></div>
+  </div>
+</div>
 <div class="popmenu" id="notePop"></div>
-
+<div class="toast" id="toast"></div>
 <div class="modal" id="addModal">
   <div class="modal-content">
     <h3>Новая задача</h3>
@@ -288,7 +279,6 @@
     </div>
   </div>
 </div>
-
 <div class="modal" id="editModal">
   <div class="modal-content">
     <h3>Редактировать задачу</h3>
@@ -299,7 +289,6 @@
     </div>
   </div>
 </div>
-
 <div class="modal" id="dueModal">
   <div class="modal-content">
     <h3>🔔 Срок задачи</h3>
@@ -311,7 +300,6 @@
     </div>
   </div>
 </div>
-
 <div class="modal" id="broomModal">
   <div class="modal-content">
     <h3>🧹 Уборка выполненных</h3>
@@ -322,7 +310,16 @@
     </div>
   </div>
 </div>
-
+<div class="modal" id="confirmModal">
+  <div class="modal-content">
+    <h3>Подтверждение</h3>
+    <p class="settings-hint" id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="confirmNo">Отмена</button>
+      <button class="modal-btn primary" id="confirmYes">Подтвердить</button>
+    </div>
+  </div>
+</div>
 <div class="modal" id="archiveModal">
   <div class="modal-content">
     <h3>📦 Архив</h3>
@@ -333,7 +330,6 @@
     </div>
   </div>
 </div>
-
 <div class="modal" id="zonesModal">
   <div class="modal-content">
     <h3>🗂️ Разделы</h3>
@@ -348,7 +344,6 @@
     </div>
   </div>
 </div>
-
 <div class="modal" id="resultsModal">
   <div class="modal-content">
     <h3>📊 Итоги недели</h3>
@@ -367,7 +362,6 @@
     </div>
   </div>
 </div>
-
 <div class="modal" id="quickZoneModal">
   <div class="modal-content">
     <h3>Куда поместить заметку?</h3>
@@ -378,7 +372,6 @@
     </div>
   </div>
 </div>
-
 <div class="modal" id="settingsModal">
   <div class="modal-content">
     <h3>☁️ Облако и копии</h3>
@@ -397,17 +390,16 @@
     </div>
   </div>
 </div>
-
 <script>
 const STORAGE_KEY = 'darya_board_tasks';
 const ZONES_KEY = 'darya_board_zones';
 const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
-const THEME_KEY = 'darya_board_theme';
 const PIN_KEY = 'darya_board_sbpinned';
+const FACT_CLOSED_KEY = 'factClosed';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
 const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
-
+const FACTS_URL = 'facts.json';
 const TINT_COUNT = 6;
 const TINT_HEX = ['#3A5F8A', '#B04A5E', '#A67C00', '#3E7A5E', '#6B4FA0', '#0E7490'];
 const DEFAULT_ZONES = [
@@ -417,7 +409,6 @@ const DEFAULT_ZONES = [
 ];
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 const ELLIPSIS = '⋯';
-
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -432,7 +423,7 @@ tasks.forEach(migrateTask);
 let currentAddZone = null, currentEditId = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 let pendingQuickLines = [];
-
+let FACTS = [];
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
@@ -452,7 +443,6 @@ function tintIndex(z){ return (z.tint||0) % TINT_COUNT; }
 function labelFor(key){ const z=zoneByKey(key); return z? z.label : key; }
 function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
 function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
-
 function hexA(hex, a){
   let h = String(hex||'').replace('#','');
   if (h.length === 3) h = h.split('').map(x=>x+x).join('');
@@ -470,8 +460,6 @@ function zoneTagStyle(z){
   const n = tintIndex(z);
   return 'background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')';
 }
-
-// Даты
 function isoOf(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function todayISO(){ return isoOf(new Date()); }
 function parseLocal(s){ const p = s.split('-'); return new Date(Number(p[0]), Number(p[1])-1, Number(p[2])); }
@@ -488,8 +476,6 @@ function dueState(t){
   if (diff === 1) return 'tomorrow';
   return 'later';
 }
-
-// Магическая строка: только даты
 const WEEKDAYS = {'понедельник':1,'вторник':2,'среда':3,'четверг':4,'пятница':5,'суббота':6,'воскресенье':0};
 function parseMagic(raw){
   let text = String(raw||'');
@@ -524,16 +510,30 @@ function parseMagic(raw){
   text = text.replace(/\s{2,}/g,' ').trim();
   return {text: text, due: due};
 }
-
-// Тема: только авто
-let themeMode = localStorage.getItem(THEME_KEY) || 'auto';
-const darkMq = window.matchMedia('(prefers-color-scheme: dark)');
-function applyTheme(){
-  const dark = themeMode === 'dark' || (themeMode === 'auto' && darkMq.matches);
-  document.body.classList.toggle('dark', dark);
+let toastTimer = null;
+function notify(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
-if (darkMq.addEventListener) darkMq.addEventListener('change', () => { if (themeMode === 'auto') applyTheme(); });
-
+let confirmCb = null;
+function askConfirm(text, cb, yesLabel){
+  document.getElementById('confirmText').textContent = text;
+  document.getElementById('confirmYes').textContent = yesLabel || 'Подтвердить';
+  confirmCb = cb;
+  document.getElementById('confirmModal').classList.add('open');
+}
+document.getElementById('confirmYes').addEventListener('click', () => {
+  document.getElementById('confirmModal').classList.remove('open');
+  const cb = confirmCb; confirmCb = null;
+  if (cb) cb();
+});
+document.getElementById('confirmNo').addEventListener('click', () => {
+  document.getElementById('confirmModal').classList.remove('open');
+  confirmCb = null;
+});
 const sidebarEl = document.getElementById('sidebar');
 const backdropEl = document.getElementById('sbBackdrop');
 function togglePin(){
@@ -551,7 +551,6 @@ if (localStorage.getItem(PIN_KEY) === '1') {
   sidebarEl.classList.add('pinned');
   document.body.classList.add('sb-pinned');
 }
-
 const sbSearchIco = document.getElementById('sbSearchIco');
 const sbSearchInput = document.getElementById('searchInput');
 sbSearchIco.addEventListener('click', () => {
@@ -561,7 +560,6 @@ sbSearchIco.addEventListener('click', () => {
 sbSearchInput.addEventListener('blur', () => {
   sidebarEl.classList.remove('search-open');
 });
-
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
   const qa = document.getElementById('quickAdd');
@@ -576,7 +574,6 @@ window.addEventListener('load', clearTransientInputs);
 window.addEventListener('pageshow', clearTransientInputs);
 setTimeout(clearSearchOnly, 300);
 setTimeout(clearSearchOnly, 1200);
-
 function clearLeakedSearch(text) {
   if (!text) return;
   const s = document.getElementById('searchInput');
@@ -586,7 +583,6 @@ function clearLeakedSearch(text) {
     if (s2 && s2.value.trim() === text.trim()) { s2.value = ''; render(); }
   }, 60);
 }
-
 function saveTasks() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   if (!suppressPush) schedulePush();
@@ -599,7 +595,6 @@ function schedulePush() {
   clearTimeout(pushTimer);
   pushTimer = setTimeout(() => { cloudWrite().catch(() => {}); }, 800);
 }
-
 function cloudRead() {
   return fetch(API_URL + '?t=' + Date.now(), {headers: {'Accept': 'application/vnd.github.v3+json'}})
     .then(r => {
@@ -618,7 +613,6 @@ function cloudRead() {
       return parsed;
     });
 }
-
 function cloudWrite() {
   const token = getToken();
   if (!token) {
@@ -644,7 +638,6 @@ function cloudWrite() {
     })
     .then(d => { if (d && d.content) cloudSha = d.content.sha; });
 }
-
 function parseMdTasks(md) {
   const zoneMap = {'авиабит': 'aviabit', 'портал 2.0': 'portal', 'прочее': 'other'};
   const out = [];
@@ -676,7 +669,6 @@ function importFromMd() {
     })
     .catch(() => {});
 }
-
 const DONE_ARCHIVE_DELAY = 3 * 24 * 60 * 60 * 1000;
 function sweepDoneToArchive() {
   const cutoff = Date.now() - DONE_ARCHIVE_DELAY;
@@ -686,7 +678,27 @@ function sweepDoneToArchive() {
   });
   if (changed) saveTasks();
 }
-
+function loadFacts() {
+  return fetch(FACTS_URL + '?t=' + Date.now())
+    .then(r => (r.ok ? r.json() : null))
+    .then(d => { if (d && Array.isArray(d.facts) && d.facts.length) FACTS = d.facts; })
+    .catch(() => {});
+}
+function dayOfYear(){
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  return Math.floor((now - start) / 86400000);
+}
+function renderFact(){
+  if (localStorage.getItem(FACT_CLOSED_KEY) === todayISO()) return;
+  if (!FACTS.length) return;
+  document.getElementById('factText').textContent = FACTS[dayOfYear() % FACTS.length];
+  document.getElementById('factWrap').style.display = 'block';
+}
+document.getElementById('factClose').addEventListener('click', () => {
+  localStorage.setItem(FACT_CLOSED_KEY, todayISO());
+  document.getElementById('factWrap').style.display = 'none';
+});
 function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 function splitEmoji(text) {
   const re = /^\s*(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u;
@@ -699,9 +711,7 @@ function matchesQuery(t, q) {
   if (t.text.toLowerCase().includes(q)) return true;
   return t.subtasks.some(s => s.text.toLowerCase().includes(q));
 }
-
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-
 function noteHtml(t) {
   const parts = splitEmoji(t.text);
   const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
@@ -747,15 +757,12 @@ function noteHtml(t) {
     '</div>' +
   '</div>';
 }
-
 function render() {
   const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const active = tasks.filter(t => !t.archived);
-
   document.getElementById('totalCount').textContent = active.length;
   document.getElementById('progressCount').textContent = active.filter(t => !t.done).length;
   document.getElementById('doneCount').textContent = active.filter(t => t.done).length;
-
   const wrap = document.getElementById('zonesWrap');
   const visible = zones.filter(z => !z.hidden);
   wrap.innerHTML = visible.map(z => {
@@ -776,7 +783,6 @@ function render() {
     '</section>';
   }).join('');
 }
-
 function toggleDone(id) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
@@ -797,7 +803,10 @@ function unarchiveTask(id) {
   if (t) { t.archived = false; saveTasks(); render(); renderArchList(); }
 }
 function permanentDelete(id) {
-  if (confirm('Удалить задачу навсегда?')) { tasks = tasks.filter(x => x.id !== id); saveTasks(); render(); renderArchList(); }
+  askConfirm('Удалить задачу навсегда? Это действие необратимо.', () => {
+    tasks = tasks.filter(x => x.id !== id);
+    saveTasks(); render(); renderArchList();
+  }, 'Удалить');
 }
 function togglePinTask(id) {
   const t = tasks.find(x => x.id === id);
@@ -882,8 +891,6 @@ function delSub(event, tid, sid) {
   const t = tasks.find(x => x.id === tid);
   if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); saveTasks(); render(); }
 }
-
-// Всплывающее меню карточки
 const popEl = document.getElementById('notePop');
 function closeNoteMenu() { popEl.classList.remove('open'); }
 function openNoteMenu(id, ev) {
@@ -918,8 +925,6 @@ document.addEventListener('click', e => {
 });
 window.addEventListener('scroll', () => { if (popEl.classList.contains('open')) closeNoteMenu(); }, true);
 window.addEventListener('resize', closeNoteMenu);
-
-// Срок
 function openDue(id) {
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
@@ -937,11 +942,9 @@ function clearDue() {
   if (t) { t.due = null; saveTasks(); render(); }
   closeDue();
 }
-
-// Метла: окно подтверждения в стиле доски
 document.getElementById('clearDoneBtn').addEventListener('click', () => {
   const n = tasks.filter(t => t.done && !t.archived).length;
-  if (!n) { alert('Нет выполненных задач для отправки в архив.'); return; }
+  if (!n) { notify('Нет выполненных задач для отправки в архив.'); return; }
   document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
   document.getElementById('broomModal').classList.add('open');
 });
@@ -950,8 +953,6 @@ function confirmBroom() {
   tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
   saveTasks(); render(); closeBroom();
 }
-
-// Архив
 function openArchive() {
   document.getElementById('archSearch').value = '';
   renderArchList();
@@ -979,8 +980,6 @@ function renderArchList() {
   }).join('');
 }
 document.getElementById('archSearch').addEventListener('input', renderArchList);
-
-// Разделы (с ручным цветом)
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
   document.getElementById('addInput').value = '';
@@ -1019,15 +1018,13 @@ function openZones() { renderZonesList(); document.getElementById('zonesModal').
 function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
 document.getElementById('addZoneBtn').addEventListener('click', () => {
   const label = document.getElementById('newZoneLabel').value.trim();
-  if (!label) { alert('Введите название раздела.'); return; }
+  if (!label) { notify('Введите название раздела.'); return; }
   const emoji = document.getElementById('newZoneEmoji').value.trim() || '🗂️';
   zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % TINT_COUNT, color: null});
   saveZones(); render(); renderZonesList();
   document.getElementById('newZoneLabel').value = '';
   document.getElementById('newZoneEmoji').value = '';
 });
-
-// Быстрая заметка с датами и вставкой списком
 function createParsed(line, zoneKey) {
   const p = parseMagic(line);
   const text = p.text || line.trim();
@@ -1080,8 +1077,6 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-
-// Итоги недели
 let lastResults = {md: '', rows: []};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1106,11 +1101,9 @@ function renderResults() {
   const toDate = parseLocal(to); toDate.setHours(23, 59, 59, 999);
   const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
   const openTasks = tasks.filter(t => !t.archived && !t.done && new Date(t.created) <= toDate);
-
   document.getElementById('resStats').innerHTML =
     '<span class="results-chip">✅ Выполнено: ' + doneInPeriod.length + '</span>' +
     '<span class="results-chip">⚡ В работе: ' + openTasks.length + '</span>';
-
   let bodyHtml = '';
   zones.forEach(z => {
     const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
@@ -1123,7 +1116,6 @@ function renderResults() {
   });
   if (!bodyHtml) bodyHtml = '<div class="empty">За период данных нет</div>';
   document.getElementById('resBody').innerHTML = bodyHtml;
-
   let md = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
   md += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
   md += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
@@ -1135,7 +1127,6 @@ function renderResults() {
     if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + t.text + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
     if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + t.text + '\n'); md += '\n'; }
   });
-
   const rows = [];
   doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
   openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'В работе', created: t.created.slice(0, 10), done: ''}));
@@ -1158,21 +1149,22 @@ function downloadBlob(content, name, mime) {
   URL.revokeObjectURL(a.href);
 }
 function copyResultsMd() {
-  navigator.clipboard.writeText(lastResults.md).then(() => alert('Отчёт скопирован в буфер обмена!'));
+  navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!'));
 }
 function downloadResultsMd() {
   downloadBlob(lastResults.md, 'itogi-nedeli-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
+  notify('Файл Markdown сохранён.');
 }
 function downloadResultsCsv() {
   downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
+  notify('Файл CSV сохранён.');
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
-
-// Облако и резервные копии — только через клик по самолётику
 function backupDownload() {
   const data = JSON.stringify({tasks: tasks, zones: zones}, null, 2);
   downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
+  notify('Резервная копия сохранена.');
 }
 function backupUploadClick() { document.getElementById('backupFile').click(); }
 document.getElementById('backupFile').addEventListener('change', e => {
@@ -1181,22 +1173,24 @@ document.getElementById('backupFile').addEventListener('change', e => {
   file.text().then(raw => {
     try {
       const parsed = JSON.parse(raw);
-      if (!parsed || !Array.isArray(parsed.tasks)) { alert('Файл не похож на резервную копию доски.'); return; }
-      if (!confirm('Заменить текущие задачи данными из файла (' + parsed.tasks.length + ' шт.)?')) return;
-      tasks = parsed.tasks.map(migrateTask);
-      if (Array.isArray(parsed.zones) && parsed.zones.length) {
-        zones = parsed.zones.map(migrateZone);
-        localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
-      }
-      saveTasks(); render();
+      if (!parsed || !Array.isArray(parsed.tasks)) { notify('Файл не похож на резервную копию доски.'); return; }
+      const count = parsed.tasks.length;
+      const zonesBackup = Array.isArray(parsed.zones) && parsed.zones.length ? parsed.zones : null;
+      askConfirm('Заменить текущие задачи данными из файла (' + count + ' шт.)?', () => {
+        tasks = parsed.tasks.map(migrateTask);
+        if (zonesBackup) {
+          zones = zonesBackup.map(migrateZone);
+          localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+        }
+        saveTasks(); render();
+        notify('Копия загружена.');
+      }, 'Заменить');
     } catch (err) {
-      alert('Не удалось прочитать файл: ' + err.message);
+      notify('Не удалось прочитать файл: ' + err.message);
     }
     e.target.value = '';
   });
 });
-
-// Голос: общий механизм для быстрого поля и подзадач
 const micBtn = document.getElementById('micBtn');
 let recog = null, listening = false, voiceBase = '', voiceTarget = null;
 function startVoice(el) {
@@ -1226,15 +1220,12 @@ if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
   recog.onend = () => { listening = false; voiceTarget = null; updateMicUI(); };
   recog.onerror = e => {
     listening = false; voiceTarget = null; updateMicUI();
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') alert('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта и попробуйте снова.');
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') notify('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта.');
   };
   micBtn.addEventListener('click', () => startVoice(document.getElementById('quickAdd')));
 }
-
-// Drag-and-drop с сортировкой
 let dragState = null;
 let justDragged = false;
-
 function beginDrag() {
   if (!dragState) return;
   const note = dragState.note;
@@ -1341,7 +1332,6 @@ document.addEventListener('contextmenu', e => { if (dragState) e.preventDefault(
 document.addEventListener('click', e => {
   if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; }
 }, true);
-
 function openSettings(hint) {
   if (hint) document.getElementById('settingsHint').textContent = hint;
   else document.getElementById('settingsHint').textContent = 'Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.';
@@ -1375,9 +1365,7 @@ function saveSettings() {
 document.getElementById('logoBtn').addEventListener('click', () => openSettings());
 document.getElementById('cancelSettings').addEventListener('click', closeSettings);
 document.getElementById('saveSettings').addEventListener('click', saveSettings);
-
 document.getElementById('searchInput').addEventListener('input', render);
-
 document.getElementById('cancelAdd').addEventListener('click', () => document.getElementById('addModal').classList.remove('open'));
 document.getElementById('confirmAdd').addEventListener('click', () => {
   const text = document.getElementById('addInput').value.trim();
@@ -1403,28 +1391,26 @@ document.getElementById('editInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('confirmEdit').click();
   if (e.key === 'Escape') document.getElementById('cancelEdit').click();
 });
-
 document.querySelectorAll('.modal').forEach(modal => {
-  if (modal.id === 'quickZoneModal') return;
-  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  modal.addEventListener('click', e => {
+    if (e.target === modal) {
+      modal.classList.remove('open');
+      if (modal.id === 'confirmModal') confirmCb = null;
+    }
+  });
 });
 document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
-
-// PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
-
-// Старт
-applyTheme();
-suppressPush = true;
 clearTransientInputs();
 render();
-if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по самолётику.');
+loadFacts().then(() => renderFact());
+if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по логотипу.');
 cloudRead()
   .then(data => {
     if (data && Array.isArray(data.tasks)) {
