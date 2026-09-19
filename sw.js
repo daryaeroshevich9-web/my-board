@@ -1,5 +1,5 @@
-const CACHE = 'darya-board-v2';
-const SHELL = ['./', './index.html', './manifest.json', './icon.svg', './facts.json'];
+const CACHE = 'darya-board-v3';
+const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -10,7 +10,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
   if (url.origin !== location.origin) return;
-  if (url.pathname.endsWith('/index.html') || url.pathname.endsWith('/') || url.pathname.endsWith('/facts.json')) {
+  if (url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
     e.respondWith(
       fetch(e.request)
         .then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
