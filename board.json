@@ -12,7 +12,8 @@
       "subOpen": false,
       "archived": false,
       "due": null,
-      "repeat": null
+      "repeat": null,
+      "tags": []
     },
     {
       "id": 1750000000001,
@@ -26,7 +27,8 @@
       "subOpen": false,
       "archived": false,
       "due": null,
-      "repeat": null
+      "repeat": null,
+      "tags": []
     },
     {
       "id": 1750000000003,
@@ -40,7 +42,8 @@
       "subOpen": false,
       "archived": false,
       "due": null,
-      "repeat": null
+      "repeat": null,
+      "tags": []
     },
     {
       "id": 1789753251002,
@@ -54,7 +57,8 @@
       "subOpen": false,
       "archived": false,
       "due": null,
-      "repeat": null
+      "repeat": null,
+      "tags": []
     },
     {
       "id": 1789756659211,
@@ -68,7 +72,8 @@
       "subOpen": false,
       "archived": false,
       "due": null,
-      "repeat": null
+      "repeat": null,
+      "tags": []
     },
     {
       "id": 1789809090856,
@@ -82,7 +87,8 @@
       "due": null,
       "repeat": null,
       "subtasks": [],
-      "subOpen": false
+      "subOpen": false,
+      "tags": []
     }
   ],
   "zones": [
@@ -91,21 +97,24 @@
       "label": "Прочее",
       "emoji": "📋",
       "hidden": false,
-      "tint": 0
+      "tint": 0,
+      "color": "#398958"
     },
     {
       "key": "portal",
       "label": "Портал 2.0",
       "emoji": "🚪",
       "hidden": false,
-      "tint": 1
+      "tint": 1,
+      "color": null
     },
     {
       "key": "aviabit",
       "label": "Авиабит",
       "emoji": "🛩️",
       "hidden": false,
-      "tint": 2
+      "tint": 2,
+      "color": null
     }
   ]
 }
