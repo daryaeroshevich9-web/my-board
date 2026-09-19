@@ -37,9 +37,9 @@
       "id": 1789753251002,
       "zone": "aviabit",
       "text": "Косте согласовать обновление",
-      "done": false,
+      "done": true,
       "created": "2026-09-18T17:40:51.002Z",
-      "doneAt": null,
+      "doneAt": "2026-09-19T08:18:07.819Z",
       "deleted": false,
       "subtasks": [],
       "subOpen": false
