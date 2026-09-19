@@ -69,7 +69,6 @@
     background:transparent;cursor:pointer;color:var(--text-secondary);font:inherit;font-size:13px;white-space:nowrap;text-align:left;
   }
   .sb-item:hover{background:var(--soft)}
-  .sb-item.sb-filter-active{background:var(--soft);color:var(--text)}
   .sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
   .sb-label{opacity:0;transition:opacity .15s}
   .sidebar:hover .sb-label,.sidebar.pinned .sb-label{opacity:1}
@@ -107,7 +106,8 @@
   .mini-broom{border:1px solid var(--border);background:var(--card);border-radius:999px;width:30px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .mini-broom:hover{background:var(--soft)}
 
-  .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start}
+  .zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 64px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+  @media (max-width:1100px){ .zones{grid-template-columns:repeat(2,1fr)} }
   .zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
   .zone.drop-hover{outline:2px dashed var(--black);outline-offset:4px}
   .zone-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -119,7 +119,7 @@
   .zone-hide-btn{width:24px;height:24px;border:none;border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;transition:all .15s}
   .zone-hide-btn:hover{background:var(--soft);color:var(--text-secondary)}
   .zone-hide-btn svg{width:14px;height:14px}
-  .notes{display:flex;flex-direction:column;gap:10px;min-height:40px}
+  .notes{display:flex;flex-direction:column;gap:10px;min-height:40px;max-height:322px;overflow-y:auto;padding-right:2px}
   .note{position:relative;border-radius:12px;padding:12px 14px 12px 44px;font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .18s, box-shadow .18s, opacity .18s;display:flex;align-items:flex-start;cursor:grab;touch-action:pan-y}
   .zone .note{background:var(--z-bg);border-color:var(--z-bd)}
   .note:active{cursor:grabbing}
@@ -138,7 +138,6 @@
   .due-o{background:rgba(240,150,50,.20);border-color:rgba(210,120,30,.5);color:#b45309}
   .due-r{background:rgba(220,60,50,.16);border-color:rgba(200,50,40,.5);color:#b93c32}
   .due-done{background:var(--soft);border-color:var(--border);color:var(--text-muted)}
-  .tag-chip{display:inline-flex;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid var(--border);background:var(--soft);color:var(--text-secondary)}
   .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
   .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
   .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
@@ -177,11 +176,11 @@
   .modal-btn.primary:hover{filter:brightness(.88)}
   .modal-btn.secondary{background:var(--soft);color:var(--text)}
   .modal-btn.secondary:hover{background:var(--soft-hover)}
-  .modal-btn.mini{padding:6px 10px;font-size:13px}
   .move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
   .move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--text)}
   .move-btn:hover{background:var(--soft)}
   .settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
+  .settings-sep{border:none;border-top:1px solid var(--border);margin:16px 0}
   .zone-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
   .zone-row-emoji{font-size:18px;flex:none}
   .zone-row-label{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px}
@@ -229,13 +228,10 @@
   <div class="sb-search">
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
-  <button class="sb-item" id="tagFilterChip" onclick="clearTagFilter()" style="display:none"><span class="sb-ico">🏷️</span><span class="sb-label" id="tagFilterLabel"></span></button>
   <button class="sb-item" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
   <button class="sb-item" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
-  <button class="sb-item" onclick="openTags()"><span class="sb-ico">🏷️</span><span class="sb-label">Теги</span></button>
   <button class="sb-item" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
-  <button class="sb-item" onclick="openBackup()"><span class="sb-ico">💾</span><span class="sb-label">Резервные копии</span></button>
-  <button class="sb-item" onclick="openSettings()"><span class="sb-ico">☁️</span><span class="sb-label">Облако и токен</span></button>
+  <button class="sb-item" onclick="openSettings()"><span class="sb-ico">☁️</span><span class="sb-label">Облако и копии</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
 </aside>
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
@@ -270,7 +266,7 @@
 <div class="modal" id="addModal">
   <div class="modal-content">
     <h3>Новая задача</h3>
-    <input type="text" id="addInput" name="darya_add" placeholder="Описание задачи... (#теги и даты распознаются)" autocomplete="off">
+    <input type="text" id="addInput" name="darya_add" placeholder="Описание задачи... (даты распознаются)" autocomplete="off">
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
@@ -297,17 +293,6 @@
       <button class="modal-btn secondary" onclick="clearDue()">Убрать дату</button>
       <button class="modal-btn secondary" onclick="closeDue()">Отмена</button>
       <button class="modal-btn primary" onclick="saveDue()">Сохранить</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="tagsModal">
-  <div class="modal-content">
-    <h3>🏷️ Теги</h3>
-    <p class="settings-hint">Клик по 🔍 — фильтр доски по тегу. ✏️ — переименовать тег во всех задачах. × — удалить тег отовсюду.</p>
-    <div id="tagsList"></div>
-    <div class="modal-actions">
-      <button class="modal-btn primary" onclick="closeTags()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -357,21 +342,6 @@
   </div>
 </div>
 
-<div class="modal" id="backupModal">
-  <div class="modal-content">
-    <h3>💾 Резервные копии</h3>
-    <p class="settings-hint">Скачайте копию всех задач и разделов в файл, или загрузите сохранённую копию на это устройство.</p>
-    <div class="move-list">
-      <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
-      <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
-    </div>
-    <input type="file" id="backupFile" accept=".json,application/json" style="display:none">
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeBackup()">Закрыть</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal" id="quickZoneModal">
   <div class="modal-content">
     <h3>Куда поместить заметку?</h3>
@@ -385,12 +355,19 @@
 
 <div class="modal" id="settingsModal">
   <div class="modal-content">
-    <h3>☁️ Подключение к облаку</h3>
-    <p class="settings-hint" id="settingsHint">Это окно появляется один раз на каждом устройстве. Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
+    <h3>☁️ Облако и копии</h3>
+    <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <div id="tokenInputWrap"></div>
+    <hr class="settings-sep">
+    <p class="settings-hint">Резервная копия — все задачи и разделы одним файлом.</p>
+    <div class="move-list">
+      <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
+      <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
+    </div>
+    <input type="file" id="backupFile" accept=".json,application/json" style="display:none">
     <div class="modal-actions">
-      <button class="modal-btn secondary" id="cancelSettings">Позже</button>
-      <button class="modal-btn primary" id="saveSettings">Сохранить</button>
+      <button class="modal-btn secondary" id="cancelSettings">Закрыть</button>
+      <button class="modal-btn primary" id="saveSettings">Сохранить токен</button>
     </div>
   </div>
 </div>
@@ -429,7 +406,6 @@ tasks.forEach(migrateTask);
 let currentAddZone = null, currentEditId = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 let pendingQuickLines = [];
-let activeTagFilter = null;
 
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
@@ -486,12 +462,10 @@ function dueState(t){
   return 'later';
 }
 
-// Магическая строка: #теги и даты
+// Магическая строка: только даты
 const WEEKDAYS = {'понедельник':1,'вторник':2,'среда':3,'четверг':4,'пятница':5,'суббота':6,'воскресенье':0};
 function parseMagic(raw){
   let text = String(raw||'');
-  const tags = [];
-  text = text.replace(/#([\p{L}\p{N}_\-]+)/gu, (m, tag) => { tags.push(tag.toLowerCase()); return ' '; });
   let due = null;
   const today = parseLocal(todayISO());
   if (/\bпослезавтра\b/i.test(text)) { due = isoOf(addDays(today,2)); text = text.replace(/послезавтра/ig,' '); }
@@ -521,7 +495,7 @@ function parseMagic(raw){
     }
   }
   text = text.replace(/\s{2,}/g,' ').trim();
-  return {text: text, tags: [...new Set(tags)], due: due};
+  return {text: text, due: due};
 }
 
 // Тема: только авто
@@ -549,67 +523,6 @@ document.getElementById('sbToggle').addEventListener('click', () => {
 if (localStorage.getItem(PIN_KEY) === '1') {
   sidebarEl.classList.add('pinned');
   document.body.classList.add('sb-pinned');
-}
-
-// Фильтр по тегу
-function updateTagFilterChip(){
-  const chip = document.getElementById('tagFilterChip');
-  if (activeTagFilter) {
-    document.getElementById('tagFilterLabel').textContent = '#' + activeTagFilter + ' ✖';
-    chip.style.display = 'flex';
-    chip.classList.add('sb-filter-active');
-  } else {
-    chip.style.display = 'none';
-    chip.classList.remove('sb-filter-active');
-  }
-}
-function clearTagFilter(){ activeTagFilter = null; updateTagFilterChip(); render(); }
-function filterByTag(tag){
-  activeTagFilter = (activeTagFilter === tag) ? null : tag;
-  updateTagFilterChip();
-  render();
-  closeTags();
-}
-function allTags(){
-  const map = {};
-  tasks.forEach(t => (t.tags||[]).forEach(tg => { map[tg] = (map[tg]||0) + 1; }));
-  return map;
-}
-function openTags(){
-  renderTagsList();
-  document.getElementById('tagsModal').classList.add('open');
-  closeSbMobile();
-}
-function closeTags(){ document.getElementById('tagsModal').classList.remove('open'); }
-function renderTagsList(){
-  const list = document.getElementById('tagsList');
-  const map = allTags();
-  const names = Object.keys(map).sort((a,b)=>a.localeCompare(b,'ru'));
-  if (!names.length) { list.innerHTML = '<div class="empty">Тегов пока нет — добавьте через #тег в быстрой задаче</div>'; return; }
-  list.innerHTML = names.map(tg =>
-    '<div class="zone-row">' +
-      '<span class="zone-row-label">#' + escapeHtml(tg) + '</span>' +
-      '<span class="count">' + map[tg] + '</span>' +
-      '<button class="modal-btn secondary mini" onclick="filterByTag(\'' + escapeHtml(tg).replace(/'/g,"\\'") + '\')" title="Фильтр доски">🔍</button>' +
-      '<button class="modal-btn secondary mini" onclick="renameTag(\'' + escapeHtml(tg).replace(/'/g,"\\'") + '\')" title="Переименовать">✏️</button>' +
-      '<button class="modal-btn secondary mini" onclick="deleteTag(\'' + escapeHtml(tg).replace(/'/g,"\\'") + '\')" title="Удалить тег">×</button>' +
-    '</div>'
-  ).join('');
-}
-function renameTag(old){
-  const nw = prompt('Новое имя тега #' + old + ':', old);
-  if (!nw) return;
-  const clean = nw.trim().replace(/^#/,'').toLowerCase();
-  if (!clean || clean === old) return;
-  tasks.forEach(t => { t.tags = (t.tags||[]).map(x => x === old ? clean : x); t.tags = [...new Set(t.tags)]; });
-  if (activeTagFilter === old) activeTagFilter = clean;
-  saveTasks(); render(); renderTagsList(); updateTagFilterChip();
-}
-function deleteTag(tag){
-  if (!confirm('Удалить тег #' + tag + ' из всех задач?')) return;
-  tasks.forEach(t => { t.tags = (t.tags||[]).filter(x => x !== tag); });
-  if (activeTagFilter === tag) { activeTagFilter = null; updateTagFilterChip(); }
-  saveTasks(); render(); renderTagsList();
 }
 
 function clearTransientInputs() {
@@ -749,10 +662,6 @@ function matchesQuery(t, q) {
   if (t.text.toLowerCase().includes(q)) return true;
   return t.subtasks.some(s => s.text.toLowerCase().includes(q));
 }
-function matchesTag(t){
-  if (!activeTagFilter) return true;
-  return (t.tags||[]).includes(activeTagFilter);
-}
 
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -773,8 +682,7 @@ function noteHtml(t) {
     else { cls += 'due-y'; content = '🔔 ' + fmtDate(t.due); }
     dueChip = '<span class="' + cls + '">' + content + '</span>';
   }
-  const tagChips = (t.tags||[]).map(tg => '<span class="tag-chip">#' + escapeHtml(tg) + '</span>').join('');
-  const metaRow = (dueChip || tagChips) ? '<div class="due-row">' + dueChip + tagChips + '</div>' : '';
+  const metaRow = dueChip ? '<div class="due-row">' + dueChip + '</div>' : '';
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
     const subMic = SpeechRec ? '<button class="sub-mic" onclick="startSubVoice(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
@@ -814,7 +722,7 @@ function render() {
   const visible = zones.filter(z => !z.hidden);
   wrap.innerHTML = visible.map(z => {
     const zoneActive = active.filter(x => x.zone === z.key);
-    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q) && matchesTag(x));
+    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q));
     let notesHtml;
     if (zoneTasks.length === 0) notesHtml = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
     else notesHtml = zoneTasks.map(noteHtml).join('');
@@ -1061,11 +969,11 @@ document.getElementById('addZoneBtn').addEventListener('click', () => {
   document.getElementById('newZoneEmoji').value = '';
 });
 
-// Быстрая заметка с магической строкой и вставкой списком
+// Быстрая заметка с датами и вставкой списком
 function createParsed(line, zoneKey) {
   const p = parseMagic(line);
   const text = p.text || line.trim();
-  tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: p.tags, subtasks: [], subOpen: false}));
+  tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
   clearLeakedSearch(text);
   saveTasks(); render();
 }
@@ -1203,9 +1111,7 @@ function downloadResultsCsv() {
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
 
-// Резервные копии
-function openBackup() { document.getElementById('backupModal').classList.add('open'); closeSbMobile(); }
-function closeBackup() { document.getElementById('backupModal').classList.remove('open'); }
+// Облако и резервные копии (единое окно)
 function backupDownload() {
   const data = JSON.stringify({tasks: tasks, zones: zones}, null, 2);
   downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
@@ -1225,7 +1131,6 @@ document.getElementById('backupFile').addEventListener('change', e => {
         localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
       }
       saveTasks(); render();
-      closeBackup();
     } catch (err) {
       alert('Не удалось прочитать файл: ' + err.message);
     }
@@ -1390,6 +1295,7 @@ document.addEventListener('click', e => {
 
 function openSettings(hint) {
   if (hint) document.getElementById('settingsHint').textContent = hint;
+  else document.getElementById('settingsHint').textContent = 'Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.';
   const wrap = document.getElementById('tokenInputWrap');
   wrap.innerHTML = '';
   const inp = document.createElement('input');
@@ -1428,7 +1334,7 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   const text = document.getElementById('addInput').value.trim();
   if (text) {
     const p = parseMagic(text);
-    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: p.text || text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: p.tags, subtasks: [], subOpen: false}));
+    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: p.text || text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
     clearLeakedSearch(text);
     saveTasks(); render();
     document.getElementById('addModal').classList.remove('open');
@@ -1461,7 +1367,6 @@ document.getElementById('quickZoneModal').addEventListener('click', e => {
 applyTheme();
 suppressPush = true;
 clearTransientInputs();
-updateTagFilterChip();
 render();
 if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже окно не появится, а заменить токен можно двойным кликом по логотипу.');
 cloudRead()
