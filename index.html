@@ -64,6 +64,7 @@
   }
   .sidebar:hover{width:230px}
   .sidebar.pinned{width:230px}
+  .sidebar.search-open{width:230px}
   .sb-item{
     display:flex;align-items:center;gap:10px;padding:9px 10px;border:none;border-radius:8px;
     background:transparent;cursor:pointer;color:var(--text-secondary);font:inherit;font-size:13px;white-space:nowrap;text-align:left;
@@ -71,13 +72,20 @@
   .sb-item:hover{background:var(--soft)}
   .sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
   .sb-label{opacity:0;transition:opacity .15s}
-  .sidebar:hover .sb-label,.sidebar.pinned .sb-label{opacity:1}
-  .sb-search{padding:2px 4px 8px}
+  .sidebar:hover .sb-label,.sidebar.pinned .sb-label,.sidebar.search-open .sb-label{opacity:1}
+  .sb-search{padding:2px 4px 8px;display:flex}
   .sb-search input{
     width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
     background:var(--input-bg);color:var(--text);font:inherit;font-size:13px;
   }
   .sb-search input:focus{outline:none;border-color:var(--accent)}
+  .sb-search-ico{
+    display:none;width:40px;height:40px;flex:none;border:1px solid var(--border);border-radius:10px;
+    background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);
+  }
+  .sb-search-ico:hover{background:var(--card)}
+  .sidebar:not(:hover):not(.pinned):not(.search-open):not(.open) .sb-search input{display:none}
+  .sidebar:not(:hover):not(.pinned):not(.search-open):not(.open) .sb-search-ico{display:flex}
   .sb-pin{margin-top:auto}
   .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190}
   .sb-backdrop.show{display:block}
@@ -226,6 +234,7 @@
 
 <aside class="sidebar" id="sidebar">
   <div class="sb-search">
+    <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
   <button class="sb-item" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
@@ -359,7 +368,7 @@
     <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <div id="tokenInputWrap"></div>
     <hr class="settings-sep">
-    <p class="settings-hint">Резервная копия — все задачи и разделы одним файлом.</p>
+    <p class="settings-hint">Резервная копия — полный снимок доски (задачи, подзадачи, сроки, разделы, цвета). Отчёт из «Итогов» для этого не подходит: это документ, а не снимок данных.</p>
     <div class="move-list">
       <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
       <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
@@ -524,6 +533,17 @@ if (localStorage.getItem(PIN_KEY) === '1') {
   sidebarEl.classList.add('pinned');
   document.body.classList.add('sb-pinned');
 }
+
+// Поиск в свёрнутом меню: иконка вместо обрезанного поля
+const sbSearchIco = document.getElementById('sbSearchIco');
+const sbSearchInput = document.getElementById('searchInput');
+sbSearchIco.addEventListener('click', () => {
+  sidebarEl.classList.add('search-open');
+  sbSearchInput.focus();
+});
+sbSearchInput.addEventListener('blur', () => {
+  sidebarEl.classList.remove('search-open');
+});
 
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
