@@ -8,8 +8,14 @@
       "created": "2026-09-18T00:00:00.000Z",
       "doneAt": null,
       "deleted": false,
-      "subtasks": [],
-      "subOpen": false,
+      "subtasks": [
+        {
+          "id": 1789903759821,
+          "text": "Вмамвам",
+          "done": false
+        }
+      ],
+      "subOpen": true,
       "archived": false,
       "due": null,
       "repeat": null,
