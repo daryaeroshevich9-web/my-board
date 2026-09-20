@@ -1,5 +1,15 @@
-const CACHE = 'darya-board-v5';
-const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.json', './icon.svg'];
+const CACHE = 'darya-board-v6';
+const SHELL = [
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './manifest.json',
+  './icon.svg',
+  './focusflight.js',
+  './airports.json',
+  './sounds/cabin.mp3'
+];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
