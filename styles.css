@@ -144,14 +144,15 @@ textarea.sub-edit:focus{outline:none;border-color:var(--accent)}
 .fmt-btn.i{font-style:italic}
 .fmt-btn.save{color:#047857}
 .fmt-btn.cancel{color:#b93c32}
+.sub-del{border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1}
+.sub-del:hover{background:rgba(185,60,50,.1);color:#b93c32}
 .sub-edit-btn{border:none;background:transparent;color:var(--text-muted);cursor:pointer;padding:2px 4px;border-radius:4px;flex:none}
 .sub-edit-btn:hover{background:var(--soft);color:var(--text)}
 .sub-edit-btn svg{width:12px;height:12px}
-.sub-del{border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1}
-.sub-del:hover{background:rgba(185,60,50,.1);color:#b93c32}
-.sub-add-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-textarea.sub-add{flex:1;min-width:120px;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);resize:vertical;min-height:32px;max-height:196px;line-height:1.4}
+.sub-add-row{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:stretch}
+textarea.sub-add{width:100%;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);resize:vertical;min-height:32px;max-height:196px;line-height:1.4}
 textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--card)}
+.sub-add-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .sub-mic{flex:none;width:34px;border:1px dashed var(--dash);border-radius:8px;background:transparent;cursor:pointer;font-size:14px}
 .note-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;flex:none;margin-left:8px}
 .note:hover .note-actions{opacity:1}
