@@ -144,14 +144,29 @@
       "text": "Взломали assasin credd shadows",
       "created": "2026-09-19T11:33:45.013Z",
       "done": false,
-      "doneAt": null
+      "doneAt": null,
+      "subtasks": [],
+      "subOpen": false
     },
     {
       "id": 1789888010718,
       "text": "отели на следующий отпуск",
       "created": "2026-09-20T07:06:41.852Z",
       "done": false,
-      "doneAt": null
+      "doneAt": null,
+      "subtasks": [
+        {
+          "id": 1789890189796,
+          "text": "мальдивы",
+          "done": false
+        },
+        {
+          "id": 1789890189805,
+          "text": "мальдивы",
+          "done": false
+        }
+      ],
+      "subOpen": false
     }
   ]
 }
