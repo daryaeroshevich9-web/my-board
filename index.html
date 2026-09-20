@@ -12,18 +12,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="https://unpkg.com/leaflet-arc@1.0.2/bin/leaflet-arc.min.js"></script>
 </head>
 <body>
 <aside class="sidebar" id="sidebar">
   <button class="sb-item" id="navBoard" onclick="switchPage('board')"><span class="sb-ico">🏠</span><span class="sb-label">Доска</span></button>
   <button class="sb-item" id="navPersonal" onclick="switchPage('personal')"><span class="sb-ico">📝</span><span class="sb-label">Личное</span></button>
-  <button class="sb-item" onclick="switchPage('flight')">✈️ <span>Focus Flight</span></button>
   <div class="sb-sep"></div>
   <div class="sb-search">
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
@@ -237,48 +230,5 @@
   </div>
 </div>
 <script src="app.js"></script>
- <div id="flightPage" class="page-hidden">
-  <div id="map"></div>
-  <div class="hud">
-    <div class="route"><strong id="fromCode">—</strong> → <strong id="toCode">—</strong></div>
-    <div class="timer" id="flightTimer">00:00</div>
-    <div class="progress-bar"><div id="flightProgressFill"></div></div>
-    <button id="abortFlightBtn">Прервать</button>
-  </div>
-  <div id="flightSetup" class="flight-panel">
-    <div class="flight-mode-switch">
-      <button class="flight-mode-btn active" data-mode="auto">Авто</button>
-      <button class="flight-mode-btn" data-mode="manual">Вручную</button>
-    </div>
-    <div id="autoControls" class="flight-controls-block">
-      <label>Длительность полёта</label>
-      <input type="range" id="flightDuration" min="0" max="1000" step="1" value="500">
-      <div class="duration-display"><span id="flightDurationLabel">1 ч 30 мин</span></div>
-      <button id="startFlightBtn">Начать полёт</button>
-    </div>
-    <div id="manualControls" class="flight-controls-block" style="display:none">
-      <p class="hint">Кликните по серому аэропорту на карте, чтобы выбрать пункт назначения.</p>
-    </div>
-  </div>
-  <div id="manualConfirm" class="flight-panel" style="display:none">
-    <h2>Подтвердите полёт</h2>
-    <div class="manual-route" id="manualRoute">—</div>
-    <div class="manual-city" id="manualCity">—</div>
-    <div class="manual-meta"><span id="manualDistance">—</span> · <span id="manualDuration">—</span></div>
-    <div class="manual-buttons">
-      <button id="confirmManualBtn">Лететь</button>
-      <button id="cancelManualBtn" class="btn-secondary">Отмена</button>
-    </div>
-  </div>
-  <div id="flightSidePanel" class="flight-side-panel">
-    <div class="fsp-header">Статистика</div>
-    <div id="flightStats" class="flight-stats"></div>
-    <div class="fsp-header">История полётов</div>
-    <div id="flightHistoryList" class="flight-history"></div>
-    <button id="resetProgressBtn" class="btn-reset" onclick="FocusFlight.resetProgress()">Сбросить прогресс</button>
-  </div>
-</div>
-<audio id="cabinSound" src="sounds/cabin.mp3" loop></audio>
-<script src="focusflight.js"></script> 
 </body>
 </html>
