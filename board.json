@@ -8,13 +8,7 @@
       "created": "2026-09-18T00:00:00.000Z",
       "doneAt": null,
       "deleted": false,
-      "subtasks": [
-        {
-          "id": 1789890267787,
-          "text": "оывжао",
-          "done": false
-        }
-      ],
+      "subtasks": [],
       "subOpen": false,
       "archived": false,
       "due": null,
