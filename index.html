@@ -150,7 +150,7 @@
   .subtask .sub-text ul,.subtask .sub-text ol{margin:2px 0 2px 16px;padding:0}
   .subtask.done .sub-text{text-decoration:line-through;opacity:.6}
   .sub-edit-wrap{display:flex;flex-direction:column;gap:4px;flex:1}
-  textarea.sub-edit{width:100%;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font:inherit;font-size:13px;color:var(--text);background:var(--card);resize:vertical;min-height:30px;max-height:160px;line-height:1.4}
+  textarea.sub-edit{width:100%;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font:inherit;font-size:13px;color:var(--text);background:var(--card);resize:vertical;min-height:30px;max-height:192px;line-height:1.4}
   textarea.sub-edit:focus{outline:none;border-color:var(--accent)}
   .fmt-bar{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
   .fmt-btn{min-width:24px;height:22px;padding:0 6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-secondary);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
@@ -158,10 +158,13 @@
   .fmt-btn.i{font-style:italic}
   .fmt-btn.save{color:#047857}
   .fmt-btn.cancel{color:#b93c32}
+  .sub-edit-btn{border:none;background:transparent;color:var(--text-muted);cursor:pointer;padding:2px 4px;border-radius:4px;flex:none}
+  .sub-edit-btn:hover{background:var(--soft);color:var(--text)}
+  .sub-edit-btn svg{width:12px;height:12px}
   .sub-del{border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1}
   .sub-del:hover{background:rgba(185,60,50,.1);color:#b93c32}
   .sub-add-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-  textarea.sub-add{flex:1;min-width:120px;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);resize:vertical;min-height:32px;max-height:160px;line-height:1.4}
+  textarea.sub-add{flex:1;min-width:120px;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);resize:vertical;min-height:32px;max-height:196px;line-height:1.4}
   textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--card)}
   .sub-mic{flex:none;width:34px;border:1px dashed var(--dash);border-radius:8px;background:transparent;cursor:pointer;font-size:14px}
   .note-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;flex:none;margin-left:8px}
@@ -218,12 +221,14 @@
   .pop-item:hover{background:var(--soft)}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 18px;font-size:14px;color:var(--text);opacity:0;pointer-events:none;transition:all .25s;z-index:1300;max-width:90vw}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.success{background:#E2F0E6;border-color:rgba(4,120,87,.35);color:#047857}
+  body.dark .toast.success{background:#1d3a2d;border-color:rgba(158,212,182,.35);color:#9ED4B6}
   .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px}
   .modal.open{display:flex}
   .modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;overflow-y:auto}
   .modal h3{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600;margin-bottom:16px}
   .modal input[type="text"],.modal input[type="password"],.modal input[type="date"]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:16px;background:var(--input-bg);color:var(--text)}
-  .modal textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:8px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:84px;max-height:300px;line-height:1.5}
+  .modal textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:8px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:84px;max-height:251px;line-height:1.5}
   .modal textarea:focus{outline:none;border-color:var(--accent)}
   .fmt-toolbar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
   .fmt-toolbar .fmt-btn{height:26px;font-size:12px}
@@ -359,7 +364,7 @@
       <button class="fmt-btn i" onclick="fmtAdd('i')" title="Курсив">К</button>
       <button class="fmt-btn" onclick="fmtAdd('l')" title="Список">•</button>
     </div>
-    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — добавить. Разметка: **жирный**, *курсив*, «- » список.</div>
+    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — добавить. Разметка: **жирный**, *курсив*, «- » список.</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
@@ -375,7 +380,7 @@
       <button class="fmt-btn i" onclick="fmtEdit('i')" title="Курсив">К</button>
       <button class="fmt-btn" onclick="fmtEdit('l')" title="Список">•</button>
     </div>
-    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список.</div>
+    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список.</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelEdit">Отмена</button>
       <button class="modal-btn primary" id="confirmEdit">Сохранить</button>
@@ -391,7 +396,7 @@
       <button class="fmt-btn i" onclick="fmtDay('i')" title="Курсив">К</button>
       <button class="fmt-btn" onclick="fmtDay('l')" title="Список">•</button>
     </div>
-    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список. Заметка видна только в «Личном».</div>
+    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список. Заметка видна только в «Личном».</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="dayDelete">Удалить</button>
       <button class="modal-btn secondary" id="dayCancel">Отмена</button>
@@ -676,14 +681,65 @@ function renderRich(raw){
   closeList();
   return html;
 }
+// Enter внутри списка: продолжить пункт; Enter на пустом пункте — выйти из списка
+function listKeydown(e){
+  if (e.key !== 'Enter' || e.ctrlKey || e.metaKey) return false;
+  const ta = e.target;
+  if (!ta || ta.tagName !== 'TEXTAREA') return false;
+  const pos = ta.selectionStart;
+  if (pos !== ta.selectionEnd) return false;
+  const before = ta.value.slice(0, pos);
+  const lineStart = before.lastIndexOf('\n') + 1;
+  const line = before.slice(lineStart);
+  const m = line.match(/^(\s*)([-•*]|\d+[.)])(\s+)(.*)$/);
+  if (!m) return false;
+  e.preventDefault();
+  if (m[4].trim() === '') {
+    ta.value = ta.value.slice(0, lineStart) + ta.value.slice(pos);
+    ta.selectionStart = ta.selectionEnd = lineStart;
+  } else {
+    let marker;
+    const num = m[2].match(/^(\d+)([.)])$/);
+    if (num) marker = (parseInt(num[1], 10) + 1) + num[2] + m[3];
+    else marker = m[2] + m[3];
+    const ins = '\n' + m[1] + marker;
+    ta.value = before + ins + ta.value.slice(pos);
+    ta.selectionStart = ta.selectionEnd = pos + ins.length;
+  }
+  return true;
+}
 function fmtApply(ta, type){
   if (!ta) return;
   const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
-  const sel = v.slice(s, e) || 'текст';
-  let ins;
-  if (type === 'b') ins = '**' + sel + '**';
-  else if (type === 'i') ins = '*' + sel + '*';
-  else ins = sel.split('\n').map(l => '- ' + l.replace(/^\s*[-•]\s+/, '')).join('\n');
+  if (type === 'b' || type === 'i') {
+    const sel = v.slice(s, e) || 'текст';
+    const ins = type === 'b' ? '**' + sel + '**' : '*' + sel + '*';
+    ta.value = v.slice(0, s) + ins + v.slice(e);
+    ta.focus();
+    ta.selectionStart = s;
+    ta.selectionEnd = s + ins.length;
+    return;
+  }
+  // список
+  if (s === e) {
+    const before = v.slice(0, s);
+    const lineStart = before.lastIndexOf('\n') + 1;
+    const lineEnd = v.indexOf('\n', s);
+    const lineEndPos = lineEnd === -1 ? v.length : lineEnd;
+    const line = v.slice(lineStart, lineEndPos);
+    const has = line.match(/^(\s*)[-•*]\s+/);
+    if (has) {
+      ta.value = v.slice(0, lineStart) + line.slice(has[0].length) + v.slice(lineEndPos);
+      ta.selectionStart = ta.selectionEnd = s - has[0].length;
+    } else {
+      ta.value = v.slice(0, lineStart) + '- ' + line + v.slice(lineEndPos);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    }
+    ta.focus();
+    return;
+  }
+  const sel = v.slice(s, e);
+  const ins = sel.split('\n').map(l => '- ' + l.replace(/^\s*[-•]\s+/, '')).join('\n');
   ta.value = v.slice(0, s) + ins + v.slice(e);
   ta.focus();
   ta.selectionStart = s;
@@ -695,9 +751,10 @@ function fmtDay(type){ fmtApply(document.getElementById('dayInput'), type); }
 function fmtSub(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-subadd="' + tid + '"]'), type); }
 function fmtSubP(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-psubadd="' + tid + '"]'), type); }
 let toastTimer = null;
-function notify(text){
+function notify(text, ok){
   const t = document.getElementById('toast');
   t.textContent = text;
+  t.classList.toggle('success', !!ok);
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
@@ -829,7 +886,7 @@ function saveDay(){
   const ex = dayNoteFor(currentDayDate);
   if (ex) { ex.text = text; ex.updated = new Date().toISOString(); }
   else dayNotes.push({date: currentDayDate, text: text, updated: new Date().toISOString()});
-  saveDayNotes(); renderCalendar(); closeDay(); notify('Заметка сохранена.');
+  saveDayNotes(); renderCalendar(); closeDay(); notify('Заметка сохранена.', true);
 }
 function deleteDayNote(){
   askConfirm('Удалить заметку за эту дату? Действие необратимо.', () => {
@@ -841,6 +898,7 @@ function deleteDayNote(){
 document.getElementById('dayDelete').addEventListener('click', deleteDayNote);
 document.getElementById('dayCancel').addEventListener('click', closeDayRequest);
 document.getElementById('dayInput').addEventListener('keydown', e => {
+  if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
   if (e.key === 'Escape') closeDayRequest();
 });
@@ -1015,6 +1073,7 @@ function noteHtml(t) {
         '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
         '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
         '<div class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
+        '<button class="sub-edit-btn" onclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
         '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
@@ -1052,6 +1111,7 @@ function personalNoteHtml(t) {
         '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
         '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSubP(' + t.id + ',' + s.id + ')">' +
         '<div class="sub-text" ondblclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
+        '<button class="sub-edit-btn" onclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
         '<button class="sub-del" onclick="delSubP(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
@@ -1220,6 +1280,7 @@ function openSubs(id) {
   }
 }
 function subKey(event, tid) {
+  if (listKeydown(event)) return;
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault();
     saveSubAdd(null, tid);
@@ -1244,6 +1305,7 @@ function saveSubAdd(event, tid) {
   }
   ta.value = '';
   saveTasks(); render();
+  if (v) notify('Подзадача сохранена.', true);
   setTimeout(() => { const el = document.querySelector('[data-subadd="' + tid + '"]'); if (el) el.focus(); }, 0);
 }
 function subBlur(event, tid) {
@@ -1258,6 +1320,7 @@ function subBlur(event, tid) {
       t.subtasks.push({id: Date.now(), text: v, done: false});
       t.subOpen = false;
       saveTasks();
+      notify('Подзадача сохранена.', true);
     } else {
       t.subOpen = false;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -1266,7 +1329,9 @@ function subBlur(event, tid) {
   }, 0);
 }
 function editSubStart(event, tid, sid) {
-  const span = event.currentTarget;
+  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
+  const span = row ? row.querySelector('.sub-text') : null;
+  if (!span) return;
   const t = tasks.find(x => x.id === tid);
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
@@ -1293,6 +1358,7 @@ function editSubStart(event, tid, sid) {
       const v = capFirst(ta.value.trim());
       if (v) s.text = v;
       saveTasks();
+      notify('Подзадача сохранена.', true);
     }
     render();
   };
@@ -1311,6 +1377,7 @@ function editSubStart(event, tid, sid) {
     });
   });
   ta.addEventListener('keydown', e => {
+    if (listKeydown(e)) return;
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
     if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
   });
@@ -1342,6 +1409,7 @@ function openSubsP(id) {
   }
 }
 function subKeyP(event, tid) {
+  if (listKeydown(event)) return;
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault();
     saveSubAddP(null, tid);
@@ -1366,6 +1434,7 @@ function saveSubAddP(event, tid) {
   }
   ta.value = '';
   savePersonal(); renderPersonal();
+  if (v) notify('Подзадача сохранена.', true);
   setTimeout(() => { const el = document.querySelector('[data-psubadd="' + tid + '"]'); if (el) el.focus(); }, 0);
 }
 function subBlurP(event, tid) {
@@ -1380,6 +1449,7 @@ function subBlurP(event, tid) {
       t.subtasks.push({id: Date.now(), text: v, done: false});
       t.subOpen = false;
       savePersonal();
+      notify('Подзадача сохранена.', true);
     } else {
       t.subOpen = false;
       localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
@@ -1388,7 +1458,9 @@ function subBlurP(event, tid) {
   }, 0);
 }
 function editSubStartP(event, tid, sid) {
-  const span = event.currentTarget;
+  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
+  const span = row ? row.querySelector('.sub-text') : null;
+  if (!span) return;
   const t = personal.find(x => x.id === tid);
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
@@ -1415,6 +1487,7 @@ function editSubStartP(event, tid, sid) {
       const v = capFirst(ta.value.trim());
       if (v) s.text = v;
       savePersonal();
+      notify('Подзадача сохранена.', true);
     }
     renderPersonal();
   };
@@ -1433,6 +1506,7 @@ function editSubStartP(event, tid, sid) {
     });
   });
   ta.addEventListener('keydown', e => {
+    if (listKeydown(e)) return;
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
     if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
   });
@@ -1599,12 +1673,14 @@ function createParsed(line, zoneKey) {
   tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
   clearLeakedSearch(text);
   saveTasks(); render();
+  notify('Задача добавлена.', true);
 }
 function addPersonalNote(line) {
   const text = capFirst(line.trim());
   if (!text) return;
   personal.push(migratePersonalNote({id: Date.now() + Math.floor(Math.random()*10000), text: text, created: new Date().toISOString(), done: false, doneAt: null, subtasks: []}));
   savePersonal(); renderPersonal();
+  notify('Заметка добавлена.', true);
 }
 function quickAddMany(lines) {
   if (currentPage === 'personal') {
@@ -1727,22 +1803,22 @@ function downloadBlob(content, name, mime) {
   URL.revokeObjectURL(a.href);
 }
 function copyResultsMd() {
-  navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!'));
+  navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!', true));
 }
 function downloadResultsMd() {
   downloadBlob(lastResults.md, 'itogi-nedeli-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
-  notify('Файл Markdown сохранён.');
+  notify('Файл Markdown сохранён.', true);
 }
 function downloadResultsCsv() {
   downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
-  notify('Файл CSV сохранён.');
+  notify('Файл CSV сохранён.', true);
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
 function backupDownload() {
   const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes}, null, 2);
   downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
-  notify('Резервная копия сохранена.');
+  notify('Резервная копия сохранена.', true);
 }
 function backupUploadClick() { document.getElementById('backupFile').click(); }
 document.getElementById('backupFile').addEventListener('change', e => {
@@ -1762,7 +1838,7 @@ document.getElementById('backupFile').addEventListener('change', e => {
         if (personalBackup) { personal = personalBackup.map(migratePersonalNote); localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); }
         if (daynotesBackup) { dayNotes = daynotesBackup.map(migrateDayNote).filter(Boolean); localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes)); }
         saveTasks(); render();
-        notify('Копия загружена.');
+        notify('Копия загружена.', true);
       }, 'Заменить');
     } catch (err) {
       notify('Не удалось прочитать файл: ' + err.message);
@@ -1954,9 +2030,11 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
     clearLeakedSearch(text);
     saveTasks(); render();
     document.getElementById('addModal').classList.remove('open');
+    notify('Задача добавлена.', true);
   }
 });
 document.getElementById('addInput').addEventListener('keydown', e => {
+  if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
   if (e.key === 'Escape') closeAddRequest();
 });
@@ -1965,13 +2043,14 @@ document.getElementById('confirmEdit').addEventListener('click', () => {
   const text = capFirst(document.getElementById('editInput').value.trim());
   if (editContext === 'personal') {
     const t = personal.find(x => x.id === currentEditId);
-    if (text && t) { t.text = text; savePersonal(); renderPersonal(); document.getElementById('editModal').classList.remove('open'); }
+    if (text && t) { t.text = text; savePersonal(); renderPersonal(); document.getElementById('editModal').classList.remove('open'); notify('Заметка сохранена.', true); }
   } else {
     const t = tasks.find(x => x.id === currentEditId);
-    if (text && t) { t.text = text; saveTasks(); render(); document.getElementById('editModal').classList.remove('open'); }
+    if (text && t) { t.text = text; saveTasks(); render(); document.getElementById('editModal').classList.remove('open'); notify('Заметка сохранена.', true); }
   }
 });
 document.getElementById('editInput').addEventListener('keydown', e => {
+  if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmEdit').click(); }
   if (e.key === 'Escape') closeEditRequest();
 });
