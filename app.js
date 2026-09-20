@@ -54,6 +54,7 @@ let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let currentDayDate = null;
+let dayInitial = '';
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
@@ -372,7 +373,6 @@ function openDay(date){
   document.getElementById('dayModal').classList.add('open');
   setTimeout(() => { dayTa.focus(); autoGrow(dayTa); }, 0);
 }
-let dayInitial = '';
 function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
 function closeDayRequest(){
   const ta = document.getElementById('dayInput');
@@ -514,6 +514,7 @@ function matchesQuery(t, q) {
   return (t.subtasks || []).some(s => s.text.toLowerCase().includes(q));
 }
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+// Раскладка поля подзадачи: поле во всю ширину, кнопки ПОД ним (инлайн-стили, не зависят от кэша CSS)
 function subAddRowHtml(tid, isPersonal){
   const attr = isPersonal ? 'data-psubadd' : 'data-subadd';
   const keyHandler = isPersonal ? 'subKeyP' : 'subKey';
@@ -521,9 +522,9 @@ function subAddRowHtml(tid, isPersonal){
   const fmtFn = isPersonal ? 'fmtSubP' : 'fmtSub';
   const voiceFn = isPersonal ? 'startSubVoiceP' : 'startSubVoice';
   const mic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="' + voiceFn + '(' + tid + ')" title="Надиктовать подзадачу">🎤</button>' : '';
-  return '<div class="sub-add-row">' +
-    '<textarea class="sub-add" rows="1" autocomplete="off" autocapitalize="sentences" name="darya_sub_' + tid + '" ' + attr + '="' + tid + '" placeholder="новая подзадача…" title="Enter — новая строка, Ctrl+Enter — сохранить" onkeydown="' + keyHandler + '(event,' + tid + ')" onblur="' + blurHandler + '(event,' + tid + ')"></textarea>' +
-    '<div class="sub-add-tools">' +
+  return '<div class="sub-add-row" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:stretch">' +
+    '<textarea class="sub-add" rows="1" style="width:100%" autocomplete="off" autocapitalize="sentences" name="darya_sub_' + tid + '" ' + attr + '="' + tid + '" placeholder="новая подзадача…" title="Enter — новая строка, Ctrl+Enter — сохранить" onkeydown="' + keyHandler + '(event,' + tid + ')" onblur="' + blurHandler + '(event,' + tid + ')"></textarea>' +
+    '<div class="sub-add-tools" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
     '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'b\')" title="Жирный">Ж</button>' +
     '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'i\')" title="Курсив">К</button>' +
     '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'l\')" title="Список">•</button>' +
@@ -677,7 +678,6 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
-// Inline-редактирование заметки прямо на странице (без модалки)
 function editNoteInline(id){
   const noteEl = document.querySelector('.note[data-id="' + id + '"]');
   if (!noteEl) return;
@@ -690,8 +690,9 @@ function editNoteInline(id){
   content.dataset.editing = '1';
   const wrap = document.createElement('div');
   wrap.className = 'sub-edit-wrap';
-  wrap.innerHTML = '<textarea class="sub-edit" rows="2" autocapitalize="sentences"></textarea>' +
-    '<div class="fmt-bar">' +
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:1';
+  wrap.innerHTML = '<textarea class="sub-edit" rows="2" style="width:100%" autocapitalize="sentences"></textarea>' +
+    '<div class="fmt-bar" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
     '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
     '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
     '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
@@ -876,8 +877,9 @@ function buildSubEditWrap(tid, sid, isPersonal){
   if (!s) return null;
   const wrap = document.createElement('div');
   wrap.className = 'sub-edit-wrap';
-  wrap.innerHTML = '<textarea class="sub-edit" rows="2" autocapitalize="sentences"></textarea>' +
-    '<div class="fmt-bar">' +
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:1';
+  wrap.innerHTML = '<textarea class="sub-edit" rows="2" style="width:100%" autocapitalize="sentences"></textarea>' +
+    '<div class="fmt-bar" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
     '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
     '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
     '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
