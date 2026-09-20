@@ -172,6 +172,17 @@ function renderRich(raw){
   closeList();
   return html;
 }
+// Авто-рост textarea: растёт с текстом до max-height (10 строк), дальше скролл
+function autoGrow(ta){
+  if (!ta || ta.tagName !== 'TEXTAREA') return;
+  ta.style.height = 'auto';
+  const max = parseFloat(getComputedStyle(ta).maxHeight);
+  const h = Math.min(ta.scrollHeight, isNaN(max) ? ta.scrollHeight : max);
+  ta.style.height = h + 'px';
+}
+document.addEventListener('input', e => {
+  if (e.target && e.target.tagName === 'TEXTAREA') autoGrow(e.target);
+});
 function listKeydown(e){
   if (e.key !== 'Enter' || e.ctrlKey || e.metaKey) return false;
   const ta = e.target;
@@ -196,6 +207,7 @@ function listKeydown(e){
     ta.value = before + ins + ta.value.slice(pos);
     ta.selectionStart = ta.selectionEnd = pos + ins.length;
   }
+  autoGrow(ta);
   return true;
 }
 function fmtApply(ta, type){
@@ -208,6 +220,7 @@ function fmtApply(ta, type){
     ta.focus();
     ta.selectionStart = s;
     ta.selectionEnd = s + ins.length;
+    autoGrow(ta);
     return;
   }
   if (s === e) {
@@ -225,6 +238,7 @@ function fmtApply(ta, type){
       ta.selectionStart = ta.selectionEnd = s + 2;
     }
     ta.focus();
+    autoGrow(ta);
     return;
   }
   const sel = v.slice(s, e);
@@ -233,6 +247,7 @@ function fmtApply(ta, type){
   ta.focus();
   ta.selectionStart = s;
   ta.selectionEnd = s + ins.length;
+  autoGrow(ta);
 }
 function fmtEdit(type){ fmtApply(document.getElementById('editInput'), type); }
 function fmtAdd(type){ fmtApply(document.getElementById('addInput'), type); }
@@ -356,10 +371,11 @@ function openDay(date){
   const note = dayNoteFor(date);
   const v = capFirst(note ? note.text : '');
   dayInitial = v;
-  document.getElementById('dayInput').value = v;
+  const dayTa = document.getElementById('dayInput');
+  dayTa.value = v;
   document.getElementById('dayDelete').style.display = note ? '' : 'none';
   document.getElementById('dayModal').classList.add('open');
-  setTimeout(() => document.getElementById('dayInput').focus(), 0);
+  setTimeout(() => { dayTa.focus(); autoGrow(dayTa); }, 0);
 }
 function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
 function closeDayRequest(){
@@ -667,9 +683,10 @@ function editTask(id) {
     document.getElementById('editTitle').textContent = 'Редактировать задачу';
     const v = capFirst(t.text);
     editInitial = v;
-    document.getElementById('editInput').value = v;
+    const ta = document.getElementById('editInput');
+    ta.value = v;
     document.getElementById('editModal').classList.add('open');
-    document.getElementById('editInput').focus();
+    setTimeout(() => { ta.focus(); autoGrow(ta); }, 0);
   }
 }
 function editPersonal(id) {
@@ -679,9 +696,10 @@ function editPersonal(id) {
     document.getElementById('editTitle').textContent = 'Редактировать заметку';
     const v = capFirst(t.text);
     editInitial = v;
-    document.getElementById('editInput').value = v;
+    const ta = document.getElementById('editInput');
+    ta.value = v;
     document.getElementById('editModal').classList.add('open');
-    document.getElementById('editInput').focus();
+    setTimeout(() => { ta.focus(); autoGrow(ta); }, 0);
   }
 }
 function closeEditRequest(){
@@ -695,7 +713,7 @@ function closeEditRequest(){
 function closeAddRequest(){
   const ta = document.getElementById('addInput');
   if (ta.value.trim() !== '') {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { ta.value = ''; document.getElementById('addModal').classList.remove('open'); }, 'Закрыть без сохранения');
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { ta.value = ''; ta.style.height = ''; document.getElementById('addModal').classList.remove('open'); }, 'Закрыть без сохранения');
   } else {
     document.getElementById('addModal').classList.remove('open');
   }
@@ -807,6 +825,7 @@ function editSubStart(event, tid, sid) {
   ta.value = s.text;
   span.replaceWith(wrap);
   ta.focus();
+  autoGrow(ta);
   let finished = false;
   const finish = commit => {
     if (finished) return;
@@ -936,6 +955,7 @@ function editSubStartP(event, tid, sid) {
   ta.value = s.text;
   span.replaceWith(wrap);
   ta.focus();
+  autoGrow(ta);
   let finished = false;
   const finish = commit => {
     if (finished) return;
@@ -1081,9 +1101,11 @@ function renderArchList() {
 document.getElementById('archSearch').addEventListener('input', renderArchList);
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
-  document.getElementById('addInput').value = '';
+  const ta = document.getElementById('addInput');
+  ta.value = '';
+  ta.style.height = '';
   document.getElementById('addModal').classList.add('open');
-  document.getElementById('addInput').focus();
+  setTimeout(() => ta.focus(), 0);
 }
 function hideZone(key) {
   const z = zoneByKey(key);
@@ -1480,12 +1502,14 @@ document.getElementById('saveSettings').addEventListener('click', saveSettings);
 document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
 document.getElementById('confirmAdd').addEventListener('click', () => {
-  const text = capFirst(document.getElementById('addInput').value.trim());
+  const ta = document.getElementById('addInput');
+  const text = capFirst(ta.value.trim());
   if (text) {
     const p = parseMagic(text);
     tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: p.text || text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
     clearLeakedSearch(text);
     saveTasks(); render();
+    ta.value = ''; ta.style.height = '';
     document.getElementById('addModal').classList.remove('open');
     notify('Задача добавлена.', true);
   }
