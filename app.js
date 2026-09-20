@@ -7,7 +7,6 @@ const INIT_KEY = 'darya_board_init';
 const PIN_KEY = 'darya_board_sbpinned';
 const PAGE_KEY = 'darya_board_page';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
-const MD_RAW = 'https://raw.githubusercontent.com/daryaeroshevich9-web/my-board/main/notes.md';
 const TINT_COUNT = 6;
 const TINT_HEX = ['#3A5F8A', '#B04A5E', '#A67C00', '#3E7A5E', '#6B4FA0', '#0E7490'];
 const DEFAULT_ZONES = [
@@ -52,7 +51,7 @@ let currentAddZone = null, currentEditId = null, currentNoteId = null;
 let editContext = 'board';
 let editInitial = '';
 let dayInitial = '';
-let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
+let cloudSha = null, suppressPush = true, pushTimer = null;
 let pendingQuickLines = [];
 let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
 let calYear = new Date().getFullYear();
@@ -480,37 +479,6 @@ function cloudWrite() {
       return r.json();
     })
     .then(d => { if (d && d.content) cloudSha = d.content.sha; });
-}
-function parseMdTasks(md) {
-  const zoneMap = {'авиабит': 'aviabit', 'портал 2.0': 'portal', 'прочее': 'other'};
-  const out = [];
-  let zone = 'other';
-  md.split('\n').forEach((line, i) => {
-    const s = line.trim();
-    if (s.startsWith('## ')) zone = zoneMap[s.slice(3).trim().toLowerCase()] || 'other';
-    else if (s.startsWith('- [ ]') || s.startsWith('- [x]')) {
-      const done = s.startsWith('- [x]');
-      const now = new Date().toISOString();
-      out.push(migrateTask({id: Date.now() + i, zone: zone, text: s.slice(5).trim(), done: done, created: now, doneAt: done ? now : null, archived: false, due: null, tags: [], subtasks: [], subOpen: false}));
-    }
-  });
-  return out;
-}
-function importFromMd() {
-  return fetch(MD_RAW + '?t=' + Date.now())
-    .then(r => (r.ok ? r.text() : null))
-    .then(md => {
-      if (md) {
-        const imported = parseMdTasks(md);
-        if (imported.length > 0) {
-          tasks = imported;
-          importedFromMd = true;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-        }
-        localStorage.setItem(INIT_KEY, '1');
-      }
-    })
-    .catch(() => {});
 }
 const DONE_ARCHIVE_DELAY = 3 * 24 * 60 * 60 * 1000;
 function sweepDoneToArchive() {
@@ -1574,15 +1542,8 @@ cloudRead()
         tasks = cloudTasks;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
         localStorage.setItem(INIT_KEY, '1');
-      } else if (tasks.length > 0) {
-        // Пустое облако при живом кэше — не затираем данные.
-      } else if (!localStorage.getItem(INIT_KEY)) {
-        return importFromMd();
       }
-    } else {
-      if (!localStorage.getItem(INIT_KEY)) {
-        return importFromMd();
-      }
+      // Пустое облако при живом кэше или отсутствие данных — не затираем локальные данные.
     }
   })
   .catch(() => {})
@@ -1590,5 +1551,4 @@ cloudRead()
     suppressPush = false;
     sweepDoneToArchive();
     render();
-    if (importedFromMd && getToken()) schedulePush();
   });
