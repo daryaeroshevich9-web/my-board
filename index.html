@@ -80,49 +80,6 @@
   .sb-pin{margin-top:auto}
   .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190}
   .sb-backdrop.show{display:block}
-  .cal-panel{
-    position:fixed;top:0;bottom:0;left:56px;width:320px;max-width:calc(100vw - 56px);
-    background:var(--card);border-right:1px solid var(--border);box-shadow:8px 0 24px rgba(0,0,0,.10);
-    z-index:180;transform:translateX(-115%);transition:transform .2s ease;
-    display:flex;flex-direction:column;padding:14px;overflow-y:auto;
-  }
-  body.sb-pinned .cal-panel{left:230px}
-  .cal-panel.open{transform:none}
-  .cal-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
-  .cal-head h3{font-family:'Unbounded',sans-serif;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cal-nav{width:28px;height:28px;flex:none;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);cursor:pointer;color:var(--text-secondary);font-size:14px}
-  .cal-nav:hover{background:var(--soft)}
-  .cal-today-btn{border:1px solid var(--border);border-radius:8px;background:var(--input-bg);padding:4px 8px;font:inherit;font-size:11px;cursor:pointer;color:var(--text-secondary);flex:none}
-  .cal-today-btn:hover{background:var(--soft)}
-  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
-  .cal-week span{text-align:center;font-size:10px;color:var(--text-muted);font-weight:600}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-  .cal-day{
-    position:relative;height:38px;border:1px solid transparent;border-radius:10px;
-    display:flex;align-items:center;justify-content:center;font:inherit;font-size:12px;
-    color:var(--text-secondary);cursor:pointer;background:transparent;padding:0;
-  }
-  .cal-day:hover{background:var(--soft)}
-  .cal-day.other{opacity:.35;cursor:default}
-  .cal-day.other:hover{background:transparent}
-  .cal-day.today{border-color:var(--accent);color:var(--text);font-weight:700}
-  .cal-day.has-note{background:var(--accent-ring);color:var(--text);font-weight:600}
-  .cal-day.has-due{background:rgba(240,200,60,.22);color:var(--text)}
-  .cal-day.has-note.has-due{background:linear-gradient(135deg,var(--accent-ring),rgba(240,200,60,.28))}
-  .cal-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
-  .cal-dot i{width:4px;height:4px;border-radius:50%;background:var(--accent)}
-  .cal-dot i.due{background:#b45309}
-  .cal-pop{position:fixed;z-index:1250;max-width:260px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 12px;font-size:12px;color:var(--text-secondary);display:none;line-height:1.45}
-  .cal-pop.show{display:block}
-  .cal-pop-date{font-weight:700;color:var(--text);margin-bottom:6px;font-size:12px}
-  .cal-pop-note{margin-bottom:6px}
-  .cal-pop-note ul,.cal-pop-note ol{margin:2px 0 2px 16px}
-  .cal-pop-due{margin-top:6px;border-top:1px dashed var(--border);padding-top:6px}
-  .cal-daynote-list{margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;font-size:12px;color:var(--text-secondary)}
-  .cal-daynote-list .item{margin:4px 0}
-  @media (max-width:720px){
-    .cal-panel{left:0;width:100vw;max-width:100vw}
-  }
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .sb-toggle{display:none;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);flex:none}
@@ -214,7 +171,36 @@
   .note-action:hover{background:var(--card);transform:scale(1.1)}
   .note-action svg{width:16px;height:16px}
   .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
-  .personal-wrap{max-width:900px;margin:0 auto;padding:24px 28px 40px}
+  .personal-layout{max-width:var(--maxw);margin:0 auto;padding:24px 28px 40px;display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  .personal-main{min-width:0}
+  .cal-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+  .cal-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  .cal-head h3{font-family:'Unbounded',sans-serif;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cal-nav{width:28px;height:28px;flex:none;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);cursor:pointer;color:var(--text-secondary);font-size:14px}
+  .cal-nav:hover{background:var(--soft)}
+  .cal-today-btn{border:1px solid var(--border);border-radius:8px;background:var(--input-bg);padding:4px 8px;font:inherit;font-size:11px;cursor:pointer;color:var(--text-secondary);flex:none}
+  .cal-today-btn:hover{background:var(--soft)}
+  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+  .cal-week span{text-align:center;font-size:10px;color:var(--text-muted);font-weight:600}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-day{
+    position:relative;height:38px;border:1px solid transparent;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;font:inherit;font-size:12px;
+    color:var(--text-secondary);cursor:pointer;background:transparent;padding:0;
+  }
+  .cal-day:hover{background:var(--soft)}
+  .cal-day.other{opacity:.35;cursor:default}
+  .cal-day.other:hover{background:transparent}
+  .cal-day.today{border-color:var(--accent);color:var(--text);font-weight:700}
+  .cal-day.has-note{background:var(--accent-ring);color:var(--text);font-weight:600}
+  .cal-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
+  .cal-legend{margin-top:10px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .cal-legend i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+  .cal-legend b{font-weight:600;color:var(--text-secondary)}
+  .cal-pop{position:fixed;z-index:1250;max-width:260px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 12px;font-size:12px;color:var(--text-secondary);display:none;line-height:1.45}
+  .cal-pop.show{display:block}
+  .cal-pop-date{font-weight:700;color:var(--text);margin-bottom:6px;font-size:12px}
+  .cal-pop-note ul,.cal-pop-note ol{margin:2px 0 2px 16px}
   .personal-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
   .personal-head h2{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600}
   .personal-count{color:var(--text-muted);font-size:13px}
@@ -279,6 +265,9 @@
   .list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
   .list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
   .page-hidden{display:none !important}
+  @media (max-width:900px){
+    .personal-layout{grid-template-columns:1fr}
+  }
   @media (max-width:720px){
     .topbar-inner{padding:12px 16px;gap:10px}
     h1{font-size:17px}
@@ -288,7 +277,7 @@
     .sidebar.open{transform:none}
     .zones{padding:14px 16px 24px;gap:14px;grid-template-columns:1fr}
     .zone{border-radius:16px;padding:14px}
-    .personal-wrap{padding:14px 16px 32px}
+    .personal-layout{padding:14px 16px 32px}
   }
 </style>
 </head>
@@ -296,7 +285,6 @@
 <aside class="sidebar" id="sidebar">
   <button class="sb-item" id="navBoard" onclick="switchPage('board')"><span class="sb-ico">🏠</span><span class="sb-label">Доска</span></button>
   <button class="sb-item" id="navPersonal" onclick="switchPage('personal')"><span class="sb-ico">📝</span><span class="sb-label">Личное</span></button>
-  <button class="sb-item" onclick="toggleCal()"><span class="sb-ico">📅</span><span class="sb-label">Календарь</span></button>
   <div class="sb-sep"></div>
   <div class="sb-search">
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
@@ -308,18 +296,6 @@
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
 </aside>
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
-<aside class="cal-panel" id="calPanel">
-  <div class="cal-head">
-    <button class="cal-nav" onclick="calPrev()" title="Предыдущий месяц">‹</button>
-    <h3 id="calTitle"></h3>
-    <button class="cal-nav" onclick="calNext()" title="Следующий месяц">›</button>
-    <button class="cal-today-btn" onclick="calToday()">Сегодня</button>
-    <button class="cal-nav" onclick="toggleCal()" title="Закрыть календарь">✕</button>
-  </div>
-  <div class="cal-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
-  <div class="cal-grid" id="calGrid"></div>
-</aside>
-<div class="cal-pop" id="calPop"></div>
 <header class="topbar">
   <div class="topbar-inner">
     <button class="sb-toggle" id="sbToggle" title="Меню">☰</button>
@@ -346,16 +322,30 @@
   <main class="zones" id="zonesWrap"></main>
 </div>
 <div id="personalPage" class="page-hidden">
-  <div class="personal-wrap">
-    <div class="personal-head">
-      <h2>📝 Личное</h2>
-      <span class="personal-count" id="personalCount">0 заметок</span>
+  <div class="personal-layout">
+    <div class="cal-card">
+      <div class="cal-head">
+        <button class="cal-nav" onclick="calPrev()" title="Предыдущий месяц">‹</button>
+        <h3 id="calTitle"></h3>
+        <button class="cal-nav" onclick="calNext()" title="Следующий месяц">›</button>
+        <button class="cal-today-btn" onclick="calToday()">Сегодня</button>
+      </div>
+      <div class="cal-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend"><i></i><b>заметка дня</b> · рамка — сегодня · клик по дню — запись</div>
     </div>
-    <div class="personal-zone">
-      <div class="personal-notes" id="personalNotes"></div>
+    <div class="personal-main">
+      <div class="personal-head">
+        <h2>📝 Личное</h2>
+        <span class="personal-count" id="personalCount">0 заметок</span>
+      </div>
+      <div class="personal-zone">
+        <div class="personal-notes" id="personalNotes"></div>
+      </div>
     </div>
   </div>
 </div>
+<div class="cal-pop" id="calPop"></div>
 <div class="popmenu" id="notePop"></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="addModal">
@@ -393,14 +383,13 @@
 <div class="modal" id="dayModal">
   <div class="modal-content">
     <h3 id="dayTitle">Заметка</h3>
-    <textarea id="dayInput" rows="5" placeholder="Заметка за эту дату..."></textarea>
+    <textarea id="dayInput" rows="5" placeholder="Личная заметка за эту дату..."></textarea>
     <div class="fmt-toolbar">
       <button class="fmt-btn" onclick="fmtDay('b')" title="Жирный">Ж</button>
       <button class="fmt-btn i" onclick="fmtDay('i')" title="Курсив">К</button>
       <button class="fmt-btn" onclick="fmtDay('l')" title="Список">•</button>
     </div>
-    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список.</div>
-    <div id="dayDueList" class="cal-daynote-list"></div>
+    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список. Заметка видна только в «Личном».</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="dayDelete" onclick="deleteDayNote()">Удалить</button>
       <button class="modal-btn secondary" onclick="closeDay()">Отмена</button>
@@ -743,19 +732,12 @@ sbSearchIco.addEventListener('click', () => {
 sbSearchInput.addEventListener('blur', () => {
   sidebarEl.classList.remove('search-open');
 });
-// Календарь и заметки дня
+// Личный календарь: только заметки дня, без рабочих задач и отчётов
 function saveDayNotes(){
   localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
   if (!suppressPush) schedulePush();
 }
 function dayNoteFor(date){ return dayNotes.find(d => d.date === date); }
-function dueTasksFor(date){ return tasks.filter(t => t.due === date && !t.deleted && !t.archived); }
-function toggleCal(){
-  const p = document.getElementById('calPanel');
-  const open = p.classList.toggle('open');
-  if (open) renderCalendar(); else calHide();
-  closeSbMobile();
-}
 function calPrev(){ calMonth--; if (calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
 function calNext(){ calMonth++; if (calMonth > 11){ calMonth = 0; calYear++; } renderCalendar(); }
 function calToday(){ const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); }
@@ -771,14 +753,11 @@ function renderCalendar(){
   for (let d = 1; d <= daysIn; d++) {
     const date = isoOf(new Date(calYear, calMonth, d));
     const note = dayNoteFor(date);
-    const dues = dueTasksFor(date);
     const cls = ['cal-day'];
     if (date === todayStr) cls.push('today');
     if (note) cls.push('has-note');
-    if (dues.length) cls.push('has-due');
-    let dots = '';
-    if (note || dues.length) dots = '<span class="cal-dot">' + (note ? '<i></i>' : '') + (dues.length ? '<i class="due"></i>' : '') + '</span>';
-    html += '<button class="' + cls.join(' ') + '" onclick="openDay(\'' + date + '\')" onmouseenter="calHover(event,\'' + date + '\')" onmouseleave="calHide()">' + d + dots + '</button>';
+    const dot = note ? '<span class="cal-dot"></span>' : '';
+    html += '<button class="' + cls.join(' ') + '" onclick="openDay(\'' + date + '\')" onmouseenter="calHover(event,\'' + date + '\')" onmouseleave="calHide()">' + d + dot + '</button>';
   }
   const trail = (7 - ((offset + daysIn) % 7)) % 7;
   for (let i = 1; i <= trail; i++) html += '<span class="cal-day other">' + i + '</span>';
@@ -787,14 +766,11 @@ function renderCalendar(){
 function calHover(event, date){
   if (!window.matchMedia('(hover:hover)').matches) return;
   const note = dayNoteFor(date);
-  const dues = dueTasksFor(date);
-  if (!note && !dues.length) { calHide(); return; }
+  if (!note) { calHide(); return; }
   const pop = document.getElementById('calPop');
   const p = parseLocal(date);
-  let html = '<div class="cal-pop-date">' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</div>';
-  if (note) html += '<div class="cal-pop-note">' + renderRich(note.text) + '</div>';
-  if (dues.length) html += '<div class="cal-pop-due">' + dues.map(t => '🔔 ' + escapeHtml(t.text) + (t.done ? ' ✅' : '')).join('<br>') + '</div>';
-  pop.innerHTML = html;
+  pop.innerHTML = '<div class="cal-pop-date">' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</div>' +
+    '<div class="cal-pop-note">' + renderRich(note.text) + '</div>';
   pop.classList.add('show');
   const r = event.currentTarget.getBoundingClientRect();
   const pw = pop.offsetWidth, ph = pop.offsetHeight;
@@ -814,10 +790,6 @@ function openDay(date){
   const note = dayNoteFor(date);
   document.getElementById('dayInput').value = note ? note.text : '';
   document.getElementById('dayDelete').style.display = note ? '' : 'none';
-  const dues = dueTasksFor(date);
-  document.getElementById('dayDueList').innerHTML = dues.length
-    ? '<div style="font-weight:600;color:var(--text);margin-bottom:4px">Задачи со сроком на эту дату:</div>' + dues.map(t => '<div class="item">' + (t.done ? '✅' : '🔔') + ' ' + escapeHtml(t.text) + '</div>').join('')
-    : '';
   document.getElementById('dayModal').classList.add('open');
   setTimeout(() => document.getElementById('dayInput').focus(), 0);
 }
@@ -839,7 +811,6 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
   if (e.key === 'Escape') closeDay();
 });
-function refreshCalIfOpen(){ if (document.getElementById('calPanel').classList.contains('open')) renderCalendar(); }
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
   const qa = document.getElementById('quickAdd');
@@ -1096,7 +1067,6 @@ function render() {
     '</section>';
   }).join('');
   renderPersonal();
-  refreshCalIfOpen();
 }
 function renderPersonal() {
   const list = document.getElementById('personalNotes');
@@ -1104,9 +1074,10 @@ function renderPersonal() {
   document.getElementById('personalCount').textContent = n + (n === 1 ? ' заметка' : (n > 1 && n < 5 ? ' заметки' : ' заметок'));
   if (!n) {
     list.innerHTML = '<div class="empty">Пока нет личных заметок — добавьте через поле в шапке</div>';
-    return;
+  } else {
+    list.innerHTML = personal.slice().reverse().map(personalNoteHtml).join('');
   }
-  list.innerHTML = personal.slice().reverse().map(personalNoteHtml).join('');
+  renderCalendar();
 }
 function switchPage(page) {
   currentPage = page;
@@ -1120,6 +1091,8 @@ function switchPage(page) {
   document.getElementById('pageTitle').textContent = isBoard ? 'Доска Дарьи' : 'Личное';
   document.getElementById('pageSubtitle').textContent = isBoard ? 'Авиабит · Портал 2.0 · Прочее' : 'Заметки только для меня';
   document.getElementById('quickAdd').placeholder = isBoard ? 'Быстрая задача' : 'Личная заметка';
+  calHide();
+  if (!isBoard) renderCalendar();
 }
 function toggleDone(id) {
   const t = tasks.find(x => x.id === id);
@@ -1285,7 +1258,7 @@ function openSubsP(id) {
   }
 }
 function subKeyP(event, tid) {
-  if (event.key === 'Enter' && (event.ctrlKey || e.metaKey)) {
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault();
     saveSubAddP(null, tid);
     return;
