@@ -119,7 +119,12 @@
       "created": "2026-09-20T14:54:10.818027",
       "doneAt": null,
       "deleted": false,
-      "subtasks": []
+      "subtasks": [],
+      "tags": [],
+      "subOpen": false,
+      "archived": false,
+      "due": null,
+      "pinned": false
     },
     {
       "id": 1789916055097,
@@ -128,10 +133,10 @@
       "done": false,
       "created": "2026-09-20T14:54:15.097805+00:00",
       "doneAt": null,
-      "deleted": true,
+      "deleted": false,
       "subtasks": [],
       "subOpen": false,
-      "archived": false,
+      "archived": true,
       "due": null,
       "repeat": null,
       "tags": [],
@@ -227,7 +232,7 @@
           "done": false
         }
       ],
-      "subOpen": true
+      "subOpen": false
     }
   ],
   "daynotes": [
