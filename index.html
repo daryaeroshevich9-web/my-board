@@ -129,6 +129,9 @@
   .note-checkbox{position:absolute;left:12px;top:12px;width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--zone-color)}
   .note-body{flex:1;min-width:0;display:flex;flex-direction:column}
   .note-content{cursor:text}
+  .note-content ul,.note-content ol{margin:4px 0 2px 18px;padding:0}
+  .note-content li{margin:2px 0}
+  .note-content .rich-line{min-height:1em}
   .note.done{opacity:.5}
   .note.done .note-text{text-decoration:line-through}
   .pin-mark{font-size:12px;margin-right:6px;vertical-align:middle}
@@ -141,17 +144,25 @@
   .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
   .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
   .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
-  .subtask{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
-  .subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none}
+  .subtask{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
+  .subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none;margin-top:2px}
   .subtask .sub-text{flex:1;word-break:break-word;cursor:text}
+  .subtask .sub-text ul,.subtask .sub-text ol{margin:2px 0 2px 16px;padding:0}
   .subtask.done .sub-text{text-decoration:line-through;opacity:.6}
-  .sub-edit{flex:1;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font:inherit;font-size:13px;color:var(--text);background:var(--card)}
-  .sub-edit:focus{outline:none;border-color:var(--accent)}
+  .sub-edit-wrap{display:flex;flex-direction:column;gap:4px;flex:1}
+  textarea.sub-edit{width:100%;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font:inherit;font-size:13px;color:var(--text);background:var(--card);resize:vertical;min-height:30px;max-height:160px;line-height:1.4}
+  textarea.sub-edit:focus{outline:none;border-color:var(--accent)}
+  .fmt-bar{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .fmt-btn{min-width:24px;height:22px;padding:0 6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-secondary);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+  .fmt-btn:hover{background:var(--soft);color:var(--text)}
+  .fmt-btn.i{font-style:italic}
+  .fmt-btn.save{color:#047857}
+  .fmt-btn.cancel{color:#b93c32}
   .sub-del{border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1}
   .sub-del:hover{background:rgba(185,60,50,.1);color:#b93c32}
-  .sub-add-row{display:flex;gap:6px}
-  .sub-add{flex:1;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);min-width:0}
-  .sub-add:focus{outline:none;border-color:var(--accent);background:var(--card)}
+  .sub-add-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  textarea.sub-add{flex:1;min-width:120px;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);resize:vertical;min-height:32px;max-height:160px;line-height:1.4}
+  textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--card)}
   .sub-mic{flex:none;width:34px;border:1px dashed var(--dash);border-radius:8px;background:transparent;cursor:pointer;font-size:14px}
   .note-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;flex:none;margin-left:8px}
   .note:hover .note-actions{opacity:1}
@@ -180,6 +191,11 @@
   .modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;overflow-y:auto}
   .modal h3{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600;margin-bottom:16px}
   .modal input[type="text"],.modal input[type="password"],.modal input[type="date"]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:16px;background:var(--input-bg);color:var(--text)}
+  .modal textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:8px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:84px;max-height:300px;line-height:1.5}
+  .modal textarea:focus{outline:none;border-color:var(--accent)}
+  .fmt-toolbar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+  .fmt-toolbar .fmt-btn{height:26px;font-size:12px}
+  .fmt-hint{font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.4}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
   .modal-btn{padding:10px 20px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
   .modal-btn.primary{background:var(--black);color:var(--on-black)}
@@ -289,7 +305,13 @@
 <div class="modal" id="addModal">
   <div class="modal-content">
     <h3>Новая задача</h3>
-    <input type="text" id="addInput" name="darya_add" placeholder="Описание задачи... (даты распознаются)" autocomplete="off">
+    <textarea id="addInput" name="darya_add" rows="3" placeholder="Описание задачи... (даты распознаются)"></textarea>
+    <div class="fmt-toolbar">
+      <button class="fmt-btn" onclick="fmtAdd('b')" title="Жирный">Ж</button>
+      <button class="fmt-btn i" onclick="fmtAdd('i')" title="Курсив">К</button>
+      <button class="fmt-btn" onclick="fmtAdd('l')" title="Список">•</button>
+    </div>
+    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — добавить. Разметка: **жирный**, *курсив*, «- » список.</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
@@ -299,7 +321,13 @@
 <div class="modal" id="editModal">
   <div class="modal-content">
     <h3 id="editTitle">Редактировать задачу</h3>
-    <input type="text" id="editInput" name="darya_edit" placeholder="Описание задачи..." autocomplete="off">
+    <textarea id="editInput" name="darya_edit" rows="4" placeholder="Текст..."></textarea>
+    <div class="fmt-toolbar">
+      <button class="fmt-btn" onclick="fmtEdit('b')" title="Жирный">Ж</button>
+      <button class="fmt-btn i" onclick="fmtEdit('i')" title="Курсив">К</button>
+      <button class="fmt-btn" onclick="fmtEdit('l')" title="Список">•</button>
+    </div>
+    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список.</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelEdit">Отмена</button>
       <button class="modal-btn primary" id="confirmEdit">Сохранить</button>
@@ -541,6 +569,45 @@ function parseMagic(raw){
   text = text.replace(/\s{2,}/g,' ').trim();
   return {text: text, due: due};
 }
+// Мини-разметка: **жирный**, *курсив*, "- " список, "1. " нумерованный
+function renderRich(raw){
+  const lines = String(raw == null ? '' : raw).split('\n');
+  let html = '';
+  let listType = null;
+  const closeList = () => { if (listType) { html += '</' + listType + '>'; listType = null; } };
+  const inline = s => escapeHtml(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/_([^_]+)_/g, '<em>$1</em>');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const ul = line.match(/^\s*[-•*]\s+(.*)$/);
+    const ol = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
+    if (ul) { if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
+    if (ol) { if (listType !== 'ol') { closeList(); html += '<ol>'; listType = 'ol'; } html += '<li>' + inline(ol[2]) + '</li>'; continue; }
+    closeList();
+    html += '<div class="rich-line">' + inline(line) + '</div>';
+  }
+  closeList();
+  return html;
+}
+function fmtApply(ta, type){
+  if (!ta) return;
+  const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
+  const sel = v.slice(s, e) || 'текст';
+  let ins;
+  if (type === 'b') ins = '**' + sel + '**';
+  else if (type === 'i') ins = '*' + sel + '*';
+  else ins = sel.split('\n').map(l => '- ' + l.replace(/^\s*[-•]\s+/, '')).join('\n');
+  ta.value = v.slice(0, s) + ins + v.slice(e);
+  ta.focus();
+  ta.selectionStart = s;
+  ta.selectionEnd = s + ins.length;
+}
+function fmtEdit(type){ fmtApply(document.getElementById('editInput'), type); }
+function fmtAdd(type){ fmtApply(document.getElementById('addInput'), type); }
+function fmtSub(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-subadd="' + tid + '"]'), type); }
+function fmtSubP(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-psubadd="' + tid + '"]'), type); }
 let toastTimer = null;
 function notify(text){
   const t = document.getElementById('toast');
@@ -751,22 +818,27 @@ function noteHtml(t) {
   const metaRow = dueChip ? '<div class="due-row">' + dueChip + '</div>' : '';
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
-    const subMic = SpeechRec ? '<button class="sub-mic" onclick="startSubVoice(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
+    const subMic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="startSubVoice(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
     subBlock = '<div class="subtasks">' +
       t.subtasks.map(s =>
         '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
         '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
-        '<span class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + escapeHtml(s.text) + '</span>' +
+        '<div class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
         '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
-      (t.subOpen ? '<div class="sub-add-row"><input class="sub-add" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="новая подзадача" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')">' + subMic + '</div>' : '') +
+      (t.subOpen ? '<div class="sub-add-row"><textarea class="sub-add" rows="1" autocomplete="off" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="новая подзадача… Enter — строка, Ctrl+Enter — сохранить" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')"></textarea>' +
+        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSub(event,' + t.id + ',\'b\')" title="Жирный">Ж</button>' +
+        '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="fmtSub(event,' + t.id + ',\'i\')" title="Курсив">К</button>' +
+        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSub(event,' + t.id + ',\'l\')" title="Список">•</button>' +
+        '<button class="fmt-btn save" onmousedown="event.preventDefault()" onclick="saveSubAdd(event,' + t.id + ')" title="Сохранить подзадачу">✓</button>' +
+        subMic + '</div>' : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + (t.pinned ? ' pinned' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + pinMark + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + pinMark + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
       metaRow +
       subBlock +
     '</div>' +
@@ -782,22 +854,27 @@ function personalNoteHtml(t) {
   const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
-    const subMic = SpeechRec ? '<button class="sub-mic" onclick="startSubVoiceP(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
+    const subMic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="startSubVoiceP(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
     subBlock = '<div class="subtasks">' +
       t.subtasks.map(s =>
         '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
         '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSubP(' + t.id + ',' + s.id + ')">' +
-        '<span class="sub-text" ondblclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + escapeHtml(s.text) + '</span>' +
+        '<div class="sub-text" ondblclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
         '<button class="sub-del" onclick="delSubP(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
-      (t.subOpen ? '<div class="sub-add-row"><input class="sub-add" autocomplete="off" name="darya_psub_' + t.id + '" data-psubadd="' + t.id + '" placeholder="новая подзадача" onkeydown="subKeyP(event,' + t.id + ')" onblur="subBlurP(event,' + t.id + ')">' + subMic + '</div>' : '') +
+      (t.subOpen ? '<div class="sub-add-row"><textarea class="sub-add" rows="1" autocomplete="off" name="darya_psub_' + t.id + '" data-psubadd="' + t.id + '" placeholder="новая подзадача… Enter — строка, Ctrl+Enter — сохранить" onkeydown="subKeyP(event,' + t.id + ')" onblur="subBlurP(event,' + t.id + ')"></textarea>' +
+        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSubP(event,' + t.id + ',\'b\')" title="Жирный">Ж</button>' +
+        '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="fmtSubP(event,' + t.id + ',\'i\')" title="Курсив">К</button>' +
+        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSubP(event,' + t.id + ',\'l\')" title="Список">•</button>' +
+        '<button class="fmt-btn save" onmousedown="event.preventDefault()" onclick="saveSubAddP(event,' + t.id + ')" title="Сохранить подзадачу">✓</button>' +
+        subMic + '</div>' : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="togglePersonalDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editPersonal(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content" ondblclick="editPersonal(' + t.id + ')">' + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
@@ -912,21 +989,36 @@ function openSubs(id) {
   }
 }
 function subKey(event, tid) {
-  if (event.key === 'Enter') {
-    const value = event.target.value.trim();
-    if (value) {
-      const t = tasks.find(x => x.id === tid);
-      if (t) {
-        t.subtasks.push({id: Date.now(), text: value, done: false});
-        saveTasks(); render();
-        setTimeout(() => { const el = document.querySelector('[data-subadd="' + tid + '"]'); if (el) el.focus(); }, 0);
-      }
-    }
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault();
+    saveSubAdd(null, tid);
+    return;
   }
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.target.dataset.handled = '1';
+    const t = tasks.find(x => x.id === tid);
+    if (t) { t.subOpen = false; localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); render(); }
+  }
+}
+function saveSubAdd(event, tid) {
+  if (event) event.preventDefault();
+  const ta = document.querySelector('[data-subadd="' + tid + '"]');
+  if (!ta) return;
+  const v = ta.value.trim();
+  ta.dataset.handled = '1';
+  if (v) {
+    const t = tasks.find(x => x.id === tid);
+    if (t) t.subtasks.push({id: Date.now(), text: v, done: false});
+  }
+  ta.value = '';
+  saveTasks(); render();
+  setTimeout(() => { const el = document.querySelector('[data-subadd="' + tid + '"]'); if (el) el.focus(); }, 0);
 }
 function subBlur(event, tid) {
   const input = event.target;
   setTimeout(() => {
+    if (input.dataset && input.dataset.handled) return;
     if (listening && voiceTarget === input) return;
     const t = tasks.find(x => x.id === tid);
     if (!t) return;
@@ -948,30 +1040,45 @@ function editSubStart(event, tid, sid) {
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
   if (!s) return;
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'sub-edit';
-  input.autocomplete = 'off';
-  input.name = 'darya_subedit_' + sid;
-  input.value = s.text;
-  span.replaceWith(input);
-  input.focus();
+  const wrap = document.createElement('div');
+  wrap.className = 'sub-edit-wrap';
+  wrap.innerHTML = '<textarea class="sub-edit" rows="2"></textarea>' +
+    '<div class="fmt-bar">' +
+    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
+    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
+    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
+    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
+    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
+    '</div>';
+  const ta = wrap.querySelector('textarea');
+  ta.value = s.text;
+  span.replaceWith(wrap);
+  ta.focus();
   let finished = false;
   const finish = commit => {
     if (finished) return;
     finished = true;
     if (commit) {
-      const v = input.value.trim();
+      const v = ta.value.trim();
       if (v) s.text = v;
       saveTasks();
     }
     render();
   };
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') finish(true);
-    if (e.key === 'Escape') finish(false);
+  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.f;
+      if (f === 'save') finish(true);
+      else if (f === 'cancel') finish(false);
+      else fmtApply(ta, f);
+    });
   });
-  input.addEventListener('blur', () => finish(true));
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  ta.addEventListener('blur', () => finish(true));
 }
 function toggleSub(tid, sid) {
   const t = tasks.find(x => x.id === tid);
@@ -982,7 +1089,6 @@ function delSub(event, tid, sid) {
   const t = tasks.find(x => x.id === tid);
   if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); saveTasks(); render(); }
 }
-// Подзадачи личных заметок
 function openSubsP(id) {
   const t = personal.find(x => x.id === id);
   if (t) {
@@ -992,21 +1098,36 @@ function openSubsP(id) {
   }
 }
 function subKeyP(event, tid) {
-  if (event.key === 'Enter') {
-    const value = event.target.value.trim();
-    if (value) {
-      const t = personal.find(x => x.id === tid);
-      if (t) {
-        t.subtasks.push({id: Date.now(), text: value, done: false});
-        savePersonal(); renderPersonal();
-        setTimeout(() => { const el = document.querySelector('[data-psubadd="' + tid + '"]'); if (el) el.focus(); }, 0);
-      }
-    }
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault();
+    saveSubAddP(null, tid);
+    return;
   }
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.target.dataset.handled = '1';
+    const t = personal.find(x => x.id === tid);
+    if (t) { t.subOpen = false; localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); renderPersonal(); }
+  }
+}
+function saveSubAddP(event, tid) {
+  if (event) event.preventDefault();
+  const ta = document.querySelector('[data-psubadd="' + tid + '"]');
+  if (!ta) return;
+  const v = ta.value.trim();
+  ta.dataset.handled = '1';
+  if (v) {
+    const t = personal.find(x => x.id === tid);
+    if (t) t.subtasks.push({id: Date.now(), text: v, done: false});
+  }
+  ta.value = '';
+  savePersonal(); renderPersonal();
+  setTimeout(() => { const el = document.querySelector('[data-psubadd="' + tid + '"]'); if (el) el.focus(); }, 0);
 }
 function subBlurP(event, tid) {
   const input = event.target;
   setTimeout(() => {
+    if (input.dataset && input.dataset.handled) return;
     if (listening && voiceTarget === input) return;
     const t = personal.find(x => x.id === tid);
     if (!t) return;
@@ -1028,30 +1149,45 @@ function editSubStartP(event, tid, sid) {
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
   if (!s) return;
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'sub-edit';
-  input.autocomplete = 'off';
-  input.name = 'darya_psubedit_' + sid;
-  input.value = s.text;
-  span.replaceWith(input);
-  input.focus();
+  const wrap = document.createElement('div');
+  wrap.className = 'sub-edit-wrap';
+  wrap.innerHTML = '<textarea class="sub-edit" rows="2"></textarea>' +
+    '<div class="fmt-bar">' +
+    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
+    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
+    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
+    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
+    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
+    '</div>';
+  const ta = wrap.querySelector('textarea');
+  ta.value = s.text;
+  span.replaceWith(wrap);
+  ta.focus();
   let finished = false;
   const finish = commit => {
     if (finished) return;
     finished = true;
     if (commit) {
-      const v = input.value.trim();
+      const v = ta.value.trim();
       if (v) s.text = v;
       savePersonal();
     }
     renderPersonal();
   };
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') finish(true);
-    if (e.key === 'Escape') finish(false);
+  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.f;
+      if (f === 'save') finish(true);
+      else if (f === 'cancel') finish(false);
+      else fmtApply(ta, f);
+    });
   });
-  input.addEventListener('blur', () => finish(true));
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  ta.addEventListener('blur', () => finish(true));
 }
 function toggleSubP(tid, sid) {
   const t = personal.find(x => x.id === tid);
@@ -1495,7 +1631,7 @@ function endDrag(commit) {
 document.addEventListener('pointerdown', e => {
   const note = e.target.closest ? e.target.closest('.note') : null;
   if (!note) return;
-  if (e.target.closest && e.target.closest('input,button,.subtask,.sub-edit')) return;
+  if (e.target.closest && e.target.closest('input,button,textarea,.subtask,.sub-edit,.sub-edit-wrap')) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   dragState = {id: Number(note.dataset.id), x0: e.clientX, y0: e.clientY, active: false, type: e.pointerType, note: note, timer: null, ghost: null, zone: null, ox: 0, oy: 0, lastX: e.clientX, lastY: e.clientY};
   if (e.pointerType !== 'mouse') {
@@ -1568,7 +1704,7 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   }
 });
 document.getElementById('addInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('confirmAdd').click();
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
   if (e.key === 'Escape') document.getElementById('cancelAdd').click();
 });
 document.getElementById('cancelEdit').addEventListener('click', () => document.getElementById('editModal').classList.remove('open'));
@@ -1583,7 +1719,7 @@ document.getElementById('confirmEdit').addEventListener('click', () => {
   }
 });
 document.getElementById('editInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('confirmEdit').click();
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmEdit').click(); }
   if (e.key === 'Escape') document.getElementById('cancelEdit').click();
 });
 document.querySelectorAll('.modal').forEach(modal => {
