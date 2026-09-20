@@ -47,10 +47,7 @@ let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let personal = (JSON.parse(localStorage.getItem(PERSONAL_KEY) || '[]')).map(migratePersonalNote);
 let dayNotes = (JSON.parse(localStorage.getItem(DAYNOTES_KEY) || '[]')).map(migrateDayNote).filter(Boolean);
 tasks.forEach(migrateTask);
-let currentAddZone = null, currentEditId = null, currentNoteId = null;
-let editContext = 'board';
-let editInitial = '';
-let dayInitial = '';
+let currentAddZone = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null;
 let pendingQuickLines = [];
 let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
@@ -172,7 +169,6 @@ function renderRich(raw){
   closeList();
   return html;
 }
-// Авто-рост textarea: растёт с текстом до max-height (10 строк), дальше скролл
 function autoGrow(ta){
   if (!ta || ta.tagName !== 'TEXTAREA') return;
   ta.style.height = 'auto';
@@ -249,7 +245,6 @@ function fmtApply(ta, type){
   ta.selectionEnd = s + ins.length;
   autoGrow(ta);
 }
-function fmtEdit(type){ fmtApply(document.getElementById('editInput'), type); }
 function fmtAdd(type){ fmtApply(document.getElementById('addInput'), type); }
 function fmtDay(type){ fmtApply(document.getElementById('dayInput'), type); }
 function fmtSub(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-subadd="' + tid + '"]'), type); }
@@ -377,6 +372,7 @@ function openDay(date){
   document.getElementById('dayModal').classList.add('open');
   setTimeout(() => { dayTa.focus(); autoGrow(dayTa); }, 0);
 }
+let dayInitial = '';
 function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
 function closeDayRequest(){
   const ta = document.getElementById('dayInput');
@@ -518,6 +514,23 @@ function matchesQuery(t, q) {
   return (t.subtasks || []).some(s => s.text.toLowerCase().includes(q));
 }
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+function subAddRowHtml(tid, isPersonal){
+  const attr = isPersonal ? 'data-psubadd' : 'data-subadd';
+  const keyHandler = isPersonal ? 'subKeyP' : 'subKey';
+  const blurHandler = isPersonal ? 'subBlurP' : 'subBlur';
+  const fmtFn = isPersonal ? 'fmtSubP' : 'fmtSub';
+  const voiceFn = isPersonal ? 'startSubVoiceP' : 'startSubVoice';
+  const mic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="' + voiceFn + '(' + tid + ')" title="Надиктовать подзадачу">🎤</button>' : '';
+  return '<div class="sub-add-row">' +
+    '<textarea class="sub-add" rows="1" autocomplete="off" autocapitalize="sentences" name="darya_sub_' + tid + '" ' + attr + '="' + tid + '" placeholder="новая подзадача…" title="Enter — новая строка, Ctrl+Enter — сохранить" onkeydown="' + keyHandler + '(event,' + tid + ')" onblur="' + blurHandler + '(event,' + tid + ')"></textarea>' +
+    '<div class="sub-add-tools">' +
+    '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'b\')" title="Жирный">Ж</button>' +
+    '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'i\')" title="Курсив">К</button>' +
+    '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'l\')" title="Список">•</button>' +
+    '<button class="fmt-btn save" onmousedown="event.preventDefault()" onclick="saveSubAddGeneric(event,' + tid + ',' + (isPersonal ? 'true' : 'false') + ')" title="Сохранить подзадачу">✓</button>' +
+    mic +
+    '</div></div>';
+}
 function noteHtml(t) {
   const parts = splitEmoji(t.text);
   parts.rest = capFirst(parts.rest);
@@ -540,7 +553,6 @@ function noteHtml(t) {
   const metaRow = dueChip ? '<div class="due-row">' + dueChip + '</div>' : '';
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
-    const subMic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="startSubVoice(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
     subBlock = '<div class="subtasks">' +
       t.subtasks.map(s =>
         '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
@@ -550,18 +562,13 @@ function noteHtml(t) {
         '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
-      (t.subOpen ? '<div class="sub-add-row"><textarea class="sub-add" rows="1" autocomplete="off" autocapitalize="sentences" name="darya_sub_' + t.id + '" data-subadd="' + t.id + '" placeholder="новая подзадача… Enter — строка, Ctrl+Enter — сохранить" onkeydown="subKey(event,' + t.id + ')" onblur="subBlur(event,' + t.id + ')"></textarea>' +
-        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSub(event,' + t.id + ',\'b\')" title="Жирный">Ж</button>' +
-        '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="fmtSub(event,' + t.id + ',\'i\')" title="Курсив">К</button>' +
-        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSub(event,' + t.id + ',\'l\')" title="Список">•</button>' +
-        '<button class="fmt-btn save" onmousedown="event.preventDefault()" onclick="saveSubAdd(event,' + t.id + ')" title="Сохранить подзадачу">✓</button>' +
-        subMic + '</div>' : '') +
+      (t.subOpen ? subAddRowHtml(t.id, false) : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + (t.pinned ? ' pinned' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editTask(' + t.id + ')">' + pinMark + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + pinMark + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
       metaRow +
       subBlock +
     '</div>' +
@@ -578,7 +585,6 @@ function personalNoteHtml(t) {
   const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
-    const subMic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="startSubVoiceP(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
     subBlock = '<div class="subtasks">' +
       t.subtasks.map(s =>
         '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
@@ -588,23 +594,18 @@ function personalNoteHtml(t) {
         '<button class="sub-del" onclick="delSubP(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
-      (t.subOpen ? '<div class="sub-add-row"><textarea class="sub-add" rows="1" autocomplete="off" autocapitalize="sentences" name="darya_psub_' + t.id + '" data-psubadd="' + t.id + '" placeholder="новая подзадача… Enter — строка, Ctrl+Enter — сохранить" onkeydown="subKeyP(event,' + t.id + ')" onblur="subBlurP(event,' + t.id + ')"></textarea>' +
-        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSubP(event,' + t.id + ',\'b\')" title="Жирный">Ж</button>' +
-        '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="fmtSubP(event,' + t.id + ',\'i\')" title="Курсив">К</button>' +
-        '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="fmtSubP(event,' + t.id + ',\'l\')" title="Список">•</button>' +
-        '<button class="fmt-btn save" onmousedown="event.preventDefault()" onclick="saveSubAddP(event,' + t.id + ')" title="Сохранить подзадачу">✓</button>' +
-        subMic + '</div>' : '') +
+      (t.subOpen ? subAddRowHtml(t.id, true) : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="togglePersonalDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editPersonal(' + t.id + ')">' + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
       '<button class="note-action" onclick="openSubsP(' + t.id + ')" title="Подзадачи">' + ARROW_DOWN + '</button>' +
-      '<button class="note-action" onclick="editPersonal(' + t.id + ')" title="Редактировать">' + PENCIL + '</button>' +
+      '<button class="note-action" onclick="editNoteInline(' + t.id + ')" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда">' + TRASH + '</button>' +
     '</div>' +
   '</div>';
@@ -676,47 +677,66 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
-function editTask(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) {
-    currentEditId = id; editContext = 'board';
-    document.getElementById('editTitle').textContent = 'Редактировать задачу';
-    const v = capFirst(t.text);
-    editInitial = v;
-    const ta = document.getElementById('editInput');
-    ta.value = v;
-    document.getElementById('editModal').classList.add('open');
-    setTimeout(() => { ta.focus(); autoGrow(ta); }, 0);
-  }
-}
-function editPersonal(id) {
-  const t = personal.find(x => x.id === id);
-  if (t) {
-    currentEditId = id; editContext = 'personal';
-    document.getElementById('editTitle').textContent = 'Редактировать заметку';
-    const v = capFirst(t.text);
-    editInitial = v;
-    const ta = document.getElementById('editInput');
-    ta.value = v;
-    document.getElementById('editModal').classList.add('open');
-    setTimeout(() => { ta.focus(); autoGrow(ta); }, 0);
-  }
-}
-function closeEditRequest(){
-  const ta = document.getElementById('editInput');
-  if (ta.value.trim() !== editInitial.trim()) {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { document.getElementById('editModal').classList.remove('open'); }, 'Закрыть без сохранения');
-  } else {
-    document.getElementById('editModal').classList.remove('open');
-  }
-}
-function closeAddRequest(){
-  const ta = document.getElementById('addInput');
-  if (ta.value.trim() !== '') {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { ta.value = ''; ta.style.height = ''; document.getElementById('addModal').classList.remove('open'); }, 'Закрыть без сохранения');
-  } else {
-    document.getElementById('addModal').classList.remove('open');
-  }
+// Inline-редактирование заметки прямо на странице (без модалки)
+function editNoteInline(id){
+  const noteEl = document.querySelector('.note[data-id="' + id + '"]');
+  if (!noteEl) return;
+  const content = noteEl.querySelector('.note-content');
+  if (!content || content.dataset.editing) return;
+  const isPersonal = !!noteEl.closest('#personalPage');
+  const store = isPersonal ? personal : tasks;
+  const t = store.find(x => x.id === id);
+  if (!t) return;
+  content.dataset.editing = '1';
+  const wrap = document.createElement('div');
+  wrap.className = 'sub-edit-wrap';
+  wrap.innerHTML = '<textarea class="sub-edit" rows="2" autocapitalize="sentences"></textarea>' +
+    '<div class="fmt-bar">' +
+    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
+    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
+    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
+    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
+    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
+    '</div>';
+  const ta = wrap.querySelector('textarea');
+  ta.value = t.text;
+  content.replaceWith(wrap);
+  ta.focus();
+  autoGrow(ta);
+  let finished = false;
+  const finish = commit => {
+    if (finished) return;
+    finished = true;
+    if (commit) {
+      const v = capFirst(ta.value.trim());
+      if (v) t.text = v;
+      if (isPersonal) { savePersonal(); renderPersonal(); }
+      else { saveTasks(); render(); }
+      notify('Заметка сохранена.', true);
+    } else {
+      if (isPersonal) renderPersonal(); else render();
+    }
+  };
+  const requestCancel = () => {
+    if (ta.value.trim() !== t.text.trim()) {
+      askConfirm('Закрыть без сохранения? Изменения заметки будут потеряны.', () => finish(false), 'Закрыть без сохранения');
+    } else finish(false);
+  };
+  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.f;
+      if (f === 'save') finish(true);
+      else if (f === 'cancel') requestCancel();
+      else fmtApply(ta, f);
+    });
+  });
+  ta.addEventListener('keydown', e => {
+    if (listKeydown(e)) return;
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
+  });
+  ta.addEventListener('blur', () => finish(true));
 }
 function deletePersonal(id) {
   const t = personal.find(x => x.id === id);
@@ -754,11 +774,19 @@ function openSubs(id) {
     if (el) el.focus();
   }
 }
+function openSubsP(id) {
+  const t = personal.find(x => x.id === id);
+  if (t) {
+    t.subOpen = true; renderPersonal();
+    const el = document.querySelector('[data-psubadd="' + id + '"]');
+    if (el) el.focus();
+  }
+}
 function subKey(event, tid) {
   if (listKeydown(event)) return;
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault();
-    saveSubAdd(null, tid);
+    saveSubAddGeneric(event, tid, false);
     return;
   }
   if (event.key === 'Escape') {
@@ -768,20 +796,37 @@ function subKey(event, tid) {
     if (t) { t.subOpen = false; localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); render(); }
   }
 }
-function saveSubAdd(event, tid) {
+function subKeyP(event, tid) {
+  if (listKeydown(event)) return;
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault();
+    saveSubAddGeneric(event, tid, true);
+    return;
+  }
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.target.dataset.handled = '1';
+    const t = personal.find(x => x.id === tid);
+    if (t) { t.subOpen = false; localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); renderPersonal(); }
+  }
+}
+function saveSubAddGeneric(event, tid, isPersonal){
   if (event) event.preventDefault();
-  const ta = document.querySelector('[data-subadd="' + tid + '"]');
+  const sel = isPersonal ? '[data-psubadd="' + tid + '"]' : '[data-subadd="' + tid + '"]';
+  const ta = document.querySelector(sel);
   if (!ta) return;
   const v = capFirst(ta.value.trim());
   ta.dataset.handled = '1';
   if (v) {
-    const t = tasks.find(x => x.id === tid);
+    const store = isPersonal ? personal : tasks;
+    const t = store.find(x => x.id === tid);
     if (t) t.subtasks.push({id: Date.now(), text: v, done: false});
   }
   ta.value = '';
-  saveTasks(); render();
+  if (isPersonal) { savePersonal(); renderPersonal(); }
+  else { saveTasks(); render(); }
   if (v) notify('Подзадача сохранена.', true);
-  setTimeout(() => { const el = document.querySelector('[data-subadd="' + tid + '"]'); if (el) el.focus(); }, 0);
+  setTimeout(() => { const el = document.querySelector(sel); if (el) el.focus(); }, 0);
 }
 function subBlur(event, tid) {
   const input = event.target;
@@ -803,116 +848,6 @@ function subBlur(event, tid) {
     render();
   }, 0);
 }
-function editSubStart(event, tid, sid) {
-  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
-  const span = row ? row.querySelector('.sub-text') : null;
-  if (!span) return;
-  const t = tasks.find(x => x.id === tid);
-  if (!t) return;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'sub-edit-wrap';
-  wrap.innerHTML = '<textarea class="sub-edit" rows="2" autocapitalize="sentences"></textarea>' +
-    '<div class="fmt-bar">' +
-    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
-    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
-    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
-    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
-    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
-    '</div>';
-  const ta = wrap.querySelector('textarea');
-  ta.value = s.text;
-  span.replaceWith(wrap);
-  ta.focus();
-  autoGrow(ta);
-  let finished = false;
-  const finish = commit => {
-    if (finished) return;
-    finished = true;
-    if (commit) {
-      const v = capFirst(ta.value.trim());
-      if (v) s.text = v;
-      saveTasks();
-      notify('Подзадача сохранена.', true);
-    }
-    render();
-  };
-  const requestCancel = () => {
-    if (ta.value.trim() !== s.text.trim()) {
-      askConfirm('Закрыть без сохранения? Изменения подзадачи будут потеряны.', () => finish(false), 'Закрыть без сохранения');
-    } else finish(false);
-  };
-  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
-    btn.addEventListener('mousedown', e => e.preventDefault());
-    btn.addEventListener('click', () => {
-      const f = btn.dataset.f;
-      if (f === 'save') finish(true);
-      else if (f === 'cancel') requestCancel();
-      else fmtApply(ta, f);
-    });
-  });
-  ta.addEventListener('keydown', e => {
-    if (listKeydown(e)) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
-    if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
-  });
-  ta.addEventListener('blur', () => finish(true));
-}
-function toggleSub(tid, sid) {
-  const t = tasks.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
-}
-function delSub(event, tid, sid) {
-  event.preventDefault(); event.stopPropagation();
-  const t = tasks.find(x => x.id === tid);
-  if (!t) return;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return;
-  askConfirm('Удалить подзадачу «' + shortText(s.text) + '»? Действие необратимо.', () => {
-    const t2 = tasks.find(x => x.id === tid);
-    if (!t2) return;
-    t2.subtasks = t2.subtasks.filter(y => y.id !== sid);
-    saveTasks(); render();
-  }, 'Удалить');
-}
-function openSubsP(id) {
-  const t = personal.find(x => x.id === id);
-  if (t) {
-    t.subOpen = true; renderPersonal();
-    const el = document.querySelector('[data-psubadd="' + id + '"]');
-    if (el) el.focus();
-  }
-}
-function subKeyP(event, tid) {
-  if (listKeydown(event)) return;
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault();
-    saveSubAddP(null, tid);
-    return;
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    event.target.dataset.handled = '1';
-    const t = personal.find(x => x.id === tid);
-    if (t) { t.subOpen = false; localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); renderPersonal(); }
-  }
-}
-function saveSubAddP(event, tid) {
-  if (event) event.preventDefault();
-  const ta = document.querySelector('[data-psubadd="' + tid + '"]');
-  if (!ta) return;
-  const v = capFirst(ta.value.trim());
-  ta.dataset.handled = '1';
-  if (v) {
-    const t = personal.find(x => x.id === tid);
-    if (t) t.subtasks.push({id: Date.now(), text: v, done: false});
-  }
-  ta.value = '';
-  savePersonal(); renderPersonal();
-  if (v) notify('Подзадача сохранена.', true);
-  setTimeout(() => { const el = document.querySelector('[data-psubadd="' + tid + '"]'); if (el) el.focus(); }, 0);
-}
 function subBlurP(event, tid) {
   const input = event.target;
   setTimeout(() => {
@@ -933,14 +868,12 @@ function subBlurP(event, tid) {
     renderPersonal();
   }, 0);
 }
-function editSubStartP(event, tid, sid) {
-  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
-  const span = row ? row.querySelector('.sub-text') : null;
-  if (!span) return;
-  const t = personal.find(x => x.id === tid);
-  if (!t) return;
+function buildSubEditWrap(tid, sid, isPersonal){
+  const store = isPersonal ? personal : tasks;
+  const t = store.find(x => x.id === tid);
+  if (!t) return null;
   const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return;
+  if (!s) return null;
   const wrap = document.createElement('div');
   wrap.className = 'sub-edit-wrap';
   wrap.innerHTML = '<textarea class="sub-edit" rows="2" autocapitalize="sentences"></textarea>' +
@@ -953,9 +886,6 @@ function editSubStartP(event, tid, sid) {
     '</div>';
   const ta = wrap.querySelector('textarea');
   ta.value = s.text;
-  span.replaceWith(wrap);
-  ta.focus();
-  autoGrow(ta);
   let finished = false;
   const finish = commit => {
     if (finished) return;
@@ -963,10 +893,12 @@ function editSubStartP(event, tid, sid) {
     if (commit) {
       const v = capFirst(ta.value.trim());
       if (v) s.text = v;
-      savePersonal();
+      if (isPersonal) { savePersonal(); renderPersonal(); }
+      else { saveTasks(); render(); }
       notify('Подзадача сохранена.', true);
+    } else {
+      if (isPersonal) renderPersonal(); else render();
     }
-    renderPersonal();
   };
   const requestCancel = () => {
     if (ta.value.trim() !== s.text.trim()) {
@@ -988,10 +920,48 @@ function editSubStartP(event, tid, sid) {
     if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
   });
   ta.addEventListener('blur', () => finish(true));
+  return {wrap: wrap, ta: ta};
+}
+function editSubStart(event, tid, sid) {
+  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
+  const span = row ? row.querySelector('.sub-text') : null;
+  if (!span) return;
+  const built = buildSubEditWrap(tid, sid, false);
+  if (!built) return;
+  span.replaceWith(built.wrap);
+  built.ta.focus();
+  autoGrow(built.ta);
+}
+function editSubStartP(event, tid, sid) {
+  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
+  const span = row ? row.querySelector('.sub-text') : null;
+  if (!span) return;
+  const built = buildSubEditWrap(tid, sid, true);
+  if (!built) return;
+  span.replaceWith(built.wrap);
+  built.ta.focus();
+  autoGrow(built.ta);
+}
+function toggleSub(tid, sid) {
+  const t = tasks.find(x => x.id === tid);
+  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
 }
 function toggleSubP(tid, sid) {
   const t = personal.find(x => x.id === tid);
   if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; savePersonal(); renderPersonal(); } }
+}
+function delSub(event, tid, sid) {
+  event.preventDefault(); event.stopPropagation();
+  const t = tasks.find(x => x.id === tid);
+  if (!t) return;
+  const s = t.subtasks.find(y => y.id === sid);
+  if (!s) return;
+  askConfirm('Удалить подзадачу «' + shortText(s.text) + '»? Действие необратимо.', () => {
+    const t2 = tasks.find(x => x.id === tid);
+    if (!t2) return;
+    t2.subtasks = t2.subtasks.filter(y => y.id !== sid);
+    saveTasks(); render();
+  }, 'Удалить');
 }
 function delSubP(event, tid, sid) {
   event.preventDefault(); event.stopPropagation();
@@ -1006,9 +976,13 @@ function delSubP(event, tid, sid) {
     savePersonal(); renderPersonal();
   }, 'Удалить');
 }
+function startSubVoice(tid) {
+  const el = document.querySelector('[data-subadd="' + tid + '"]');
+  if (el) startVoice(el);
+}
 function startSubVoiceP(tid) {
   const el = document.querySelector('[data-psubadd="' + tid + '"]');
-  startVoice(el);
+  if (el) startVoice(el);
 }
 const popEl = document.getElementById('notePop');
 function closeNoteMenu() { popEl.classList.remove('open'); }
@@ -1019,10 +993,10 @@ function openNoteMenu(id, ev) {
   const dueLabel = t && t.due ? ': ' + fmtDate(t.due) : '';
   const pinLabel = t && t.pinned ? 'Открепить' : 'Закрепить';
   popEl.innerHTML =
-    '<button class="pop-item" onclick="popSubs()">📝 Подзадачи</button>' +
     '<button class="pop-item" onclick="popEdit()">✏️ Редактировать</button>' +
     '<button class="pop-item" onclick="popDue()">🔔 Срок' + dueLabel + '</button>' +
     '<button class="pop-item" onclick="popPin()">📌 ' + pinLabel + '</button>' +
+    '<button class="pop-item" onclick="popSubs()">📝 Подзадачи</button>' +
     '<button class="pop-item" onclick="popArchive()">📦 В архив</button>';
   popEl.classList.add('open');
   const r = ev.currentTarget.getBoundingClientRect();
@@ -1035,7 +1009,7 @@ function openNoteMenu(id, ev) {
   popEl.style.top = top + 'px';
 }
 function popSubs(){ const id=currentNoteId; closeNoteMenu(); openSubs(id); }
-function popEdit(){ const id=currentNoteId; closeNoteMenu(); editTask(id); }
+function popEdit(){ const id=currentNoteId; closeNoteMenu(); editNoteInline(id); }
 function popDue(){ const id=currentNoteId; closeNoteMenu(); openDue(id); }
 function popPin(){ const id=currentNoteId; closeNoteMenu(); togglePinTask(id); }
 function popArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id); }
@@ -1335,10 +1309,6 @@ function startVoice(el) {
   el.focus();
   try { recog.start(); listening = true; updateMicUI(); } catch (err) { listening = false; updateMicUI(); }
 }
-function startSubVoice(tid) {
-  const el = document.querySelector('[data-subadd="' + tid + '"]');
-  startVoice(el);
-}
 function updateMicUI() {
   micBtn.classList.toggle('listening', listening && voiceTarget === document.getElementById('quickAdd'));
 }
@@ -1350,6 +1320,7 @@ if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
     for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript;
     const el = voiceTarget || document.getElementById('quickAdd');
     el.value = voiceBase + (voiceBase && !voiceBase.endsWith(' ') ? ' ' : '') + full;
+    autoGrow(el);
   };
   recog.onend = () => { listening = false; voiceTarget = null; updateMicUI(); };
   recog.onerror = e => {
@@ -1501,6 +1472,14 @@ document.getElementById('cancelSettings').addEventListener('click', closeSetting
 document.getElementById('saveSettings').addEventListener('click', saveSettings);
 document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
+function closeAddRequest(){
+  const ta = document.getElementById('addInput');
+  if (ta.value.trim() !== '') {
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { ta.value = ''; ta.style.height = ''; document.getElementById('addModal').classList.remove('open'); }, 'Закрыть без сохранения');
+  } else {
+    document.getElementById('addModal').classList.remove('open');
+  }
+}
 document.getElementById('confirmAdd').addEventListener('click', () => {
   const ta = document.getElementById('addInput');
   const text = capFirst(ta.value.trim());
@@ -1519,27 +1498,10 @@ document.getElementById('addInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
   if (e.key === 'Escape') closeAddRequest();
 });
-document.getElementById('cancelEdit').addEventListener('click', closeEditRequest);
-document.getElementById('confirmEdit').addEventListener('click', () => {
-  const text = capFirst(document.getElementById('editInput').value.trim());
-  if (editContext === 'personal') {
-    const t = personal.find(x => x.id === currentEditId);
-    if (text && t) { t.text = text; savePersonal(); renderPersonal(); document.getElementById('editModal').classList.remove('open'); notify('Заметка сохранена.', true); }
-  } else {
-    const t = tasks.find(x => x.id === currentEditId);
-    if (text && t) { t.text = text; saveTasks(); render(); document.getElementById('editModal').classList.remove('open'); notify('Заметка сохранена.', true); }
-  }
-});
-document.getElementById('editInput').addEventListener('keydown', e => {
-  if (listKeydown(e)) return;
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmEdit').click(); }
-  if (e.key === 'Escape') closeEditRequest();
-});
 document.querySelectorAll('.modal').forEach(modal => {
   modal.addEventListener('click', e => {
     if (e.target === modal) {
       if (modal.id === 'confirmModal') { modal.classList.remove('open'); confirmCb = null; }
-      else if (modal.id === 'editModal') closeEditRequest();
       else if (modal.id === 'dayModal') closeDayRequest();
       else if (modal.id === 'addModal') closeAddRequest();
       else modal.classList.remove('open');
