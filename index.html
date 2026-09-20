@@ -174,12 +174,15 @@
   .personal-layout{max-width:var(--maxw);margin:0 auto;padding:24px 28px 40px;display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
   .personal-main{min-width:0}
   .cal-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
-  .cal-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
-  .cal-head h3{font-family:'Unbounded',sans-serif;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cal-head{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+  .cal-head h3{font-family:'Unbounded',sans-serif;font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cal-nav{width:28px;height:28px;flex:none;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);cursor:pointer;color:var(--text-secondary);font-size:14px}
   .cal-nav:hover{background:var(--soft)}
   .cal-today-btn{border:1px solid var(--border);border-radius:8px;background:var(--input-bg);padding:4px 8px;font:inherit;font-size:11px;cursor:pointer;color:var(--text-secondary);flex:none}
   .cal-today-btn:hover{background:var(--soft)}
+  .cal-month{margin-bottom:14px}
+  .cal-month:last-of-type{margin-bottom:6px}
+  .cal-month h4{font-family:'Unbounded',sans-serif;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;letter-spacing:.3px}
   .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
   .cal-week span{text-align:center;font-size:10px;color:var(--text-muted);font-weight:600}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
@@ -194,7 +197,7 @@
   .cal-day.today{border-color:var(--accent);color:var(--text);font-weight:700}
   .cal-day.has-note{background:var(--accent-ring);color:var(--text);font-weight:600}
   .cal-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
-  .cal-legend{margin-top:10px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .cal-legend{margin-top:8px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .cal-legend i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
   .cal-legend b{font-weight:600;color:var(--text-secondary)}
   .cal-pop{position:fixed;z-index:1250;max-width:260px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 12px;font-size:12px;color:var(--text-secondary);display:none;line-height:1.45}
@@ -330,8 +333,7 @@
         <button class="cal-nav" onclick="calNext()" title="Следующий месяц">›</button>
         <button class="cal-today-btn" onclick="calToday()">Сегодня</button>
       </div>
-      <div class="cal-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
-      <div class="cal-grid" id="calGrid"></div>
+      <div id="calGrid"></div>
       <div class="cal-legend"><i></i><b>заметка дня</b> · рамка — сегодня · клик по дню — запись</div>
     </div>
     <div class="personal-main">
@@ -732,7 +734,7 @@ sbSearchIco.addEventListener('click', () => {
 sbSearchInput.addEventListener('blur', () => {
   sidebarEl.classList.remove('search-open');
 });
-// Личный календарь: только заметки дня, без рабочих задач и отчётов
+// Личный календарь: два месяца, только личные заметки дня
 function saveDayNotes(){
   localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
   if (!suppressPush) schedulePush();
@@ -741,27 +743,36 @@ function dayNoteFor(date){ return dayNotes.find(d => d.date === date); }
 function calPrev(){ calMonth--; if (calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
 function calNext(){ calMonth++; if (calMonth > 11){ calMonth = 0; calYear++; } renderCalendar(); }
 function calToday(){ const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); }
-function renderCalendar(){
-  document.getElementById('calTitle').textContent = MONTHS_NOM[calMonth] + ' ' + calYear;
-  const first = new Date(calYear, calMonth, 1);
+function monthBlock(year, month){
+  const first = new Date(year, month, 1);
   const offset = (first.getDay() + 6) % 7;
-  const daysIn = new Date(calYear, calMonth + 1, 0).getDate();
-  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  const daysIn = new Date(year, month + 1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
   const todayStr = todayISO();
-  let html = '';
-  for (let i = offset - 1; i >= 0; i--) html += '<span class="cal-day other">' + (prevDays - i) + '</span>';
+  let cells = '';
+  for (let i = offset - 1; i >= 0; i--) cells += '<span class="cal-day other">' + (prevDays - i) + '</span>';
   for (let d = 1; d <= daysIn; d++) {
-    const date = isoOf(new Date(calYear, calMonth, d));
+    const date = isoOf(new Date(year, month, d));
     const note = dayNoteFor(date);
     const cls = ['cal-day'];
     if (date === todayStr) cls.push('today');
     if (note) cls.push('has-note');
     const dot = note ? '<span class="cal-dot"></span>' : '';
-    html += '<button class="' + cls.join(' ') + '" onclick="openDay(\'' + date + '\')" onmouseenter="calHover(event,\'' + date + '\')" onmouseleave="calHide()">' + d + dot + '</button>';
+    cells += '<button class="' + cls.join(' ') + '" onclick="openDay(\'' + date + '\')" onmouseenter="calHover(event,\'' + date + '\')" onmouseleave="calHide()">' + d + dot + '</button>';
   }
   const trail = (7 - ((offset + daysIn) % 7)) % 7;
-  for (let i = 1; i <= trail; i++) html += '<span class="cal-day other">' + i + '</span>';
-  document.getElementById('calGrid').innerHTML = html;
+  for (let i = 1; i <= trail; i++) cells += '<span class="cal-day other">' + i + '</span>';
+  return '<div class="cal-month">' +
+    '<h4>' + MONTHS_NOM[month] + ' ' + year + '</h4>' +
+    '<div class="cal-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>' +
+    '<div class="cal-grid">' + cells + '</div>' +
+    '</div>';
+}
+function renderCalendar(){
+  const m2 = (calMonth + 1) % 12;
+  const y2 = calYear + (calMonth === 11 ? 1 : 0);
+  document.getElementById('calTitle').textContent = MONTHS_NOM[calMonth] + ' — ' + MONTHS_NOM[m2] + ' ' + y2;
+  document.getElementById('calGrid').innerHTML = monthBlock(calYear, calMonth) + monthBlock(y2, m2);
 }
 function calHover(event, date){
   if (!window.matchMedia('(hover:hover)').matches) return;
