@@ -62,7 +62,7 @@
   .sb-item.active{background:var(--soft);color:var(--text);font-weight:600}
   .sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
   .sb-label{opacity:0;transition:opacity .15s}
-  .sidebar:hover .sb-label,.sidebar.pinned .sb-label,.sidebar.search-open .sb-label{opacity:1}
+  .sidebar:hover .sb-label,.sidebar.pinned .sb-label,.sidebar.search-open .sb-label,.sidebar.open .sb-label{opacity:1}
   .sb-search{padding:2px 4px 8px;display:flex;align-items:center;height:48px;flex:none}
   .sb-search input{
     width:100%;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:8px;
@@ -158,6 +158,7 @@
   @media (hover:none){.note-actions{opacity:1}}
   .note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none;color:var(--text-secondary);font-weight:700;font-size:15px}
   .note-action:hover{background:var(--card);transform:scale(1.1)}
+  .note-action svg{width:16px;height:16px}
   .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
   .personal-wrap{max-width:900px;margin:0 auto;padding:24px 28px 40px}
   .personal-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
@@ -166,6 +167,7 @@
   .personal-zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
   .personal-zone .note{background:var(--personal-bg);border-color:var(--personal-bd);--zone-color:var(--text-muted)}
   .personal-zone .note-checkbox{accent-color:var(--text-muted)}
+  .personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
   .personal-notes{display:flex;flex-direction:column;gap:10px;min-height:40px}
   .popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
   .popmenu.open{display:block}
@@ -423,6 +425,9 @@ const DEFAULT_ZONES = [
   {key:'aviabit', label:'Авиабит', emoji:'🛩️', hidden:false, tint:2, color:null}
 ];
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+const ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
+const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 const ELLIPSIS = '⋯';
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
@@ -437,6 +442,8 @@ function migratePersonalNote(t){
   if (!t.created) t.created = new Date().toISOString();
   if (t.done === undefined) t.done = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
+  if (!Array.isArray(t.subtasks)) t.subtasks = [];
+  t.subOpen = false;
   return t;
 }
 let zones = loadZones();
@@ -720,7 +727,7 @@ function splitEmoji(text) {
 function matchesQuery(t, q) {
   if (!q) return true;
   if (t.text.toLowerCase().includes(q)) return true;
-  return t.subtasks.some(s => s.text.toLowerCase().includes(q));
+  return (t.subtasks || []).some(s => s.text.toLowerCase().includes(q));
 }
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 function noteHtml(t) {
@@ -771,14 +778,32 @@ function noteHtml(t) {
 function personalNoteHtml(t) {
   const parts = splitEmoji(t.text);
   const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
+  const subDone = t.subtasks.filter(s => s.done).length;
+  const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
+  let subBlock = '';
+  if (t.subtasks.length || t.subOpen) {
+    const subMic = SpeechRec ? '<button class="sub-mic" onclick="startSubVoiceP(' + t.id + ')" title="Надиктовать подзадачу">🎤</button>' : '';
+    subBlock = '<div class="subtasks">' +
+      t.subtasks.map(s =>
+        '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
+        '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSubP(' + t.id + ',' + s.id + ')">' +
+        '<span class="sub-text" ondblclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + escapeHtml(s.text) + '</span>' +
+        '<button class="sub-del" onclick="delSubP(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
+        '</div>'
+      ).join('') +
+      (t.subOpen ? '<div class="sub-add-row"><input class="sub-add" autocomplete="off" name="darya_psub_' + t.id + '" data-psubadd="' + t.id + '" placeholder="новая подзадача" onkeydown="subKeyP(event,' + t.id + ')" onblur="subBlurP(event,' + t.id + ')">' + subMic + '</div>' : '') +
+      '</div>';
+  }
   return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="togglePersonalDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editPersonal(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span></div>' +
+      '<div class="note-content" ondblclick="editPersonal(' + t.id + ')">' + chip + '<span class="note-text">' + escapeHtml(parts.rest) + '</span>' + subChip + '</div>' +
+      subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="editPersonal(' + t.id + ')" title="Редактировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
-      '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+      '<button class="note-action" onclick="openSubsP(' + t.id + ')" title="Подзадачи">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="editPersonal(' + t.id + ')" title="Редактировать">' + PENCIL + '</button>' +
+      '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда">' + TRASH + '</button>' +
     '</div>' +
   '</div>';
 }
@@ -957,6 +982,90 @@ function delSub(event, tid, sid) {
   const t = tasks.find(x => x.id === tid);
   if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); saveTasks(); render(); }
 }
+// Подзадачи личных заметок
+function openSubsP(id) {
+  const t = personal.find(x => x.id === id);
+  if (t) {
+    t.subOpen = true; renderPersonal();
+    const el = document.querySelector('[data-psubadd="' + id + '"]');
+    if (el) el.focus();
+  }
+}
+function subKeyP(event, tid) {
+  if (event.key === 'Enter') {
+    const value = event.target.value.trim();
+    if (value) {
+      const t = personal.find(x => x.id === tid);
+      if (t) {
+        t.subtasks.push({id: Date.now(), text: value, done: false});
+        savePersonal(); renderPersonal();
+        setTimeout(() => { const el = document.querySelector('[data-psubadd="' + tid + '"]'); if (el) el.focus(); }, 0);
+      }
+    }
+  }
+}
+function subBlurP(event, tid) {
+  const input = event.target;
+  setTimeout(() => {
+    if (listening && voiceTarget === input) return;
+    const t = personal.find(x => x.id === tid);
+    if (!t) return;
+    const v = input.value.trim();
+    if (v) {
+      t.subtasks.push({id: Date.now(), text: v, done: false});
+      t.subOpen = false;
+      savePersonal();
+    } else {
+      t.subOpen = false;
+      localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
+    }
+    renderPersonal();
+  }, 0);
+}
+function editSubStartP(event, tid, sid) {
+  const span = event.currentTarget;
+  const t = personal.find(x => x.id === tid);
+  if (!t) return;
+  const s = t.subtasks.find(y => y.id === sid);
+  if (!s) return;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'sub-edit';
+  input.autocomplete = 'off';
+  input.name = 'darya_psubedit_' + sid;
+  input.value = s.text;
+  span.replaceWith(input);
+  input.focus();
+  let finished = false;
+  const finish = commit => {
+    if (finished) return;
+    finished = true;
+    if (commit) {
+      const v = input.value.trim();
+      if (v) s.text = v;
+      savePersonal();
+    }
+    renderPersonal();
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') finish(true);
+    if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+function toggleSubP(tid, sid) {
+  const t = personal.find(x => x.id === tid);
+  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; savePersonal(); renderPersonal(); } }
+}
+function delSubP(event, tid, sid) {
+  event.preventDefault(); event.stopPropagation();
+  const t = personal.find(x => x.id === tid);
+  if (t) { t.subtasks = t.subtasks.filter(y => y.id !== sid); savePersonal(); renderPersonal(); }
+}
+function startSubVoiceP(tid) {
+  const el = document.querySelector('[data-psubadd="' + tid + '"]');
+  startVoice(el);
+}
 const popEl = document.getElementById('notePop');
 function closeNoteMenu() { popEl.classList.remove('open'); }
 function openNoteMenu(id, ev) {
@@ -1101,7 +1210,7 @@ function createParsed(line, zoneKey) {
 function addPersonalNote(line) {
   const text = line.trim();
   if (!text) return;
-  personal.push(migratePersonalNote({id: Date.now() + Math.floor(Math.random()*10000), text: text, created: new Date().toISOString(), done: false, doneAt: null}));
+  personal.push(migratePersonalNote({id: Date.now() + Math.floor(Math.random()*10000), text: text, created: new Date().toISOString(), done: false, doneAt: null, subtasks: []}));
   savePersonal(); renderPersonal();
 }
 function quickAddMany(lines) {
