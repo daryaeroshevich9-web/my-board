@@ -154,10 +154,14 @@ textarea.sub-add{width:100%;border:1px dashed var(--dash);background:transparent
 textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--card)}
 .sub-add-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .sub-mic{flex:none;width:34px;border:1px dashed var(--dash);border-radius:8px;background:transparent;cursor:pointer;font-size:14px}
-.note-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s;flex:none;margin-left:8px}
+/* Кнопка действий карточки — оверлей, не резервирует место */
+.note-actions{position:absolute;top:10px;right:10px;display:flex;gap:6px;opacity:0;transition:opacity .15s}
 .note:hover .note-actions{opacity:1}
-@media (hover:none){.note-actions{opacity:1}}
-.note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex:none;color:var(--text-secondary);font-weight:700;font-size:15px}
+@media (hover:none){
+  .note{padding-right:44px}
+  .note-actions{opacity:1}
+}
+.note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text-secondary);font-weight:700;font-size:15px}
 .note-action:hover{background:var(--card);transform:scale(1.1)}
 .note-action svg{width:16px;height:16px}
 .empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
