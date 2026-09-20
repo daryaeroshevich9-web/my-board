@@ -167,6 +167,15 @@
         }
       ],
       "subOpen": false
+    },
+    {
+      "id": 1789903822123,
+      "text": "Фильмы",
+      "created": "2026-09-20T11:30:21.956Z",
+      "done": false,
+      "doneAt": null,
+      "subtasks": [],
+      "subOpen": false
     }
   ],
   "daynotes": [
