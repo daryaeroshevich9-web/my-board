@@ -80,6 +80,49 @@
   .sb-pin{margin-top:auto}
   .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190}
   .sb-backdrop.show{display:block}
+  .cal-panel{
+    position:fixed;top:0;bottom:0;left:56px;width:320px;max-width:calc(100vw - 56px);
+    background:var(--card);border-right:1px solid var(--border);box-shadow:8px 0 24px rgba(0,0,0,.10);
+    z-index:180;transform:translateX(-115%);transition:transform .2s ease;
+    display:flex;flex-direction:column;padding:14px;overflow-y:auto;
+  }
+  body.sb-pinned .cal-panel{left:230px}
+  .cal-panel.open{transform:none}
+  .cal-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  .cal-head h3{font-family:'Unbounded',sans-serif;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cal-nav{width:28px;height:28px;flex:none;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);cursor:pointer;color:var(--text-secondary);font-size:14px}
+  .cal-nav:hover{background:var(--soft)}
+  .cal-today-btn{border:1px solid var(--border);border-radius:8px;background:var(--input-bg);padding:4px 8px;font:inherit;font-size:11px;cursor:pointer;color:var(--text-secondary);flex:none}
+  .cal-today-btn:hover{background:var(--soft)}
+  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+  .cal-week span{text-align:center;font-size:10px;color:var(--text-muted);font-weight:600}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-day{
+    position:relative;height:38px;border:1px solid transparent;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;font:inherit;font-size:12px;
+    color:var(--text-secondary);cursor:pointer;background:transparent;padding:0;
+  }
+  .cal-day:hover{background:var(--soft)}
+  .cal-day.other{opacity:.35;cursor:default}
+  .cal-day.other:hover{background:transparent}
+  .cal-day.today{border-color:var(--accent);color:var(--text);font-weight:700}
+  .cal-day.has-note{background:var(--accent-ring);color:var(--text);font-weight:600}
+  .cal-day.has-due{background:rgba(240,200,60,.22);color:var(--text)}
+  .cal-day.has-note.has-due{background:linear-gradient(135deg,var(--accent-ring),rgba(240,200,60,.28))}
+  .cal-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+  .cal-dot i{width:4px;height:4px;border-radius:50%;background:var(--accent)}
+  .cal-dot i.due{background:#b45309}
+  .cal-pop{position:fixed;z-index:1250;max-width:260px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 12px;font-size:12px;color:var(--text-secondary);display:none;line-height:1.45}
+  .cal-pop.show{display:block}
+  .cal-pop-date{font-weight:700;color:var(--text);margin-bottom:6px;font-size:12px}
+  .cal-pop-note{margin-bottom:6px}
+  .cal-pop-note ul,.cal-pop-note ol{margin:2px 0 2px 16px}
+  .cal-pop-due{margin-top:6px;border-top:1px dashed var(--border);padding-top:6px}
+  .cal-daynote-list{margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;font-size:12px;color:var(--text-secondary)}
+  .cal-daynote-list .item{margin:4px 0}
+  @media (max-width:720px){
+    .cal-panel{left:0;width:100vw;max-width:100vw}
+  }
   .topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
   .topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .sb-toggle{display:none;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);flex:none}
@@ -253,6 +296,7 @@
 <aside class="sidebar" id="sidebar">
   <button class="sb-item" id="navBoard" onclick="switchPage('board')"><span class="sb-ico">🏠</span><span class="sb-label">Доска</span></button>
   <button class="sb-item" id="navPersonal" onclick="switchPage('personal')"><span class="sb-ico">📝</span><span class="sb-label">Личное</span></button>
+  <button class="sb-item" onclick="toggleCal()"><span class="sb-ico">📅</span><span class="sb-label">Календарь</span></button>
   <div class="sb-sep"></div>
   <div class="sb-search">
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
@@ -264,6 +308,18 @@
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
 </aside>
 <div class="sb-backdrop" id="sbBackdrop" onclick="closeSb()"></div>
+<aside class="cal-panel" id="calPanel">
+  <div class="cal-head">
+    <button class="cal-nav" onclick="calPrev()" title="Предыдущий месяц">‹</button>
+    <h3 id="calTitle"></h3>
+    <button class="cal-nav" onclick="calNext()" title="Следующий месяц">›</button>
+    <button class="cal-today-btn" onclick="calToday()">Сегодня</button>
+    <button class="cal-nav" onclick="toggleCal()" title="Закрыть календарь">✕</button>
+  </div>
+  <div class="cal-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+  <div class="cal-grid" id="calGrid"></div>
+</aside>
+<div class="cal-pop" id="calPop"></div>
 <header class="topbar">
   <div class="topbar-inner">
     <button class="sb-toggle" id="sbToggle" title="Меню">☰</button>
@@ -331,6 +387,24 @@
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelEdit">Отмена</button>
       <button class="modal-btn primary" id="confirmEdit">Сохранить</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="dayModal">
+  <div class="modal-content">
+    <h3 id="dayTitle">Заметка</h3>
+    <textarea id="dayInput" rows="5" placeholder="Заметка за эту дату..."></textarea>
+    <div class="fmt-toolbar">
+      <button class="fmt-btn" onclick="fmtDay('b')" title="Жирный">Ж</button>
+      <button class="fmt-btn i" onclick="fmtDay('i')" title="Курсив">К</button>
+      <button class="fmt-btn" onclick="fmtDay('l')" title="Список">•</button>
+    </div>
+    <div class="fmt-hint">Enter — новая строка, Ctrl+Enter — сохранить. Разметка: **жирный**, *курсив*, «- » список.</div>
+    <div id="dayDueList" class="cal-daynote-list"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="dayDelete" onclick="deleteDayNote()">Удалить</button>
+      <button class="modal-btn secondary" onclick="closeDay()">Отмена</button>
+      <button class="modal-btn primary" onclick="saveDay()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -423,7 +497,7 @@
     <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <div id="tokenInputWrap"></div>
     <hr class="settings-sep">
-    <p class="settings-hint">Резервная копия — полный снимок доски и личных заметок (задачи, подзадачи, сроки, разделы, цвета).</p>
+    <p class="settings-hint">Резервная копия — полный снимок доски, личных заметок и заметок календаря.</p>
     <div class="move-list">
       <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
       <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
@@ -438,6 +512,7 @@
 <script>
 const STORAGE_KEY = 'darya_board_tasks';
 const PERSONAL_KEY = 'darya_personal_notes';
+const DAYNOTES_KEY = 'darya_board_daynotes';
 const ZONES_KEY = 'darya_board_zones';
 const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
@@ -452,6 +527,8 @@ const DEFAULT_ZONES = [
   {key:'portal', label:'Портал 2.0', emoji:'🚪', hidden:false, tint:1, color:null},
   {key:'aviabit', label:'Авиабит', emoji:'🛩️', hidden:false, tint:2, color:null}
 ];
+const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 const ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
 const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
@@ -474,15 +551,23 @@ function migratePersonalNote(t){
   t.subOpen = false;
   return t;
 }
+function migrateDayNote(d){
+  if (!d || !d.date) return null;
+  return {date: d.date, text: String(d.text || ''), updated: d.updated || new Date().toISOString()};
+}
 let zones = loadZones();
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let personal = (JSON.parse(localStorage.getItem(PERSONAL_KEY) || '[]')).map(migratePersonalNote);
+let dayNotes = (JSON.parse(localStorage.getItem(DAYNOTES_KEY) || '[]')).map(migrateDayNote).filter(Boolean);
 tasks.forEach(migrateTask);
 let currentAddZone = null, currentEditId = null, currentNoteId = null;
 let editContext = 'board';
 let cloudSha = null, suppressPush = true, pushTimer = null, importedFromMd = false;
 let pendingQuickLines = [];
 let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let currentDayDate = null;
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
@@ -569,7 +654,6 @@ function parseMagic(raw){
   text = text.replace(/\s{2,}/g,' ').trim();
   return {text: text, due: due};
 }
-// Мини-разметка: **жирный**, *курсив*, "- " список, "1. " нумерованный
 function renderRich(raw){
   const lines = String(raw == null ? '' : raw).split('\n');
   let html = '';
@@ -606,6 +690,7 @@ function fmtApply(ta, type){
 }
 function fmtEdit(type){ fmtApply(document.getElementById('editInput'), type); }
 function fmtAdd(type){ fmtApply(document.getElementById('addInput'), type); }
+function fmtDay(type){ fmtApply(document.getElementById('dayInput'), type); }
 function fmtSub(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-subadd="' + tid + '"]'), type); }
 function fmtSubP(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-psubadd="' + tid + '"]'), type); }
 let toastTimer = null;
@@ -658,6 +743,103 @@ sbSearchIco.addEventListener('click', () => {
 sbSearchInput.addEventListener('blur', () => {
   sidebarEl.classList.remove('search-open');
 });
+// Календарь и заметки дня
+function saveDayNotes(){
+  localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
+  if (!suppressPush) schedulePush();
+}
+function dayNoteFor(date){ return dayNotes.find(d => d.date === date); }
+function dueTasksFor(date){ return tasks.filter(t => t.due === date && !t.deleted && !t.archived); }
+function toggleCal(){
+  const p = document.getElementById('calPanel');
+  const open = p.classList.toggle('open');
+  if (open) renderCalendar(); else calHide();
+  closeSbMobile();
+}
+function calPrev(){ calMonth--; if (calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
+function calNext(){ calMonth++; if (calMonth > 11){ calMonth = 0; calYear++; } renderCalendar(); }
+function calToday(){ const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); }
+function renderCalendar(){
+  document.getElementById('calTitle').textContent = MONTHS_NOM[calMonth] + ' ' + calYear;
+  const first = new Date(calYear, calMonth, 1);
+  const offset = (first.getDay() + 6) % 7;
+  const daysIn = new Date(calYear, calMonth + 1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  const todayStr = todayISO();
+  let html = '';
+  for (let i = offset - 1; i >= 0; i--) html += '<span class="cal-day other">' + (prevDays - i) + '</span>';
+  for (let d = 1; d <= daysIn; d++) {
+    const date = isoOf(new Date(calYear, calMonth, d));
+    const note = dayNoteFor(date);
+    const dues = dueTasksFor(date);
+    const cls = ['cal-day'];
+    if (date === todayStr) cls.push('today');
+    if (note) cls.push('has-note');
+    if (dues.length) cls.push('has-due');
+    let dots = '';
+    if (note || dues.length) dots = '<span class="cal-dot">' + (note ? '<i></i>' : '') + (dues.length ? '<i class="due"></i>' : '') + '</span>';
+    html += '<button class="' + cls.join(' ') + '" onclick="openDay(\'' + date + '\')" onmouseenter="calHover(event,\'' + date + '\')" onmouseleave="calHide()">' + d + dots + '</button>';
+  }
+  const trail = (7 - ((offset + daysIn) % 7)) % 7;
+  for (let i = 1; i <= trail; i++) html += '<span class="cal-day other">' + i + '</span>';
+  document.getElementById('calGrid').innerHTML = html;
+}
+function calHover(event, date){
+  if (!window.matchMedia('(hover:hover)').matches) return;
+  const note = dayNoteFor(date);
+  const dues = dueTasksFor(date);
+  if (!note && !dues.length) { calHide(); return; }
+  const pop = document.getElementById('calPop');
+  const p = parseLocal(date);
+  let html = '<div class="cal-pop-date">' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</div>';
+  if (note) html += '<div class="cal-pop-note">' + renderRich(note.text) + '</div>';
+  if (dues.length) html += '<div class="cal-pop-due">' + dues.map(t => '🔔 ' + escapeHtml(t.text) + (t.done ? ' ✅' : '')).join('<br>') + '</div>';
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const r = event.currentTarget.getBoundingClientRect();
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let left = r.right + 8;
+  if (left + pw > window.innerWidth - 8) left = Math.max(8, r.left - pw - 8);
+  let top = r.top;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function calHide(){ document.getElementById('calPop').classList.remove('show'); }
+function openDay(date){
+  calHide();
+  currentDayDate = date;
+  const p = parseLocal(date);
+  document.getElementById('dayTitle').textContent = '📅 ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
+  const note = dayNoteFor(date);
+  document.getElementById('dayInput').value = note ? note.text : '';
+  document.getElementById('dayDelete').style.display = note ? '' : 'none';
+  const dues = dueTasksFor(date);
+  document.getElementById('dayDueList').innerHTML = dues.length
+    ? '<div style="font-weight:600;color:var(--text);margin-bottom:4px">Задачи со сроком на эту дату:</div>' + dues.map(t => '<div class="item">' + (t.done ? '✅' : '🔔') + ' ' + escapeHtml(t.text) + '</div>').join('')
+    : '';
+  document.getElementById('dayModal').classList.add('open');
+  setTimeout(() => document.getElementById('dayInput').focus(), 0);
+}
+function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
+function saveDay(){
+  const text = document.getElementById('dayInput').value.trim();
+  if (!text) { deleteDayNote(true); return; }
+  const ex = dayNoteFor(currentDayDate);
+  if (ex) { ex.text = text; ex.updated = new Date().toISOString(); }
+  else dayNotes.push({date: currentDayDate, text: text, updated: new Date().toISOString()});
+  saveDayNotes(); renderCalendar(); closeDay(); notify('Заметка сохранена.');
+}
+function deleteDayNote(silent){
+  dayNotes = dayNotes.filter(d => d.date !== currentDayDate);
+  saveDayNotes(); renderCalendar(); closeDay();
+  if (!silent) notify('Заметка удалена.');
+}
+document.getElementById('dayInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
+  if (e.key === 'Escape') closeDay();
+});
+function refreshCalIfOpen(){ if (document.getElementById('calPanel').classList.contains('open')) renderCalendar(); }
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
   const qa = document.getElementById('quickAdd');
@@ -716,6 +898,10 @@ function cloudRead() {
         personal = parsed.personal.map(migratePersonalNote);
         localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
       }
+      if (parsed && Array.isArray(parsed.daynotes)) {
+        dayNotes = parsed.daynotes.map(migrateDayNote).filter(Boolean);
+        localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
+      }
       return parsed;
     });
 }
@@ -726,7 +912,7 @@ function cloudWrite() {
     return Promise.reject('no-token');
   }
   const payload = () => {
-    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones, personal: personal}, null, 2))};
+    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes}, null, 2))};
     if (cloudSha) b.sha = cloudSha;
     return b;
   };
@@ -910,6 +1096,7 @@ function render() {
     '</section>';
   }).join('');
   renderPersonal();
+  refreshCalIfOpen();
 }
 function renderPersonal() {
   const list = document.getElementById('personalNotes');
@@ -1098,7 +1285,7 @@ function openSubsP(id) {
   }
 }
 function subKeyP(event, tid) {
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+  if (event.key === 'Enter' && (event.ctrlKey || e.metaKey)) {
     event.preventDefault();
     saveSubAddP(null, tid);
     return;
@@ -1234,8 +1421,8 @@ function popArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id);
 document.addEventListener('click', e => {
   if (popEl.classList.contains('open') && !e.target.closest('#notePop') && !e.target.closest('.note-action')) closeNoteMenu();
 });
-window.addEventListener('scroll', () => { if (popEl.classList.contains('open')) closeNoteMenu(); }, true);
-window.addEventListener('resize', closeNoteMenu);
+window.addEventListener('scroll', () => { if (popEl.classList.contains('open')) closeNoteMenu(); calHide(); }, true);
+window.addEventListener('resize', () => { closeNoteMenu(); calHide(); });
 function openDue(id) {
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
@@ -1483,7 +1670,7 @@ function downloadResultsCsv() {
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
 function backupDownload() {
-  const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal}, null, 2);
+  const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes}, null, 2);
   downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
   notify('Резервная копия сохранена.');
 }
@@ -1498,16 +1685,12 @@ document.getElementById('backupFile').addEventListener('change', e => {
       const count = parsed.tasks.length;
       const zonesBackup = Array.isArray(parsed.zones) && parsed.zones.length ? parsed.zones : null;
       const personalBackup = Array.isArray(parsed.personal) ? parsed.personal : null;
+      const daynotesBackup = Array.isArray(parsed.daynotes) ? parsed.daynotes : null;
       askConfirm('Заменить текущие данные данными из файла (' + count + ' задач)?', () => {
         tasks = parsed.tasks.map(migrateTask);
-        if (zonesBackup) {
-          zones = zonesBackup.map(migrateZone);
-          localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
-        }
-        if (personalBackup) {
-          personal = personalBackup.map(migratePersonalNote);
-          localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
-        }
+        if (zonesBackup) { zones = zonesBackup.map(migrateZone); localStorage.setItem(ZONES_KEY, JSON.stringify(zones)); }
+        if (personalBackup) { personal = personalBackup.map(migratePersonalNote); localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); }
+        if (daynotesBackup) { dayNotes = daynotesBackup.map(migrateDayNote).filter(Boolean); localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes)); }
         saveTasks(); render();
         notify('Копия загружена.');
       }, 'Заменить');
