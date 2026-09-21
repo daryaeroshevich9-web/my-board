@@ -11,6 +11,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/lang/summernote-ru-RU.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -23,7 +27,6 @@
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
   <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
-  <button class="sb-item" onclick="openDayReport()"><span class="sb-ico">📄</span><span class="sb-label">Отчёт дня</span></button>
   <button class="sb-item sb-board-only" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
   <button class="sb-item sb-board-only" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
@@ -77,22 +80,39 @@
     </div>
   </div>
 </div>
+<button class="fab" id="fabReport" title="Отчёт дня" onclick="openDayReport()">📄</button>
 <div class="cal-pop" id="calPop"></div>
 <div class="popmenu" id="notePop"></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="addModal">
   <div class="modal-content">
     <h3>Новая задача</h3>
-    <textarea id="addInput" name="darya_add" rows="3" placeholder="Описание задачи... (даты распознаются)" autocomplete="off" autocapitalize="sentences"></textarea>
-    <div class="fmt-toolbar">
-      <button class="fmt-btn" onclick="fmtAdd('b')" title="Жирный">Ж</button>
-      <button class="fmt-btn i" onclick="fmtAdd('i')" title="Курсив">К</button>
-      <button class="fmt-btn" onclick="fmtAdd('l')" title="Список">•</button>
-    </div>
-    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — добавить. Разметка: **жирный**, *курсив*, «- » список.</div>
+    <div class="note-editor" id="addEditor"></div>
+    <div class="fmt-hint">Даты распознаются: «завтра», «в пятницу», «15.10». Ctrl+Enter — добавить.</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="editModal">
+  <div class="modal-content">
+    <h3 id="editTitle">Редактирование</h3>
+    <div class="note-editor" id="editEditor"></div>
+    <div class="fmt-hint">Ctrl+Enter — сохранить.</div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="cancelEdit">Отмена</button>
+      <button class="modal-btn primary" id="saveEditBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="subsModal">
+  <div class="modal-content">
+    <h3 id="subsTitle">Подзадачи</h3>
+    <div class="subs-list" id="subsList"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeSubs()">Закрыть</button>
+      <button class="modal-btn primary" id="subsAddBtn">＋ Подзадача</button>
     </div>
   </div>
 </div>
@@ -116,35 +136,16 @@
 <div class="modal" id="dayReportModal">
   <div class="modal-content">
     <h3 id="dayReportTitle">📄 Отчёт дня</h3>
-    <textarea id="dayReportInput" rows="6" placeholder="Что сделано за день — по пунктам:&#10;- ..." autocomplete="off" autocapitalize="sentences"></textarea>
-    <div class="fmt-toolbar">
-      <button class="fmt-btn" onclick="fmtReport('b')" title="Жирный">Ж</button>
-      <button class="fmt-btn i" onclick="fmtReport('i')" title="Курсив">К</button>
-      <button class="fmt-btn" onclick="fmtReport('l')" title="Список">•</button>
-    </div>
-    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — сохранить. Отчёт сохраняется за сегодняшнее число.</div>
+    <div class="note-editor" id="dayReportEditor"></div>
+    <div class="fmt-hint">Отчёт сохраняется за сегодняшнее число. Микрофон дописывает распознанные фразы в конец текста.</div>
     <div class="modal-actions">
+      <button class="mic-btn" id="repMic" title="Голосовой ввод в отчёт">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+      </button>
       <button class="modal-btn secondary" onclick="copyDayReport()">📋 Копировать</button>
       <button class="modal-btn secondary" onclick="downloadDayReportMd()">⬇ Markdown</button>
-      <button class="modal-btn secondary" onclick="openReportPeriod()">📅 За период</button>
-      <button class="modal-btn secondary" onclick="closeDayReportRequest()">Отмена</button>
+      <button class="modal-btn secondary" id="cancelDayReport">Отмена</button>
       <button class="modal-btn primary" onclick="saveDayReport()">Сохранить</button>
-    </div>
-  </div>
-</div>
-<div class="modal" id="reportPeriodModal">
-  <div class="modal-content">
-    <h3>📅 Отчёты за период</h3>
-    <div class="results-period">
-      <input type="date" id="rpFrom">
-      <span style="color:var(--text-muted)">—</span>
-      <input type="date" id="rpTo">
-    </div>
-    <pre class="report-preview" id="rpPreview"></pre>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="copyReportPeriod()">📋 Копировать</button>
-      <button class="modal-btn secondary" onclick="downloadReportPeriodMd()">⬇ Markdown</button>
-      <button class="modal-btn primary" onclick="closeReportPeriod()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -204,17 +205,26 @@
   </div>
 </div>
 <div class="modal" id="resultsModal">
-  <div class="modal-content">
-    <h3>📊 Итоги недели</h3>
+  <div class="modal-content modal-wide">
+    <h3>📊 Итоги и отчёты</h3>
     <div class="results-period">
       <input type="date" id="resFrom">
       <span style="color:var(--text-muted)">—</span>
       <input type="date" id="resTo">
     </div>
-    <div class="results-stats" id="resStats"></div>
-    <div id="resBody"></div>
+    <div class="results-split">
+      <div class="results-half">
+        <h4>Задачи</h4>
+        <div class="results-stats" id="resStats"></div>
+        <div id="resBody"></div>
+      </div>
+      <div class="results-half">
+        <h4>Отчёты по дням <span style="float:right"><button class="modal-btn secondary" style="padding:4px 10px;font-size:12px" onclick="copyReportsOnly()">📋</button> <button class="modal-btn secondary" style="padding:4px 10px;font-size:12px" onclick="downloadReportsOnly()">⬇</button></span></h4>
+        <div id="resReports"></div>
+      </div>
+    </div>
     <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать</button>
+      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать всё</button>
       <button class="modal-btn secondary" onclick="downloadResultsMd()">⬇ Markdown</button>
       <button class="modal-btn secondary" onclick="downloadResultsCsv()">⬇ CSV</button>
       <button class="modal-btn primary" onclick="closeResults()">Закрыть</button>
