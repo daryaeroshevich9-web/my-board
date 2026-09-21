@@ -90,9 +90,9 @@ h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spac
 .mini-stat b{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;color:var(--text)}
 .mini-broom{border:1px solid var(--border);background:var(--card);border-radius:999px;width:30px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .mini-broom:hover{background:var(--soft)}
-.zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
-@media (max-width:1100px){ .zones{grid-template-columns:repeat(2,1fr)} }
-.zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+/* Masonry: колонки без пустых дыр между карточками разной высоты */
+.zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 40px;columns:3;column-gap:20px}
+.zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06);display:block;width:100%;margin:0 0 20px;break-inside:avoid;-webkit-column-break-inside:avoid}
 .zone.drop-hover{outline:2px dashed var(--black);outline-offset:4px}
 .zone-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .zone-emoji{width:38px;height:38px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,var(--z-bg),var(--z-bd))}
@@ -212,6 +212,7 @@ textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--
 .personal-zone .note-checkbox{accent-color:var(--text-muted)}
 .personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
 .personal-notes{display:flex;flex-direction:column;gap:10px;min-height:420px;max-height:calc(100vh - 320px);overflow-y:auto;padding-right:2px}
+.report-preview{white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.5;color:var(--text-secondary);background:var(--soft);border:1px solid var(--border);border-radius:10px;padding:12px;max-height:300px;overflow-y:auto;margin-bottom:14px}
 .popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
 .popmenu.open{display:block}
 .pop-item{display:flex;gap:8px;align-items:center;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;color:var(--text);text-align:left;white-space:nowrap}
@@ -269,6 +270,9 @@ textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--
 .list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
 .list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
 .page-hidden{display:none !important}
+@media (max-width:1100px){
+  .zones{columns:2}
+}
 @media (max-width:900px){
   .personal-layout{grid-template-columns:1fr}
   .personal-notes{min-height:40px;max-height:none;overflow:visible}
@@ -280,74 +284,7 @@ textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--
   .sb-toggle{display:flex}
   .sidebar{width:260px;transform:translateX(-100%);transition:transform .2s}
   .sidebar.open{transform:none}
-  .zones{padding:14px 16px 24px;gap:14px;grid-template-columns:1fr}
+  .zones{columns:1;padding:14px 16px 24px}
   .zone{border-radius:16px;padding:14px}
   .personal-layout{padding:14px 16px 32px}
 }
-/* ===== FOCUS FLIGHT (вкладка) ===== */
-#flightPage{max-width:var(--maxw);margin:0 auto;padding:20px 28px 40px}
-#flightPage header{margin-bottom:18px}
-#flightPage h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:22px;letter-spacing:.3px}
-#flightPage .sub{color:var(--text-muted);font-size:13px;margin-top:4px}
-#flightPage .sub b{color:var(--accent);font-weight:700}
-#flightPage .grid{display:grid;grid-template-columns:1fr;gap:20px}
-@media (min-width:900px){ #flightPage .grid{grid-template-columns:1fr 1fr;align-items:start} }
-#flightPage .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:0 8px 24px rgba(0,0,0,.05)}
-#flightPage label{display:block;font-size:13px;color:var(--text-secondary);font-weight:500;margin-bottom:8px}
-#flightPage select,#flightPage input[type=range]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:#fff;color:var(--text)}
-#flightPage select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
-#flightPage input[type=range]{padding:0;accent-color:var(--accent);cursor:pointer}
-#flightPage button{padding:12px 20px;border:none;border-radius:10px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;background:var(--black);color:var(--on-black);transition:.15s}
-#flightPage button:hover{filter:brightness(.9)}
-#flightPage button.ghost{background:var(--soft);color:var(--text)}
-#flightPage button.ghost:hover{background:var(--soft-hover);filter:none}
-#flightPage .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-#flightPage .chip{padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-secondary);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
-#flightPage .chip:hover{background:var(--soft)}
-#flightPage .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-#flightPage .dur{font-size:1.15rem;font-weight:700;text-align:center;padding:10px;color:var(--accent);margin-top:8px}
-#flightPage .list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding-right:4px;margin-top:4px}
-#flightPage .item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;transition:.15s}
-#flightPage .item:hover{background:var(--soft);border-color:var(--accent);transform:translateX(2px)}
-#flightPage .item .code{font-weight:800;font-size:14px;color:var(--accent);min-width:56px;font-family:ui-monospace,monospace}
-#flightPage .item .city{flex:1;font-size:14px;font-weight:500}
-#flightPage .item .country{font-size:12px;color:var(--text-muted);font-weight:500}
-#flightPage .item .info{font-size:12px;color:var(--text-muted);text-align:right;white-space:nowrap;line-height:1.5}
-#flightPage .item.visited{opacity:.55}
-#flightPage .item.visited .city{color:var(--text-muted);font-weight:400}
-#flightPage .item.visited .code{color:var(--text-muted)}
-#flightPage .timer{font-size:3rem;font-weight:800;text-align:center;letter-spacing:2px;font-variant-numeric:tabular-nums}
-#flightPage .route{text-align:center;color:var(--text-secondary);font-size:14px;margin-top:8px}
-#flightPage .route strong{color:var(--text);font-weight:700}
-#flightPage .progress{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin-top:18px;position:relative}
-#flightPage .progress-fill{height:100%;background:var(--accent);transition:width 1s linear;width:0}
-#flightPage .progress-pct{text-align:right;font-size:12px;color:var(--text-muted);margin-top:6px;font-weight:600;font-variant-numeric:tabular-nums}
-#flightPage .empty,#flightPage .loader{padding:36px 20px;text-align:center;color:var(--text-muted);font-size:14px}
-#flightPage .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-#flightPage .stat{background:var(--soft);border-radius:12px;padding:14px;text-align:center}
-#flightPage .stat b{display:block;font-size:1.2rem;font-weight:800;color:var(--accent)}
-#flightPage .stat span{font-size:11px;color:var(--text-muted);margin-top:4px;display:block}
-#flightPage .big{font-size:2.5rem;text-align:center;margin-bottom:8px}
-#flightPage .done-title{font-size:18px;font-weight:800;text-align:center}
-#flightPage .done-sub{color:var(--text-secondary);text-align:center;margin-top:6px}
-#flightPage .hidden{display:none!important}
-#flightPage .row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary);margin-top:12px}
-#flightPage .row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
-#flightPage .recent{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-#flightPage .recent-item{font-size:12px;color:var(--text-secondary);padding:6px 10px;background:var(--soft);border-radius:8px;display:flex;justify-content:space-between;gap:8px}
-#flightPage .recent-item b{color:var(--text);font-weight:700}
-#flightPage .recent-item span{color:var(--text-muted);font-size:11px}
-#flightPage .ach{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-#flightPage .ach-badge{font-size:11px;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--text-muted);font-weight:600;border:1px solid var(--border)}
-#flightPage .ach-badge.on{background:var(--accent-ring);color:var(--accent);border-color:var(--accent)}
-#flightPage .map-wrap{margin-top:12px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#EDF2F7;position:relative;aspect-ratio:2/1}
-#flightPage .map-bg{position:absolute;inset:0;background:url('world.svg') center/100% 100% no-repeat}
-#flightPage #worldMap{position:absolute;inset:0;display:block;width:100%;height:100%}
-#flightPage .legend{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-top:8px;justify-content:center}
-#flightPage .legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
-@media(max-width:520px){
-#flightPage{padding:14px 16px 32px}
-#flightPage .card{padding:16px;border-radius:14px}
-#flightPage .timer{font-size:2.2rem}
-}
-/* ===== FOCUS FLIGHT END ===== */
