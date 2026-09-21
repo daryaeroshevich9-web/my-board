@@ -1,6 +1,5 @@
 (function(){
 'use strict';
-
 var mem = {};
 var storage;
 try {
@@ -14,79 +13,74 @@ try {
     removeItem: function(k){ delete mem[k]; }
   };
 }
-
 var FALLBACK = [
-["SVO","Москва","RU",55.9726,37.4146],["LED","Санкт-Петербург","RU",59.8003,30.2625],
-["KZN","Казань","RU",55.6062,49.2787],["AER","Сочи","RU",43.4499,39.9566],
-["OVB","Новосибирск","RU",55.0126,82.6507],["VVO","Владивосток","RU",43.399,132.1482],
-["KHV","Хабаровск","RU",48.528,135.1883],["KGD","Калининград","RU",54.89,20.5926],
-["TAS","Ташкент","UZ",41.2579,69.2812],["ALA","Алматы","KZ",43.3521,77.0405],
-["KBP","Киев","UA",50.345,30.8947],["MSQ","Минск","BY",53.8825,28.0307],
-["TBS","Тбилиси","GE",41.6692,44.9547],["EVN","Ереван","AM",40.1473,44.3959],
-["GYD","Баку","AZ",40.4675,50.0467],["LHR","London","GB",51.47,-0.4543],
-["CDG","Paris","FR",49.0097,2.5479],["FRA","Frankfurt","DE",50.0379,8.5622],
-["MUC","Munich","DE",48.3537,11.775],["BER","Berlin","DE",52.3667,13.5033],
-["AMS","Amsterdam","NL",52.3105,4.7683],["BRU","Brussels","BE",50.9014,4.4844],
-["ZRH","Zurich","CH",47.4647,8.5492],["VIE","Vienna","AT",48.1103,16.5697],
-["MAD","Madrid","ES",40.4719,-3.5626],["BCN","Barcelona","ES",41.2971,2.0785],
-["LIS","Lisbon","PT",38.7813,-9.1359],["FCO","Rome","IT",41.8003,12.2389],
-["MXP","Milan","IT",45.6306,8.7281],["ATH","Athens","GR",37.9364,23.9445],
-["IST","Istanbul","TR",41.2753,28.7519],["CPH","Copenhagen","DK",55.6181,12.6561],
-["ARN","Stockholm","SE",59.6519,17.9186],["OSL","Oslo","NO",60.1939,11.1004],
-["HEL","Helsinki","FI",60.3172,24.9633],["KEF","Reykjavik","IS",63.985,-22.6056],
-["WAW","Warsaw","PL",52.1657,20.9671],["PRG","Prague","CZ",50.1008,14.26],
-["BUD","Budapest","HU",47.4369,19.2556],["OTP","Bucharest","RO",44.5711,26.085],
-["DXB","Dubai","AE",25.2532,55.3657],["DOH","Doha","QA",25.2731,51.608],
-["TLV","Tel Aviv","IL",32.0114,34.8867],["CAI","Cairo","EG",30.1219,31.4056],
-["HKG","Hong Kong","HK",22.308,113.9185],["PEK","Beijing","CN",40.0799,116.6031],
-["PVG","Shanghai","CN",31.1443,121.8083],["CAN","Guangzhou","CN",23.3924,113.2988],
-["NRT","Tokyo Narita","JP",35.772,140.3929],["HND","Tokyo Haneda","JP",35.5494,139.7798],
-["KIX","Osaka","JP",34.4273,135.2442],["ICN","Seoul","KR",37.4602,126.4407],
-["TPE","Taipei","TW",25.0777,121.2328],["SIN","Singapore","SG",1.3644,103.9915],
-["BKK","Bangkok","TH",13.69,100.7501],["KUL","Kuala Lumpur","MY",2.7456,101.7099],
-["CGK","Jakarta","ID",-6.1256,106.6559],["MNL","Manila","PH",14.5086,121.0194],
-["DEL","Delhi","IN",28.5562,77.1],["BOM","Mumbai","IN",19.0887,72.8679],
-["BLR","Bangalore","IN",13.1989,77.7069],["CMB","Colombo","LK",7.1808,79.8841],
-["JNB","Johannesburg","ZA",-26.1392,28.246],["CPT","Cape Town","ZA",-33.9689,18.6017],
-["NBO","Nairobi","KE",-1.3192,36.9278],["ADD","Addis Ababa","ET",8.9779,38.7993],
-["LOS","Lagos","NG",6.5774,3.3212],["CMN","Casablanca","MA",33.3675,-7.59],
-["JFK","New York","US",40.6413,-73.7781],["LAX","Los Angeles","US",33.9416,-118.4085],
-["SFO","San Francisco","US",37.6213,-122.379],["ORD","Chicago","US",41.9742,-87.9073],
-["ATL","Atlanta","US",33.6407,-84.4277],["DFW","Dallas","US",32.8998,-97.0403],
-["DEN","Denver","US",39.8561,-104.6737],["SEA","Seattle","US",47.4502,-122.3088],
-["BOS","Boston","US",42.3656,-71.0096],["MIA","Miami","US",25.7959,-80.287],
-["IAD","Washington","US",38.9531,-77.4565],["LAS","Las Vegas","US",36.084,-115.1537],
-["HNL","Honolulu","US",21.3187,-157.9225],["YYZ","Toronto","CA",43.6777,-79.6248],
-["YVR","Vancouver","CA",49.1967,-123.1815],["YUL","Montreal","CA",45.4706,-73.7408],
-["MEX","Mexico City","MX",19.4363,-99.0721],["CUN","Cancun","MX",21.0365,-86.8771],
-["GRU","Sao Paulo","BR",-23.4356,-46.4731],["GIG","Rio de Janeiro","BR",-22.8099,-43.2506],
-["EZE","Buenos Aires","AR",-34.8222,-58.5358],["SCL","Santiago","CL",-33.393,-70.7858],
-["LIM","Lima","PE",-12.0219,-77.1143],["BOG","Bogota","CO",4.7016,-74.1469],
-["SYD","Sydney","AU",-33.9399,151.1753],["MEL","Melbourne","AU",-37.6733,144.8433],
-["BNE","Brisbane","AU",-27.3842,153.1175],["PER","Perth","AU",-31.9403,115.9669],
-["AKL","Auckland","NZ",-37.0082,174.785],["CHC","Christchurch","NZ",-43.4894,172.5322],
-["KTM","Kathmandu","NP",27.6966,85.3591],["DAC","Dhaka","BD",23.8433,90.3978],
-["SGN","Ho Chi Minh","VN",10.8188,106.652],["HAN","Hanoi","VN",21.2212,105.8072],
-["DPS","Bali","ID",-8.7482,115.1672],["HKT","Phuket","TH",8.1132,98.3169],
-["RAK","Marrakesh","MA",31.6069,-8.0363],["TUN","Tunis","TN",36.8511,10.2272]
+  ["SVO","Москва","RU",55.9726,37.4146],["LED","Санкт-Петербург","RU",59.8003,30.2625],
+  ["KZN","Казань","RU",55.6062,49.2787],["AER","Сочи","RU",43.4499,39.9566],
+  ["OVB","Новосибирск","RU",55.0126,82.6507],["VVO","Владивосток","RU",43.399,132.1482],
+  ["KHV","Хабаровск","RU",48.528,135.1883],["KGD","Калининград","RU",54.89,20.5926],
+  ["TAS","Ташкент","UZ",41.2579,69.2812],["ALA","Алматы","KZ",43.3521,77.0405],
+  ["KBP","Киев","UA",50.345,30.8947],["MSQ","Минск","BY",53.8825,28.0307],
+  ["TBS","Тбилиси","GE",41.6692,44.9547],["EVN","Ереван","AM",40.1473,44.3959],
+  ["GYD","Баку","AZ",40.4675,50.0467],["LHR","London","GB",51.47,-0.4543],
+  ["CDG","Paris","FR",49.0097,2.5479],["FRA","Frankfurt","DE",50.0379,8.5622],
+  ["MUC","Munich","DE",48.3537,11.775],["BER","Berlin","DE",52.3667,13.5033],
+  ["AMS","Amsterdam","NL",52.3105,4.7683],["BRU","Brussels","BE",50.9014,4.4844],
+  ["ZRH","Zurich","CH",47.4647,8.5492],["VIE","Vienna","AT",48.1103,16.5697],
+  ["MAD","Madrid","ES",40.4719,-3.5626],["BCN","Barcelona","ES",41.2971,2.0785],
+  ["LIS","Lisbon","PT",38.7813,-9.1359],["FCO","Rome","IT",41.8003,12.2389],
+  ["MXP","Milan","IT",45.6306,8.7281],["ATH","Athens","GR",37.9364,23.9445],
+  ["IST","Istanbul","TR",41.2753,28.7519],["CPH","Copenhagen","DK",55.6181,12.6561],
+  ["ARN","Stockholm","SE",59.6519,17.9186],["OSL","Oslo","NO",60.1939,11.1004],
+  ["HEL","Helsinki","FI",60.3172,24.9633],["KEF","Reykjavik","IS",63.985,-22.6056],
+  ["WAW","Warsaw","PL",52.1657,20.9671],["PRG","Prague","CZ",50.1008,14.26],
+  ["BUD","Budapest","HU",47.4369,19.2556],["OTP","Bucharest","RO",44.5711,26.085],
+  ["DXB","Dubai","AE",25.2532,55.3657],["DOH","Doha","QA",25.2731,51.608],
+  ["TLV","Tel Aviv","IL",32.0114,34.8867],["CAI","Cairo","EG",30.1219,31.4056],
+  ["HKG","Hong Kong","HK",22.308,113.9185],["PEK","Beijing","CN",40.0799,116.6031],
+  ["PVG","Shanghai","CN",31.1443,121.8083],["CAN","Guangzhou","CN",23.3924,113.2988],
+  ["NRT","Tokyo Narita","JP",35.772,140.3929],["HND","Tokyo Haneda","JP",35.5494,139.7798],
+  ["KIX","Osaka","JP",34.4273,135.2442],["ICN","Seoul","KR",37.4602,126.4407],
+  ["TPE","Taipei","TW",25.0777,121.2328],["SIN","Singapore","SG",1.3644,103.9915],
+  ["BKK","Bangkok","TH",13.69,100.7501],["KUL","Kuala Lumpur","MY",2.7456,101.7099],
+  ["CGK","Jakarta","ID",-6.1256,106.6559],["MNL","Manila","PH",14.5086,121.0194],
+  ["DEL","Delhi","IN",28.5562,77.1],["BOM","Mumbai","IN",19.0887,72.8679],
+  ["BLR","Bangalore","IN",13.1989,77.7069],["CMB","Colombo","LK",7.1808,79.8841],
+  ["JNB","Johannesburg","ZA",-26.1392,28.246],["CPT","Cape Town","ZA",-33.9689,18.6017],
+  ["NBO","Nairobi","KE",-1.3192,36.9278],["ADD","Addis Ababa","ET",8.9779,38.7993],
+  ["LOS","Lagos","NG",6.5774,3.3212],["CMN","Casablanca","MA",33.3675,-7.59],
+  ["JFK","New York","US",40.6413,-73.7781],["LAX","Los Angeles","US",33.9416,-118.4085],
+  ["SFO","San Francisco","US",37.6213,-122.379],["ORD","Chicago","US",41.9742,-87.9073],
+  ["ATL","Atlanta","US",33.6407,-84.4277],["DFW","Dallas","US",32.8998,-97.0403],
+  ["DEN","Denver","US",39.8561,-104.6737],["SEA","Seattle","US",47.4502,-122.3088],
+  ["BOS","Boston","US",42.3656,-71.0096],["MIA","Miami","US",25.7959,-80.287],
+  ["IAD","Washington","US",38.9531,-77.4565],["LAS","Las Vegas","US",36.084,-115.1537],
+  ["HNL","Honolulu","US",21.3187,-157.9225],["YYZ","Toronto","CA",43.6777,-79.6248],
+  ["YVR","Vancouver","CA",49.1967,-123.1815],["YUL","Montreal","CA",45.4706,-73.7408],
+  ["MEX","Mexico City","MX",19.4363,-99.0721],["CUN","Cancun","MX",21.0365,-86.8771],
+  ["GRU","Sao Paulo","BR",-23.4356,-46.4731],["GIG","Rio de Janeiro","BR",-22.8099,-43.2506],
+  ["EZE","Buenos Aires","AR",-34.8222,-58.5358],["SCL","Santiago","CL",-33.393,-70.7858],
+  ["LIM","Lima","PE",-12.0219,-77.1143],["BOG","Bogota","CO",4.7016,-74.1469],
+  ["SYD","Sydney","AU",-33.9399,151.1753],["MEL","Melbourne","AU",-37.6733,144.8433],
+  ["BNE","Brisbane","AU",-27.3842,153.1175],["PER","Perth","AU",-31.9403,115.9669],
+  ["AKL","Auckland","NZ",-37.0082,174.785],["CHC","Christchurch","NZ",-43.4894,172.5322],
+  ["KTM","Kathmandu","NP",27.6966,85.3591],["DAC","Dhaka","BD",23.8433,90.3978],
+  ["SGN","Ho Chi Minh","VN",10.8188,106.652],["HAN","Hanoi","VN",21.2212,105.8072],
+  ["DPS","Bali","ID",-8.7482,115.1672],["HKT","Phuket","TH",8.1132,98.3169],
+  ["RAK","Marrakesh","MA",31.6069,-8.0363],["TUN","Tunis","TN",36.8511,10.2272]
 ].map(function(r){return {code:r[0],city:r[1],country:r[2],lat:r[3],lon:r[4]};});
-
 var CSV_URL = 'https://davidmegginson.github.io/ourairports-data/airports.csv';
 var SPEED_KMH = 800;
 var DUR_MIN = 15, DUR_MAX = 12*60;
 var LS = {airports:'ff_airports_v1',visited:'ff_visited_v1',home:'ff_home_v1',history:'ff_history_v1',active:'ff_active_v1'};
-
 var state = {
   airports: [], byCode: {}, visited: new Set(),
   home: null, durationMin: 90, history: [],
   timerId: null, activeFlight: null,
   sortMode: 'time', onlyNew: true
 };
-
 function $(id){ return document.getElementById(id); }
 function hideAll(){ ['loader','setup','results','flight','done'].forEach(function(i){ var el=$(i); if(el) el.classList.add('hidden'); }); }
 function show(id){ var el=$(id); if(el) el.classList.remove('hidden'); }
-
 function hav(a,b){
   var R=6371, toRad=function(d){return d*Math.PI/180;};
   var dLat=toRad(b.lat-a.lat), dLon=toRad(b.lon-a.lon);
@@ -109,7 +103,6 @@ function minutesToSlider(m){
   var c=Math.max(DUR_MIN,Math.min(DUR_MAX,m));
   return Math.round(1000*Math.log(c/DUR_MIN)/Math.log(DUR_MAX/DUR_MIN));
 }
-
 function parseCSV(t){
   var rows=[],row=[],field='',inQ=false,i=0;
   while(i<t.length){
@@ -128,14 +121,12 @@ function parseCSV(t){
   return rows;
 }
 function buildByCode(arr){ var m={}; for(var i=0;i<arr.length;i++) m[arr[i].code]=arr[i]; return m; }
-
 function startWithFallback(){
   state.airports = FALLBACK.slice();
   state.byCode = buildByCode(state.airports);
   bootstrap();
   tryLoadFull();
 }
-
 function tryLoadFull(){
   var cached = storage.getItem(LS.airports);
   if(cached){
@@ -171,7 +162,6 @@ function tryLoadFull(){
     console.warn('Полный список не загружен, работаю на 100 базовых:', e.message);
   });
 }
-
 function applyFull(arr){
   state.airports = arr;
   state.byCode = buildByCode(arr);
@@ -182,13 +172,11 @@ function applyFull(arr){
   renderSetup();
   renderStats();
 }
-
 function bootstrap(){
   try { state.visited = new Set(JSON.parse(storage.getItem(LS.visited) || '[]')); } catch(e){}
   try { state.history = JSON.parse(storage.getItem(LS.history) || '[]'); } catch(e){}
   var hc = storage.getItem(LS.home);
   state.home = state.byCode[hc] || state.airports[0];
-
   var activeSaved = storage.getItem(LS.active);
   if(activeSaved){
     try {
@@ -220,17 +208,14 @@ function bootstrap(){
       }
     } catch(e){ console.warn('Не удалось восстановить полёт', e); }
   }
-
   hideAll();
   renderSetup();
   renderStats();
 }
-
 function renderSetup(){
   hideAll();
   show('setup'); show('stats'); show('results');
   updateCurrentHomeLabel();
-
   var sel = $('homeSelect');
   if(!sel) return;
   var sorted = state.airports.slice().sort(function(a,b){
@@ -252,7 +237,6 @@ function renderSetup(){
     updateCurrentHomeLabel();
     renderDestinations();
   };
-
   var slider = $('duration');
   if(slider && !slider.dataset.init){
     slider.value = minutesToSlider(state.durationMin);
@@ -264,7 +248,6 @@ function renderSetup(){
     };
   }
   if($('durationLabel')) $('durationLabel').textContent = fmtMin(state.durationMin);
-
   var chips = document.querySelectorAll('#setup .chip');
   for(var c=0;c<chips.length;c++){
     chips[c].onclick = function(){
@@ -275,7 +258,6 @@ function renderSetup(){
       renderDestinations();
     };
   }
-
   var rb = $('randomBtn');
   if(rb) rb.onclick = function(){
     var items = $('list').querySelectorAll('.item');
@@ -283,7 +265,6 @@ function renderSetup(){
     var pick = items[Math.floor(Math.random()*items.length)];
     startFlight(pick.dataset.code);
   };
-
   var sortChips = document.querySelectorAll('#sortChips .chip');
   for(var s=0;s<sortChips.length;s++){
     sortChips[s].classList.toggle('active', sortChips[s].dataset.sort === state.sortMode);
@@ -293,7 +274,6 @@ function renderSetup(){
       renderDestinations();
     };
   }
-
   var on = $('onlyNew');
   if(on){
     on.checked = state.onlyNew;
@@ -302,15 +282,12 @@ function renderSetup(){
       renderDestinations();
     };
   }
-
   renderDestinations();
 }
-
 function updateCurrentHomeLabel(){
   var el = $('currentHome');
   if(el && state.home) el.textContent = state.home.city + ' (' + state.home.code + ')';
 }
-
 function renderDestinations(){
   var target = state.durationMin/60 * SPEED_KMH;
   var pool = [];
@@ -320,7 +297,6 @@ function renderDestinations(){
     if(state.onlyNew && state.visited.has(a.code)) continue;
     pool.push({a:a, d:hav(state.home, a)});
   }
-
   if(state.sortMode === 'time'){
     pool.sort(function(x,y){ return Math.abs(x.d-target) - Math.abs(y.d-target); });
   } else if(state.sortMode === 'alpha'){
@@ -332,19 +308,17 @@ function renderDestinations(){
     });
   }
   var list = pool.slice(0, 20);
-
   var el = $('list');
   if(!el) return;
   if(list.length === 0){
     el.innerHTML = '<div class="empty">'+(state.onlyNew ? '🎉 Все аэропорты посещены!<br>Снимите галочку или сбросьте прогресс.' : 'Нет доступных аэропортов')+'</div>';
     return;
   }
-
   var html = '';
   for(var i=0;i<list.length;i++){
     var it = list[i];
     var mins = Math.round(it.d/SPEED_KMH*60);
-    var visited = state.visited.has(it.a.code);
+    var visited = state.visited(it.a.code);
     var vmark = visited ? ' <span style="color:var(--accent)">✓</span>' : '';
     var cls = 'item' + (visited ? ' visited' : '');
     html += '<div class="'+cls+'" data-code="'+it.a.code+'">'+
@@ -357,28 +331,23 @@ function renderDestinations(){
     '</div>';
   }
   el.innerHTML = html;
-
   var items = el.querySelectorAll('.item');
   for(var j=0;j<items.length;j++){
     items[j].onclick = function(){ startFlight(this.dataset.code); };
   }
 }
-
 function startFlight(code){
   var dest = state.byCode[code];
   if(!dest) return;
   var km = hav(state.home, dest);
   var mins = Math.max(1, Math.round(km/SPEED_KMH*60));
-
   state.activeFlight = {from: state.home, to: dest, totalSec: mins*60, remainSec: mins*60, distance: km};
-
   storage.setItem(LS.active, JSON.stringify({
     fromCode: state.home.code, toCode: dest.code,
     totalSec: state.activeFlight.totalSec,
     distance: state.activeFlight.distance,
     startedAt: Date.now()
   }));
-
   hideAll(); show('flight');
   $('fromCode').textContent = state.home.code;
   $('toCode').textContent = dest.code;
@@ -386,10 +355,8 @@ function startFlight(code){
   $('progressFill').style.width = '0%';
   $('progressPct').textContent = '0%';
   $('timer').textContent = fmtTime(state.activeFlight.totalSec);
-
   state.timerId = setInterval(tick, 1000);
 }
-
 function tick(){
   var f = state.activeFlight;
   if(!f) return;
@@ -400,16 +367,13 @@ function tick(){
   $('progressFill').style.width = (p*100)+'%';
   $('progressPct').textContent = Math.round(p*100)+'%';
 }
-
 function finishFlight(){
   var f = state.activeFlight;
   clearInterval(state.timerId); state.timerId = null;
   storage.removeItem(LS.active);
-
   state.visited.add(f.from.code);
   state.visited.add(f.to.code);
   storage.setItem(LS.visited, JSON.stringify(Array.from(state.visited)));
-
   state.history.push({
     from:f.from.code, to:f.to.code,
     fromCity:f.from.city, toCity:f.to.city,
@@ -418,21 +382,18 @@ function finishFlight(){
     date:new Date().toISOString()
   });
   storage.setItem(LS.history, JSON.stringify(state.history));
-
   state.home = f.to;
   storage.setItem(LS.home, f.to.code);
   state.activeFlight = null;
-
   hideAll(); show('done'); show('stats');
   $('doneMsg').textContent = 'Вы в '+f.to.city+' ('+f.to.code+')';
   $('doneStats').innerHTML =
-    '<div class="stat"><b>'+Math.round(f.distance)+'</b><span>км пройдено</span></div>'+
-    '<div class="stat"><b>'+fmtMin(Math.round(f.totalSec/60))+'</b><span>в воздухе</span></div>'+
-    '<div class="stat"><b>'+state.visited.size+'</b><span>посещено</span></div>'+
-    '<div class="stat"><b>'+state.history.length+'</b><span>полётов всего</span></div>';
+    '<div class="stat"><b>'+Math.round(f.distance)+'</b> <span>км пройдено</span></div>'+
+    '<div class="stat"><b>'+fmtMin(Math.round(f.totalSec/60))+'</b> <span>в воздухе</span></div>'+
+    '<div class="stat"><b>'+state.visited.size+'</b> <span>посещено</span></div>'+
+    '<div class="stat"><b>'+state.history.length+'</b> <span>полётов всего</span></div>';
   renderStats();
 }
-
 function abortFlight(){
   if(!state.timerId) return;
   if(!confirm('Прервать полёт? Прогресс не сохранится.')) return;
@@ -441,7 +402,6 @@ function abortFlight(){
   state.activeFlight = null;
   renderSetup();
 }
-
 function renderStats(){
   show('stats');
   var totalMin=0, totalKm=0;
@@ -452,20 +412,17 @@ function renderStats(){
   var total = state.airports.length;
   var visited = state.visited.size;
   var pct = total>0 ? Math.round(visited/total*100) : 0;
-
   var sg = $('statsGrid');
   if(sg) sg.innerHTML =
-    '<div class="stat"><b>'+visited+' / '+total+'</b><span>аэропортов ('+pct+'%)</span></div>'+
-    '<div class="stat"><b>'+state.history.length+'</b><span>полётов</span></div>'+
-    '<div class="stat"><b>'+Math.round(totalMin/60)+'</b><span>часов в воздухе</span></div>'+
-    '<div class="stat"><b>'+totalKm.toLocaleString('ru-RU')+'</b><span>км пройдено</span></div>';
-
+    '<div class="stat"><b>'+visited+' / '+total+'</b> <span>аэропортов ('+pct+'%)</span></div>'+
+    '<div class="stat"><b>'+state.history.length+'</b> <span>полётов</span></div>'+
+    '<div class="stat"><b>'+Math.round(totalMin/60)+'</b> <span>часов в воздухе</span></div>'+
+    '<div class="stat"><b>'+totalKm.toLocaleString('ru-RU')+'</b> <span>км пройдено</span></div>';
   renderAchievements();
   renderRecent();
   renderMap();
   updateCurrentHomeLabel();
 }
-
 function renderAchievements(){
   var h = state.history;
   var totalMin = 0, maxDist = 0, maxDur = 0;
@@ -476,16 +433,16 @@ function renderAchievements(){
   }
   var visited = state.visited.size;
   var list = [
-    {name:'🥇 Первый полёт',    on: h.length >= 1},
-    {name:'✈️ 5 полётов',       on: h.length >= 5},
-    {name:'🛩 10 полётов',      on: h.length >= 10},
-    {name:'⏱ 10 часов',         on: totalMin >= 600},
-    {name:'⌛ 50 часов',         on: totalMin >= 3000},
-    {name:'🏃 Полёт > 4 ч',    on: maxDur >= 240},
-    {name:'🌍 Полёт > 8000 км',on: maxDist >= 8000},
-    {name:'🧭 50 аэропортов',  on: visited >= 50},
-    {name:'🌏 200 аэропортов',  on: visited >= 200},
-    {name:'👑 Все аэропорты',   on: state.airports.length>0 && visited >= state.airports.length}
+    {name:'🥇 Первый полёт',     on: h.length >= 1},
+    {name:'✈️ 5 полётов',        on: h.length >= 5},
+    {name:'🛩 10 полётов',       on: h.length >= 10},
+    {name:'⏱ 10 часов',          on: totalMin >= 600},
+    {name:'⌛ 50 часов',          on: totalMin >= 3000},
+    {name:'🏃 Полёт > 4 ч',      on: maxDur >= 240},
+    {name:'🌍 Полёт > 8000 км',  on: maxDist >= 8000},
+    {name:'🧭 50 аэропортов',    on: visited >= 50},
+    {name:'🌏 200 аэропортов',   on: visited >= 200},
+    {name:'👑 Все аэропорты',    on: state.airports.length>0 && visited >= state.airports.length}
   ];
   var html = '';
   for(var i=0;i<list.length;i++){
@@ -494,7 +451,6 @@ function renderAchievements(){
   var al = $('achList');
   if(al) al.innerHTML = html;
 }
-
 function renderRecent(){
   var el = $('recentList');
   if(!el) return;
@@ -515,26 +471,21 @@ function renderRecent(){
   }
   el.innerHTML = html;
 }
-
 function lonToX(lon, W){ return (lon + 180) / 360 * W; }
 function latToY(lat, H){ return (90 - lat) / 180 * H; }
-
 function renderMap(){
   var canvas = $('worldMap');
   var wrap = $('mapWrap');
   if(!canvas || !wrap) return;
-
   var W = wrap.clientWidth;
   var H = wrap.clientHeight;
   if(W < 10 || H < 10) return;
-
   var dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   var ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-
   ctx.strokeStyle = 'rgba(58,95,138,.25)';
   ctx.lineWidth = 1;
   for(var h=0; h<state.history.length; h++){
@@ -546,7 +497,6 @@ function renderMap(){
     ctx.lineTo(lonToX(b.lon, W), latToY(b.lat, H));
     ctx.stroke();
   }
-
   for(var k=0; k<state.airports.length; k++){
     var ap = state.airports[k];
     var visited = state.visited.has(ap.code);
@@ -564,7 +514,6 @@ function renderMap(){
       ctx.fill();
     }
   }
-
   if(state.home){
     var hx = lonToX(state.home.lon, W);
     var hy = latToY(state.home.lat, H);
@@ -577,7 +526,6 @@ function renderMap(){
     ctx.stroke();
   }
 }
-
 var resizeTimer = null;
 window.addEventListener('resize', function(){
   clearTimeout(resizeTimer);
@@ -586,8 +534,6 @@ window.addEventListener('resize', function(){
     if(fp && !fp.classList.contains('page-hidden')) renderMap();
   }, 200);
 });
-
-// ---------- Кнопки ----------
 var ab = $('abortBtn'); if(ab) ab.onclick = abortFlight;
 var cb = $('continueBtn'); if(cb) cb.onclick = function(){ renderSetup(); };
 var rb = $('resetBtn'); if(rb) rb.onclick = function(){
@@ -599,54 +545,53 @@ var rb = $('resetBtn'); if(rb) rb.onclick = function(){
   storage.removeItem(LS.active);
   location.reload();
 };
-
 window.FocusFlight = {
   init: startWithFallback,
   onShow: function(){ setTimeout(renderMap, 60); }
 };
-
 startWithFallback();
-
 })();
-
 // ---------- Перехват кликов по навигации ----------
 (function(){
-  function showFlightPage(){
-    var bp = document.getElementById('boardPage');
-    var pp = document.getElementById('personalPage');
-    var fp = document.getElementById('flightPage');
-    if(bp) bp.classList.add('page-hidden');
-    if(pp) pp.classList.add('page-hidden');
-    if(fp) fp.classList.remove('page-hidden');
-    try { localStorage.setItem('darya_board_page', 'flight'); } catch(e){}
-    if(window.FocusFlight && window.FocusFlight.onShow) window.FocusFlight.onShow();
+function showFlightPage(){
+  var bp = document.getElementById('boardPage');
+  var pp = document.getElementById('personalPage');
+  var fp = document.getElementById('flightPage');
+  if(bp) bp.classList.add('page-hidden');
+  if(pp) pp.classList.add('page-hidden');
+  if(fp) fp.classList.remove('page-hidden');
+  var nb = document.getElementById('navBoard');
+  var np = document.getElementById('navPersonal');
+  if(nb) nb.classList.remove('active');
+  if(np) np.classList.remove('active');
+  var pt = document.getElementById('pageTitle');
+  var ps = document.getElementById('pageSubtitle');
+  if(pt) pt.textContent = 'FocusFlight';
+  if(ps) ps.textContent = 'Симулятор перелётов';
+  try { localStorage.setItem('darya_board_page', 'flight'); } catch(e){}
+  if(window.FocusFlight && window.FocusFlight.onShow) window.FocusFlight.onShow();
+}
+function hideFlightPage(){
+  var fp = document.getElementById('flightPage');
+  if(fp) fp.classList.add('page-hidden');
+}
+document.addEventListener('click', function(e){
+  var el = e.target && e.target.closest ? e.target.closest('[onclick]') : null;
+  if(!el) return;
+  var oc = el.getAttribute('onclick') || '';
+  if(oc.indexOf("switchPage('flight')") >= 0){
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    showFlightPage();
+  } else if(oc.indexOf('switchPage(') >= 0){
+    hideFlightPage();
   }
-
-  function hideFlightPage(){
-    var fp = document.getElementById('flightPage');
-    if(fp) fp.classList.add('page-hidden');
-  }
-
-  // Capture-фаза: срабатываем РАНЬШЕ inline onclick
-  document.addEventListener('click', function(e){
-    var el = e.target && e.target.closest ? e.target.closest('[onclick]') : null;
-    if(!el) return;
-    var oc = el.getAttribute('onclick') || '';
-    if(oc.indexOf("switchPage('flight')") >= 0){
-      e.stopImmediatePropagation();
-      e.preventDefault();
+}, true);
+window.addEventListener('load', function(){
+  try {
+    if(localStorage.getItem('darya_board_page') === 'flight'){
       showFlightPage();
-    } else if(oc.indexOf('switchPage(') >= 0){
-      hideFlightPage();
     }
-  }, true);
-
-  // Восстановление после перезагрузки
-  window.addEventListener('load', function(){
-    try {
-      if(localStorage.getItem('darya_board_page') === 'flight'){
-        showFlightPage();
-      }
-    } catch(e){}
-  });
+  } catch(e){}
+});
 })();
