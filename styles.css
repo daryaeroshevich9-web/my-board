@@ -118,6 +118,9 @@ h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spac
 .note-content ul,.note-content ol{margin:4px 0 2px 18px;padding:0}
 .note-content li{margin:2px 0}
 .note-content .rich-line{min-height:1em}
+.note-text.clamped{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.collapse-toggle{border:none;background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;margin-top:2px;text-align:left}
+.collapse-toggle:hover{text-decoration:underline}
 .note.done{opacity:.5}
 .note.done .note-text{text-decoration:line-through}
 .pin-mark{font-size:12px;margin-right:6px;vertical-align:middle}
@@ -131,6 +134,7 @@ h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spac
 .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
 .subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
 .subtask{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
+.subtask.sub-hidden{display:none}
 .subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none;margin-top:2px}
 .subtask .sub-text{flex:1;word-break:break-word;cursor:text}
 .subtask .sub-text ul,.subtask .sub-text ol{margin:2px 0 2px 16px;padding:0}
@@ -204,7 +208,7 @@ textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--
 .personal-zone .note{background:var(--personal-bg);border-color:var(--personal-bd);--zone-color:var(--text-muted)}
 .personal-zone .note-checkbox{accent-color:var(--text-muted)}
 .personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
-.personal-notes{display:flex;flex-direction:column;gap:10px;min-height:40px}
+.personal-notes{display:flex;flex-direction:column;gap:10px;min-height:40px;max-height:322px;overflow-y:auto;padding-right:2px}
 .popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
 .popmenu.open{display:block}
 .pop-item{display:flex;gap:8px;align-items:center;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;color:var(--text);text-align:left;white-space:nowrap}
