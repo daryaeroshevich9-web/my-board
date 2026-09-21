@@ -292,10 +292,10 @@ h1{font-size:17px}
 .personal-layout{padding:14px 16px 32px}
 .fab{right:16px;bottom:16px}
 }
-/* ---------- Итоги ---------- */
+/* ---------- Отчёты по дням (одноколоночные итоги) ---------- */
 #resultsModal{padding:16px}
 #resultsModal .modal-content{
-max-width:min(1900px, 96vw) !important;
+max-width:min(1000px, 96vw) !important;
 width:100% !important;
 max-height:94vh;
 padding:24px 32px;
@@ -311,12 +311,9 @@ flex-direction:column;
 padding:8px 10px;border:1px solid var(--border);border-radius:8px;
 background:var(--input-bg);color:var(--text);font:inherit;font-size:13px;width:auto;margin-bottom:0;
 }
-.results-stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.results-chip{background:var(--soft);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-secondary)}
-#resBody{
+#resReports{
 flex:1 1 auto;
-min-height:240px;
-max-height:none;
+min-height:220px;
 overflow-y:auto;
 border:1px solid var(--border);
 border-radius:12px;
@@ -324,26 +321,18 @@ padding:16px 22px;
 background:var(--card);
 margin-bottom:16px;
 }
-.results-block{margin-bottom:18px}
-.results-block:last-child{margin-bottom:0}
-.results-block h4{
-font-family:'Unbounded',sans-serif;
-font-size:14px;font-weight:600;color:var(--text);
-margin-bottom:8px;letter-spacing:.2px;
-}
-.results-sub{
-font-size:11px;color:var(--text-muted);
-text-transform:uppercase;letter-spacing:.6px;
-font-weight:600;margin:10px 0 4px;
-}
-.results-item{font-size:14px;padding:6px 0;border-bottom:1px dashed var(--border);line-height:1.45}
-.results-item:last-child{border-bottom:none}
-.results-item.done-item{color:var(--text-secondary)}
-.results-item .item-date{color:var(--text-muted);font-size:12px;margin-left:8px}
+.res-rep{margin-bottom:14px;border-bottom:1px dashed var(--border);padding-bottom:10px}
+.res-rep:last-child{margin-bottom:0;border-bottom:none}
+.res-rep h5{font-family:'Unbounded',sans-serif;font-size:13px;color:var(--text);margin-bottom:6px;font-weight:600}
+.res-rep-body{font-size:14px;color:var(--text-secondary);line-height:1.5}
+.res-rep-body ul,.res-rep-body ol{margin:2px 0 2px 16px}
+.res-rep-body table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+.res-rep-body td,.res-rep-body th{border:1px solid var(--border);padding:4px 6px}
+.res-rep-auto{font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.6}
 @media (max-width:860px){
 .results-period-quick{margin-left:0}
 #resultsModal .modal-content{padding:16px}
-#resBody{padding:12px 14px}
+#resReports{padding:12px 14px}
 }
 /* ---------- Quill: брендовая стилизация редактора ---------- */
 .note-editor .ql-toolbar.ql-snow{
