@@ -9,6 +9,7 @@ const PAGE_KEY = 'darya_board_page';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
 const TINT_COUNT = 6;
 const TINT_HEX = ['#3A5F8A', '#B04A5E', '#A67C00', '#3E7A5E', '#6B4FA0', '#0E7490'];
+const SUB_VISIBLE = 5;
 const DEFAULT_ZONES = [
   {key:'other', label:'Прочее', emoji:'📋', hidden:false, tint:0, color:null},
   {key:'portal', label:'Портал 2.0', emoji:'🚪', hidden:false, tint:1, color:null},
@@ -21,6 +22,8 @@ const ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
 const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 const ELLIPSIS = '⋯';
+let expandedText = new Set();
+let expandedSubs = new Set();
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -558,21 +561,23 @@ function noteHtml(t) {
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map(s =>
-        '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
+      t.subtasks.map((s, idx) =>
+        '<div class="subtask ' + (s.done ? 'done' : '') + (!expandedSubs.has(t.id) && idx >= SUB_VISIBLE ? ' sub-hidden' : '') + '">' +
         '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
         '<div class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
         '<button class="sub-edit-btn" onclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
         '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
+      '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
       (t.subOpen ? subAddRowHtml(t.id, false) : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + (t.pinned ? ' pinned' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + pinMark + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + pinMark + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<button type="button" class="collapse-toggle" data-ct="' + t.id + '" style="display:none"></button>' +
       metaRow +
       subBlock +
     '</div>' +
@@ -590,21 +595,23 @@ function personalNoteHtml(t) {
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map(s =>
-        '<div class="subtask ' + (s.done ? 'done' : '') + '">' +
+      t.subtasks.map((s, idx) =>
+        '<div class="subtask ' + (s.done ? 'done' : '') + (!expandedSubs.has(t.id) && idx >= SUB_VISIBLE ? ' sub-hidden' : '') + '">' +
         '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSubP(' + t.id + ',' + s.id + ')">' +
         '<div class="sub-text" ondblclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
         '<button class="sub-edit-btn" onclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
         '<button class="sub-del" onclick="delSubP(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
         '</div>'
       ).join('') +
+      '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
       (t.subOpen ? subAddRowHtml(t.id, true) : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="togglePersonalDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + chip + '<span class="note-text">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<button type="button" class="collapse-toggle" data-ct="' + t.id + '" style="display:none"></button>' +
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
@@ -614,6 +621,53 @@ function personalNoteHtml(t) {
     '</div>' +
   '</div>';
 }
+function applyTextCollapse(noteEl){
+  const nt = noteEl.querySelector('.note-text');
+  const tog = noteEl.querySelector('.collapse-toggle[data-ct]');
+  if (!nt || !tog) return;
+  const id = Number(tog.getAttribute('data-ct'));
+  if (expandedText.has(id)) {
+    nt.classList.remove('clamped');
+    tog.textContent = 'свернуть';
+    tog.style.display = '';
+  } else {
+    nt.classList.add('clamped');
+    if (nt.scrollHeight > nt.clientHeight + 2) { tog.textContent = 'развернуть'; tog.style.display = ''; }
+    else { tog.style.display = 'none'; }
+  }
+}
+function applySubCollapse(noteEl){
+  const tog = noteEl.querySelector('.collapse-toggle[data-cs]');
+  if (!tog) return;
+  const id = Number(tog.getAttribute('data-cs'));
+  const subs = noteEl.querySelectorAll('.subtask');
+  const expanded = expandedSubs.has(id);
+  subs.forEach((s, i) => s.classList.toggle('sub-hidden', !expanded && i >= SUB_VISIBLE));
+  if (subs.length > SUB_VISIBLE) {
+    tog.style.display = '';
+    tog.textContent = expanded ? 'свернуть' : 'развернуть (ещё ' + (subs.length - SUB_VISIBLE) + ')';
+  } else {
+    tog.style.display = 'none';
+  }
+}
+function refreshCollapses(){
+  document.querySelectorAll('.note').forEach(el => { applyTextCollapse(el); applySubCollapse(el); });
+}
+document.addEventListener('click', e => {
+  const tog = e.target && e.target.closest ? e.target.closest('.collapse-toggle') : null;
+  if (!tog) return;
+  const noteEl = tog.closest('.note');
+  if (!noteEl) return;
+  if (tog.hasAttribute('data-ct')) {
+    const id = Number(tog.getAttribute('data-ct'));
+    if (expandedText.has(id)) expandedText.delete(id); else expandedText.add(id);
+    applyTextCollapse(noteEl);
+  } else if (tog.hasAttribute('data-cs')) {
+    const id = Number(tog.getAttribute('data-cs'));
+    if (expandedSubs.has(id)) expandedSubs.delete(id); else expandedSubs.add(id);
+    applySubCollapse(noteEl);
+  }
+});
 function render() {
   const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const active = tasks.filter(t => !t.archived);
@@ -651,6 +705,7 @@ function renderPersonal() {
     list.innerHTML = personal.slice().reverse().map(personalNoteHtml).join('');
   }
   renderCalendar();
+  refreshCollapses();
 }
 function switchPage(page) {
   currentPage = page;
@@ -691,6 +746,8 @@ function editNoteInline(id){
   const t = store.find(x => x.id === id);
   if (!t) return;
   content.dataset.editing = '1';
+  const ctog = noteEl.querySelector('.collapse-toggle[data-ct]');
+  if (ctog) ctog.style.display = 'none';
   const wrap = document.createElement('div');
   wrap.className = 'sub-edit-wrap';
   wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:1';
