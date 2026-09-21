@@ -514,7 +514,6 @@ function matchesQuery(t, q) {
   return (t.subtasks || []).some(s => s.text.toLowerCase().includes(q));
 }
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-// Раскладка поля подзадачи: поле во всю ширину, кнопки ПОД ним (инлайн-стили, не зависят от кэша CSS)
 function subAddRowHtml(tid, isPersonal){
   const attr = isPersonal ? 'data-psubadd' : 'data-subadd';
   const keyHandler = isPersonal ? 'subKeyP' : 'subKey';
@@ -1301,33 +1300,68 @@ document.getElementById('backupFile').addEventListener('change', e => {
     e.target.value = '';
   });
 });
+// --- Голосовой ввод: непрерывная диктовка с авто-возобновлением ---
 const micBtn = document.getElementById('micBtn');
 let recog = null, listening = false, voiceBase = '', voiceTarget = null;
+let voiceActive = false, voiceFinal = '';
+function voiceJoin(base, add){
+  if (!add) return base;
+  return base + (base && !base.endsWith(' ') ? ' ' : '') + add;
+}
+function startRecog(){
+  try { recog.start(); } catch (err) {}
+  listening = true;
+  updateMicUI();
+}
 function startVoice(el) {
   if (!SpeechRec || !el) return;
-  if (listening) { recog.stop(); return; }
+  if (voiceActive) {
+    voiceActive = false; listening = false;
+    try { recog.stop(); } catch (err) {}
+    updateMicUI();
+    return;
+  }
   voiceTarget = el;
   voiceBase = el.value.trim();
+  voiceFinal = '';
+  voiceActive = true;
   el.focus();
-  try { recog.start(); listening = true; updateMicUI(); } catch (err) { listening = false; updateMicUI(); }
+  startRecog();
 }
 function updateMicUI() {
-  micBtn.classList.toggle('listening', listening && voiceTarget === document.getElementById('quickAdd'));
+  micBtn.classList.toggle('listening', voiceActive && voiceTarget === document.getElementById('quickAdd'));
 }
 if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
   recog = new SpeechRec();
-  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = false; recog.maxAlternatives = 1;
+  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = true; recog.maxAlternatives = 1;
   recog.onresult = e => {
-    let full = '';
-    for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript;
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) voiceFinal += t + ' ';
+      else interim += t;
+    }
     const el = voiceTarget || document.getElementById('quickAdd');
-    el.value = voiceBase + (voiceBase && !voiceBase.endsWith(' ') ? ' ' : '') + full;
+    el.value = voiceJoin(voiceBase, (voiceFinal + interim).trim());
     autoGrow(el);
   };
-  recog.onend = () => { listening = false; voiceTarget = null; updateMicUI(); };
+  recog.onend = () => {
+    listening = false;
+    if (voiceActive) { setTimeout(() => { if (voiceActive) startRecog(); }, 250); }
+    else { voiceTarget = null; updateMicUI(); }
+  };
   recog.onerror = e => {
-    listening = false; voiceTarget = null; updateMicUI();
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') notify('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта.');
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      voiceActive = false; listening = false; updateMicUI();
+      notify('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта.');
+      return;
+    }
+    if (e.error === 'network') {
+      voiceActive = false; listening = false; updateMicUI();
+      notify('Голосовой ввод недоступен: нет соединения с сервисом распознавания.');
+      return;
+    }
+    // no-speech / aborted: onend сам перезапустит сессию
   };
   micBtn.addEventListener('click', () => startVoice(document.getElementById('quickAdd')));
 }
