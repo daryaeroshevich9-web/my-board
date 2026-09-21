@@ -125,6 +125,21 @@
       "archived": false,
       "due": null,
       "pinned": false
+    },
+    {
+      "id": 1790013835728,
+      "zone": "aviabit",
+      "text": "<p>Индивидуальный&nbsp;ГС</p>",
+      "done": false,
+      "created": "2026-09-21T18:03:55.728Z",
+      "doneAt": null,
+      "archived": false,
+      "due": null,
+      "tags": [],
+      "subtasks": [],
+      "subOpen": false,
+      "deleted": false,
+      "pinned": false
     }
   ],
   "zones": [
