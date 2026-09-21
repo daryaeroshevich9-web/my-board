@@ -281,22 +281,26 @@ function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQ
 function makeEditor(hostId){
   const host = document.getElementById(hostId);
   let snEl = null, ta = null;
-  const useSn = () => snAvailable();
   return {
     init(content, asHtml){
       this.destroy();
       const html = asHtml ? sanitizeHtml(content||'') : (content ? renderRich(content) : '');
-      if (useSn()) {
-        snEl = window.jQuery('<div></div>');
-        window.jQuery(host).append(snEl);
-        snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
-        snEl.summernote('code', html || '');
-      } else {
-        ta = document.createElement('textarea');
-        ta.className = 'ed-fallback';
-        ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
-        host.appendChild(ta);
+      if (snAvailable()) {
+        try {
+          snEl = window.jQuery('<div></div>');
+          window.jQuery(host).append(snEl);
+          snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
+          snEl.summernote('code', html || '');
+          return;
+        } catch(e) {
+          try { snEl.summernote('destroy'); } catch(e2){}
+          snEl = null;
+        }
       }
+      ta = document.createElement('textarea');
+      ta.className = 'ed-fallback';
+      ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
+      host.appendChild(ta);
     },
     get(){
       if (snEl) return sanitizeHtml(snEl.summernote('code'));
@@ -314,7 +318,7 @@ function makeEditor(hostId){
         ta.value += (ta.value && !/\n$/.test(ta.value) ? '\n' : '') + chunk;
       }
     },
-    focus(){ if (snEl) snEl.summernote('focus'); else if (ta) ta.focus(); },
+    focus(){ if (snEl) { try{ snEl.summernote('focus'); }catch(e){} } else if (ta) ta.focus(); },
     destroy(){
       if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
       if (host) host.innerHTML = '';
@@ -463,6 +467,22 @@ function saveDayReports(){
 }
 function dayNoteFor(date){ return dayNotes.find(d => d.date === date); }
 function dayReportFor(date){ return dayReports.find(r => r.date === date); }
+// --- Авто-секция: закрытые за дату задачи ---
+function doneTasksForDate(dateISO){
+  return tasks.filter(t => t.done && t.doneAt && String(t.doneAt).slice(0,10) === dateISO);
+}
+function autoLinesForDate(dateISO){
+  return doneTasksForDate(dateISO).map(t => '- [' + labelFor(t.zone) + '] ' + htmlToPlain(t.text));
+}
+function renderDayReportAuto(dateISO){
+  const box = document.getElementById('dayReportAuto');
+  if (!box) return;
+  const items = doneTasksForDate(dateISO);
+  box.innerHTML = items.length
+    ? '<h5>✅ Закрыто на доске за этот день (попадает в выгрузки автоматически):</h5><ul>' +
+      items.map(t => '<li>[' + escapeHtml(labelFor(t.zone)) + '] ' + escapeHtml(htmlToPlain(t.text)) + '</li>').join('') + '</ul>'
+    : '<h5>✅ Закрыто на доске за этот день: пока ничего</h5>';
+}
 function calPrev(){ calMonth--; if (calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
 function calNext(){ calMonth++; if (calMonth > 11){ calMonth = 0; calYear++; } renderCalendar(); }
 function calToday(){ const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); }
@@ -559,16 +579,22 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
   if (e.key === 'Escape') closeDayRequest();
 });
-// --- Отчёт дня (FAB + модалка с редактором и голосом) ---
+// --- Отчёт дня (FAB + модалка с редактором, голосом и авто-секцией) ---
 function openDayReport(){
   stopEdVoice();
   const date = todayISO();
   const p = parseLocal(date);
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
-  const r = dayReportFor(date);
-  repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
-  dayReportInitialPlain = repEditor.plain();
   document.getElementById('dayReportModal').classList.add('open');
+  const r = dayReportFor(date);
+  try {
+    repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
+  } catch(e) {
+    try { repEditor.destroy(); } catch(e2){}
+    repEditor.init(r ? r.text : '', false);
+  }
+  dayReportInitialPlain = repEditor.plain();
+  renderDayReportAuto(date);
   setTimeout(() => repEditor.focus(), 60);
 }
 function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); stopEdVoice(); repEditor.destroy(); }
@@ -596,22 +622,26 @@ function saveDayReport(){
   saveDayReports(); closeDayReport();
   notify('Отчёт дня сохранён.', true);
 }
-function dayReportPlain(date){
+function dayReportFullText(date){
   const r = dayReportFor(date);
-  if (!r) return null;
-  return htmlToPlain(r.text);
+  const manual = r ? htmlToPlain(r.text).trim() : '';
+  const auto = autoLinesForDate(date);
+  const p = parseLocal(date);
+  const head = 'Отчёт за ' + p.getDate() + '.' + String(p.getMonth()+1).padStart(2,'0') + '.' + p.getFullYear();
+  let out = '';
+  if (manual) out += head + '\n' + manual;
+  if (auto.length) out += (out ? '\n\n' : head + '\n') + 'Закрыто на доске:\n' + auto.join('\n');
+  return out.trim();
 }
 function copyDayReport(){
-  const t = dayReportPlain(todayISO());
+  const t = dayReportFullText(todayISO());
   if (!t) { notify('Отчёта за сегодня нет.'); return; }
-  const p = parseLocal(todayISO());
-  navigator.clipboard.writeText('Отчёт за ' + p.getDate() + '.' + String(p.getMonth()+1).padStart(2,'0') + '.' + p.getFullYear() + '\n' + t).then(() => notify('Отчёт скопирован.', true));
+  navigator.clipboard.writeText(t).then(() => notify('Отчёт скопирован.', true));
 }
 function downloadDayReportMd(){
-  const t = dayReportPlain(todayISO());
+  const t = dayReportFullText(todayISO());
   if (!t) { notify('Отчёта за сегодня нет.'); return; }
-  const p = parseLocal(todayISO());
-  downloadBlob('# Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n\n' + t + '\n', 'otchet-' + todayISO() + '.md', 'text/markdown;charset=utf-8');
+  downloadBlob('# ' + t.split('\n')[0] + '\n\n' + t.split('\n').slice(1).join('\n') + '\n', 'otchet-' + todayISO() + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('cancelDayReport').addEventListener('click', closeDayReportRequest);
@@ -871,7 +901,7 @@ function noteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      (t.subtasks.length || true ? '<button class="note-action" onclick="openSubsModal(' + t.id + ',false)" title="Подзадачи">' + ARROW_DOWN + '</button>' : '') +
+      '<button class="note-action" onclick="openSubsModal(' + t.id + ',false)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
       '<button class="note-action" onclick="openEditModal({type:\'task\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action" onclick="openNoteMenu(' + t.id + ', event)" title="Действия">' + ELLIPSIS + '</button>' +
     '</div>' +
@@ -1064,9 +1094,14 @@ function openEditModal(mode){
     title = '＋ Новая подзадача';
   }
   document.getElementById('editTitle').textContent = title;
-  editEditor.init(content, asHtml);
-  editInitialPlain = editEditor.plain();
   document.getElementById('editModal').classList.add('open');
+  try {
+    editEditor.init(content, asHtml);
+  } catch(e) {
+    try { editEditor.destroy(); } catch(e2){}
+    editEditor.init(content, false);
+  }
+  editInitialPlain = editEditor.plain();
   setTimeout(() => editEditor.focus(), 60);
 }
 function closeEdit(){ document.getElementById('editModal').classList.remove('open'); editEditor.destroy(); editMode = null; }
@@ -1274,8 +1309,8 @@ function renderArchList() {
 document.getElementById('archSearch').addEventListener('input', renderArchList);
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
-  addEditor.init('', false);
   document.getElementById('addModal').classList.add('open');
+  addEditor.init('', false);
   setTimeout(() => addEditor.focus(), 60);
 }
 function hideZone(key) {
@@ -1381,7 +1416,7 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-// --- Итоги недели + отчёты за период (две половины) ---
+// --- Итоги недели + отчёты по дням (две половины, авто-секция) ---
 let lastResults = {md: '', rows: []};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1398,16 +1433,29 @@ function openResults() {
   closeSbMobile();
 }
 function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
-function reportsInPeriod(from, to){
-  return dayReports.filter(r => r.date >= from && r.date <= to && htmlToPlain(r.text).trim()).sort((a,b) => a.date.localeCompare(b.date));
+function reportDatesInPeriod(from, to){
+  const set = new Set();
+  dayReports.forEach(r => { if (r.date >= from && r.date <= to && htmlToPlain(r.text).trim()) set.add(r.date); });
+  tasks.forEach(t => {
+    if (t.done && t.doneAt) {
+      const d = String(t.doneAt).slice(0,10);
+      if (d >= from && d <= to) set.add(d);
+    }
+  });
+  return Array.from(set).sort();
 }
 function buildReportsMd(from, to){
-  const list = reportsInPeriod(from, to);
-  if (!list.length) return '';
+  const dates = reportDatesInPeriod(from, to);
+  if (!dates.length) return '';
   let md = '';
-  list.forEach(r => {
-    const p = parseLocal(r.date);
-    md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n' + htmlToPlain(r.text) + '\n\n';
+  dates.forEach(d => {
+    const p = parseLocal(d);
+    md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n';
+    const r = dayReportFor(d);
+    if (r && htmlToPlain(r.text).trim()) md += htmlToPlain(r.text).trim() + '\n';
+    const auto = autoLinesForDate(d);
+    if (auto.length) md += 'Закрыто на доске:\n' + auto.join('\n') + '\n';
+    md += '\n';
   });
   return md.trim() + '\n';
 }
@@ -1434,11 +1482,15 @@ function renderResults() {
   });
   if (!bodyHtml) bodyHtml = '<div class="empty">За период задач нет</div>';
   document.getElementById('resBody').innerHTML = bodyHtml;
-  const reps = reportsInPeriod(from, to);
-  document.getElementById('resReports').innerHTML = reps.length
-    ? reps.map(r => {
-        const p = parseLocal(r.date);
-        return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h5><div class="res-rep-body">' + sanitizeHtml(r.text) + '</div></div>';
+  const dates = reportDatesInPeriod(from, to);
+  document.getElementById('resReports').innerHTML = dates.length
+    ? dates.map(d => {
+        const p = parseLocal(d);
+        const r = dayReportFor(d);
+        const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
+        const auto = autoLinesForDate(d);
+        const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
+        return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h5>' + manual + autoHtml + '</div>';
       }).join('')
     : '<div class="empty">За период отчётов нет</div>';
   let md = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
