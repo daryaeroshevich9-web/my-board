@@ -627,11 +627,11 @@ function applyTextCollapse(noteEl){
   const id = Number(tog.getAttribute('data-ct'));
   if (expandedText.has(id)) {
     nt.classList.remove('clamped');
-    tog.textContent = 'свернуть';
+    tog.textContent = 'свернуть ▴';
     tog.style.display = '';
   } else {
     nt.classList.add('clamped');
-    if (nt.scrollHeight > nt.clientHeight + 2) { tog.textContent = 'развернуть'; tog.style.display = ''; }
+    if (nt.scrollHeight > nt.clientHeight + 2) { tog.textContent = 'развернуть ▾'; tog.style.display = ''; }
     else { tog.style.display = 'none'; }
   }
 }
@@ -644,7 +644,7 @@ function applySubCollapse(noteEl){
   subs.forEach((s, i) => s.classList.toggle('sub-hidden', !expanded && i >= SUB_VISIBLE));
   if (subs.length > SUB_VISIBLE) {
     tog.style.display = '';
-    tog.textContent = expanded ? 'свернуть' : 'развернуть (ещё ' + (subs.length - SUB_VISIBLE) + ')';
+    tog.textContent = expanded ? 'свернуть ▴' : 'развернуть (ещё ' + (subs.length - SUB_VISIBLE) + ') ▾';
   } else {
     tog.style.display = 'none';
   }
@@ -656,11 +656,11 @@ function applySubTextCollapse(noteEl){
     const id = Number(tog.getAttribute('data-cst'));
     if (expandedSubText.has(id)) {
       content.classList.remove('clamped-sub');
-      tog.textContent = 'свернуть';
+      tog.textContent = 'свернуть ▴';
       tog.style.display = '';
     } else {
       content.classList.add('clamped-sub');
-      if (content.scrollHeight > content.clientHeight + 2) { tog.textContent = 'развернуть'; tog.style.display = ''; }
+      if (content.scrollHeight > content.clientHeight + 2) { tog.textContent = 'развернуть ▾'; tog.style.display = ''; }
       else { tog.style.display = 'none'; }
     }
   });
