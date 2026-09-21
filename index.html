@@ -23,6 +23,7 @@
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
   <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
+  <button class="sb-item" onclick="openDayReport()"><span class="sb-ico">📄</span><span class="sb-label">Отчёт дня</span></button>
   <button class="sb-item sb-board-only" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
   <button class="sb-item sb-board-only" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
@@ -88,7 +89,7 @@
       <button class="fmt-btn i" onclick="fmtAdd('i')" title="Курсив">К</button>
       <button class="fmt-btn" onclick="fmtAdd('l')" title="Список">•</button>
     </div>
-    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — добавить.</div>
+    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — добавить. Разметка: **жирный**, *курсив*, «- » список.</div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="cancelAdd">Отмена</button>
       <button class="modal-btn primary" id="confirmAdd">Добавить</button>
@@ -109,6 +110,41 @@
       <button class="modal-btn secondary" id="dayDelete">Удалить</button>
       <button class="modal-btn secondary" id="dayCancel">Отмена</button>
       <button class="modal-btn primary" onclick="saveDay()">Сохранить</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="dayReportModal">
+  <div class="modal-content">
+    <h3 id="dayReportTitle">📄 Отчёт дня</h3>
+    <textarea id="dayReportInput" rows="6" placeholder="Что сделано за день — по пунктам:&#10;- ..." autocomplete="off" autocapitalize="sentences"></textarea>
+    <div class="fmt-toolbar">
+      <button class="fmt-btn" onclick="fmtReport('b')" title="Жирный">Ж</button>
+      <button class="fmt-btn i" onclick="fmtReport('i')" title="Курсив">К</button>
+      <button class="fmt-btn" onclick="fmtReport('l')" title="Список">•</button>
+    </div>
+    <div class="fmt-hint">Enter — новая строка (в списке — следующий пункт), Ctrl+Enter — сохранить. Отчёт сохраняется за сегодняшнее число.</div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="copyDayReport()">📋 Копировать</button>
+      <button class="modal-btn secondary" onclick="downloadDayReportMd()">⬇ Markdown</button>
+      <button class="modal-btn secondary" onclick="openReportPeriod()">📅 За период</button>
+      <button class="modal-btn secondary" onclick="closeDayReportRequest()">Отмена</button>
+      <button class="modal-btn primary" onclick="saveDayReport()">Сохранить</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="reportPeriodModal">
+  <div class="modal-content">
+    <h3>📅 Отчёты за период</h3>
+    <div class="results-period">
+      <input type="date" id="rpFrom">
+      <span style="color:var(--text-muted)">—</span>
+      <input type="date" id="rpTo">
+    </div>
+    <pre class="report-preview" id="rpPreview"></pre>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="copyReportPeriod()">📋 Копировать</button>
+      <button class="modal-btn secondary" onclick="downloadReportPeriodMd()">⬇ Markdown</button>
+      <button class="modal-btn primary" onclick="closeReportPeriod()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -201,7 +237,7 @@
     <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <div id="tokenInputWrap"></div>
     <hr class="settings-sep">
-    <p class="settings-hint">Резервная копия — полный снимок доски, личных заметок и заметок календаря.</p>
+    <p class="settings-hint">Резервная копия — полный снимок доски, личных заметок, заметок календаря и отчётов дня.</p>
     <div class="move-list">
       <button class="move-btn" onclick="backupDownload()">⬇ Скачать копию (файл)</button>
       <button class="move-btn" onclick="backupUploadClick()">⬆ Загрузить копию из файла</button>
