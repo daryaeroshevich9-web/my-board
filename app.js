@@ -24,6 +24,7 @@ const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const ELLIPSIS = '⋯';
 let expandedText = new Set();
 let expandedSubs = new Set();
+let expandedSubText = new Set();
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -54,10 +55,6 @@ let currentAddZone = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null;
 let pendingQuickLines = [];
 let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
-if (currentPage !== 'board' && currentPage !== 'personal') {
-  currentPage = 'board';
-  try { localStorage.setItem(PAGE_KEY, 'board'); } catch(e){}
-}
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let currentDayDate = null;
@@ -538,6 +535,22 @@ function subAddRowHtml(tid, isPersonal){
     mic +
     '</div></div>';
 }
+function subtaskHtml(t, s, idx, isPersonal){
+  const onchange = isPersonal ? 'toggleSubP' : 'toggleSub';
+  const editFn = isPersonal ? 'editSubStartP' : 'editSubStart';
+  const delFn = isPersonal ? 'delSubP' : 'delSub';
+  const hidden = (!expandedSubs.has(t.id) && idx >= SUB_VISIBLE) ? ' sub-hidden' : '';
+  const clamped = expandedSubText.has(s.id) ? '' : ' clamped-sub';
+  return '<div class="subtask ' + (s.done ? 'done' : '') + hidden + '">' +
+    '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="' + onchange + '(' + t.id + ',' + s.id + ')">' +
+    '<div class="sub-text" ondblclick="' + editFn + '(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' +
+      '<div class="sub-content' + clamped + '">' + renderRich(s.text) + '</div>' +
+      '<button type="button" class="collapse-toggle" data-cst="' + s.id + '" style="display:none"></button>' +
+    '</div>' +
+    '<button class="sub-edit-btn" onclick="' + editFn + '(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
+    '<button class="sub-del" onclick="' + delFn + '(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
+    '</div>';
+}
 function noteHtml(t) {
   const parts = splitEmoji(t.text);
   parts.rest = capFirst(parts.rest);
@@ -561,14 +574,7 @@ function noteHtml(t) {
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) =>
-        '<div class="subtask ' + (s.done ? 'done' : '') + (!expandedSubs.has(t.id) && idx >= SUB_VISIBLE ? ' sub-hidden' : '') + '">' +
-        '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
-        '<div class="sub-text" ondblclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
-        '<button class="sub-edit-btn" onclick="editSubStart(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
-        '<button class="sub-del" onclick="delSub(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
-        '</div>'
-      ).join('') +
+      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx, false)).join('') +
       '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
       (t.subOpen ? subAddRowHtml(t.id, false) : '') +
       '</div>';
@@ -595,14 +601,7 @@ function personalNoteHtml(t) {
   let subBlock = '';
   if (t.subtasks.length || t.subOpen) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) =>
-        '<div class="subtask ' + (s.done ? 'done' : '') + (!expandedSubs.has(t.id) && idx >= SUB_VISIBLE ? ' sub-hidden' : '') + '">' +
-        '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSubP(' + t.id + ',' + s.id + ')">' +
-        '<div class="sub-text" ondblclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' + renderRich(s.text) + '</div>' +
-        '<button class="sub-edit-btn" onclick="editSubStartP(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
-        '<button class="sub-del" onclick="delSubP(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
-        '</div>'
-      ).join('') +
+      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx, true)).join('') +
       '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
       (t.subOpen ? subAddRowHtml(t.id, true) : '') +
       '</div>';
@@ -650,8 +649,28 @@ function applySubCollapse(noteEl){
     tog.style.display = 'none';
   }
 }
+function applySubTextCollapse(noteEl){
+  noteEl.querySelectorAll('.collapse-toggle[data-cst]').forEach(tog => {
+    const content = tog.parentElement ? tog.parentElement.querySelector('.sub-content') : null;
+    if (!content) return;
+    const id = Number(tog.getAttribute('data-cst'));
+    if (expandedSubText.has(id)) {
+      content.classList.remove('clamped-sub');
+      tog.textContent = 'свернуть';
+      tog.style.display = '';
+    } else {
+      content.classList.add('clamped-sub');
+      if (content.scrollHeight > content.clientHeight + 2) { tog.textContent = 'развернуть'; tog.style.display = ''; }
+      else { tog.style.display = 'none'; }
+    }
+  });
+}
 function refreshCollapses(){
-  document.querySelectorAll('.note').forEach(el => { applyTextCollapse(el); applySubCollapse(el); });
+  document.querySelectorAll('.note').forEach(el => {
+    applyTextCollapse(el);
+    applySubCollapse(el);
+    applySubTextCollapse(el);
+  });
 }
 document.addEventListener('click', e => {
   const tog = e.target && e.target.closest ? e.target.closest('.collapse-toggle') : null;
@@ -666,6 +685,10 @@ document.addEventListener('click', e => {
     const id = Number(tog.getAttribute('data-cs'));
     if (expandedSubs.has(id)) expandedSubs.delete(id); else expandedSubs.add(id);
     applySubCollapse(noteEl);
+  } else if (tog.hasAttribute('data-cst')) {
+    const id = Number(tog.getAttribute('data-cst'));
+    if (expandedSubText.has(id)) expandedSubText.delete(id); else expandedSubText.add(id);
+    applySubTextCollapse(noteEl);
   }
 });
 function render() {
