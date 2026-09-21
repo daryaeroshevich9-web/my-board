@@ -51,6 +51,10 @@ let currentAddZone = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null;
 let pendingQuickLines = [];
 let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
+if (currentPage !== 'board' && currentPage !== 'personal') {
+  currentPage = 'board';
+  try { localStorage.setItem(PAGE_KEY, 'board'); } catch(e){}
+}
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let currentDayDate = null;
