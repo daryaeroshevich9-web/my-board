@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'darya_board_tasks';
 const PERSONAL_KEY = 'darya_personal_notes';
 const DAYNOTES_KEY = 'darya_board_daynotes';
+const DAYREPORTS_KEY = 'darya_board_dayreports';
 const ZONES_KEY = 'darya_board_zones';
 const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
@@ -46,10 +47,15 @@ function migrateDayNote(d){
   if (!d || !d.date) return null;
   return {date: d.date, text: String(d.text || ''), updated: d.updated || new Date().toISOString()};
 }
+function migrateDayReport(d){
+  if (!d || !d.date) return null;
+  return {date: d.date, text: String(d.text || ''), updated: d.updated || new Date().toISOString()};
+}
 let zones = loadZones();
 let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let personal = (JSON.parse(localStorage.getItem(PERSONAL_KEY) || '[]')).map(migratePersonalNote);
 let dayNotes = (JSON.parse(localStorage.getItem(DAYNOTES_KEY) || '[]')).map(migrateDayNote).filter(Boolean);
+let dayReports = (JSON.parse(localStorage.getItem(DAYREPORTS_KEY) || '[]')).map(migrateDayReport).filter(Boolean);
 tasks.forEach(migrateTask);
 let currentAddZone = null, currentNoteId = null;
 let cloudSha = null, suppressPush = true, pushTimer = null;
@@ -59,6 +65,7 @@ let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let currentDayDate = null;
 let dayInitial = '';
+let dayReportInitial = '';
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
@@ -252,6 +259,7 @@ function fmtApply(ta, type){
 }
 function fmtAdd(type){ fmtApply(document.getElementById('addInput'), type); }
 function fmtDay(type){ fmtApply(document.getElementById('dayInput'), type); }
+function fmtReport(type){ fmtApply(document.getElementById('dayReportInput'), type); }
 function fmtSub(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-subadd="' + tid + '"]'), type); }
 function fmtSubP(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-psubadd="' + tid + '"]'), type); }
 let toastTimer = null;
@@ -309,7 +317,12 @@ function saveDayNotes(){
   localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
   if (!suppressPush) schedulePush();
 }
+function saveDayReports(){
+  localStorage.setItem(DAYREPORTS_KEY, JSON.stringify(dayReports));
+  if (!suppressPush) schedulePush();
+}
 function dayNoteFor(date){ return dayNotes.find(d => d.date === date); }
+function dayReportFor(date){ return dayReports.find(r => r.date === date); }
 function calPrev(){ calMonth--; if (calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
 function calNext(){ calMonth++; if (calMonth > 11){ calMonth = 0; calYear++; } renderCalendar(); }
 function calToday(){ const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); }
@@ -406,6 +419,105 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
   if (e.key === 'Escape') closeDayRequest();
 });
+// --- Отчёты дня ---
+function openDayReport(){
+  const date = todayISO();
+  const p = parseLocal(date);
+  document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
+  const r = dayReportFor(date);
+  const v = r ? r.text : '';
+  dayReportInitial = v;
+  const ta = document.getElementById('dayReportInput');
+  ta.value = v;
+  document.getElementById('dayReportModal').classList.add('open');
+  setTimeout(() => { ta.focus(); autoGrow(ta); }, 0);
+}
+function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); }
+function closeDayReportRequest(){
+  const ta = document.getElementById('dayReportInput');
+  if (ta.value.trim() !== dayReportInitial.trim()) {
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => closeDayReport(), 'Закрыть без сохранения');
+  } else closeDayReport();
+}
+function saveDayReport(){
+  const text = document.getElementById('dayReportInput').value.trim();
+  const date = todayISO();
+  if (!text) {
+    if (!dayReportFor(date)) { closeDayReport(); return; }
+    askConfirm('Удалить отчёт за сегодня? Действие необратимо.', () => {
+      dayReports = dayReports.filter(r => r.date !== date);
+      saveDayReports(); closeDayReport();
+      notify('Отчёт удалён.');
+    }, 'Удалить');
+    return;
+  }
+  const ex = dayReportFor(date);
+  if (ex) { ex.text = text; ex.updated = new Date().toISOString(); }
+  else dayReports.push({date: date, text: text, updated: new Date().toISOString()});
+  saveDayReports(); closeDayReport();
+  notify('Отчёт дня сохранён.', true);
+}
+function dayReportText(date){
+  const r = dayReportFor(date);
+  if (!r) return null;
+  const p = parseLocal(date);
+  return 'Отчёт за ' + p.getDate() + '.' + String(p.getMonth()+1).padStart(2,'0') + '.' + p.getFullYear() + '\n' + r.text;
+}
+function copyDayReport(){
+  const t = dayReportText(todayISO());
+  if (!t) { notify('Отчёта за сегодня нет.'); return; }
+  navigator.clipboard.writeText(t).then(() => notify('Отчёт скопирован.', true));
+}
+function downloadDayReportMd(){
+  const t = dayReportText(todayISO());
+  if (!t) { notify('Отчёта за сегодня нет.'); return; }
+  downloadBlob(t, 'otchet-' + todayISO() + '.md', 'text/markdown;charset=utf-8');
+  notify('Файл Markdown сохранён.', true);
+}
+function openReportPeriod(){
+  const today = todayISO();
+  document.getElementById('rpFrom').value = mondayOf(today);
+  document.getElementById('rpTo').value = today;
+  renderReportPeriod();
+  document.getElementById('reportPeriodModal').classList.add('open');
+}
+function closeReportPeriod(){ document.getElementById('reportPeriodModal').classList.remove('open'); }
+function buildPeriodReport(){
+  const from = document.getElementById('rpFrom').value;
+  const to = document.getElementById('rpTo').value;
+  if (!from || !to) return '';
+  const list = dayReports.filter(r => r.date >= from && r.date <= to && r.text.trim()).sort((a,b) => a.date.localeCompare(b.date));
+  if (!list.length) return '';
+  const pf = parseLocal(from), pt = parseLocal(to);
+  let md = '# Отчёты за период ' + fmtDate(from) + '.' + pf.getFullYear() + ' — ' + fmtDate(to) + '.' + pt.getFullYear() + '\n\n';
+  list.forEach(r => {
+    const p = parseLocal(r.date);
+    md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n' + r.text + '\n\n';
+  });
+  return md.trim() + '\n';
+}
+function renderReportPeriod(){
+  const md = buildPeriodReport();
+  document.getElementById('rpPreview').textContent = md || 'За выбранный период отчётов нет.';
+}
+function copyReportPeriod(){
+  const md = buildPeriodReport();
+  if (!md) { notify('За период отчётов нет.'); return; }
+  navigator.clipboard.writeText(md).then(() => notify('Отчёты скопированы.', true));
+}
+function downloadReportPeriodMd(){
+  const md = buildPeriodReport();
+  if (!md) { notify('За период отчётов нет.'); return; }
+  downloadBlob(md, 'otchety-' + document.getElementById('rpFrom').value + '-' + document.getElementById('rpTo').value + '.md', 'text/markdown;charset=utf-8');
+  notify('Файл Markdown сохранён.', true);
+}
+document.getElementById('rpFrom').addEventListener('change', renderReportPeriod);
+document.getElementById('rpTo').addEventListener('change', renderReportPeriod);
+document.getElementById('dayReportInput').addEventListener('keydown', e => {
+  if (listKeydown(e)) return;
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDayReport(); }
+  if (e.key === 'Escape') closeDayReportRequest();
+});
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
   const qa = document.getElementById('quickAdd');
@@ -468,6 +580,10 @@ function cloudRead() {
         dayNotes = parsed.daynotes.map(migrateDayNote).filter(Boolean);
         localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
       }
+      if (parsed && Array.isArray(parsed.dayreports)) {
+        dayReports = parsed.dayreports.map(migrateDayReport).filter(Boolean);
+        localStorage.setItem(DAYREPORTS_KEY, JSON.stringify(dayReports));
+      }
       return parsed;
     });
 }
@@ -478,7 +594,7 @@ function cloudWrite() {
     return Promise.reject('no-token');
   }
   const payload = () => {
-    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes}, null, 2))};
+    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes, dayreports: dayReports}, null, 2))};
     if (cloudSha) b.sha = cloudSha;
     return b;
   };
@@ -1354,7 +1470,7 @@ function downloadResultsCsv() {
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
 function backupDownload() {
-  const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes}, null, 2);
+  const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes, dayreports: dayReports}, null, 2);
   downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
   notify('Резервная копия сохранена.', true);
 }
@@ -1370,11 +1486,13 @@ document.getElementById('backupFile').addEventListener('change', e => {
       const zonesBackup = Array.isArray(parsed.zones) && parsed.zones.length ? parsed.zones : null;
       const personalBackup = Array.isArray(parsed.personal) ? parsed.personal : null;
       const daynotesBackup = Array.isArray(parsed.daynotes) ? parsed.daynotes : null;
+      const dayreportsBackup = Array.isArray(parsed.dayreports) ? parsed.dayreports : null;
       askConfirm('Заменить текущие данные данными из файла (' + count + ' задач)?', () => {
         tasks = parsed.tasks.map(migrateTask);
         if (zonesBackup) { zones = zonesBackup.map(migrateZone); localStorage.setItem(ZONES_KEY, JSON.stringify(zones)); }
         if (personalBackup) { personal = personalBackup.map(migratePersonalNote); localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); }
         if (daynotesBackup) { dayNotes = daynotesBackup.map(migrateDayNote).filter(Boolean); localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes)); }
+        if (dayreportsBackup) { dayReports = dayreportsBackup.map(migrateDayReport).filter(Boolean); localStorage.setItem(DAYREPORTS_KEY, JSON.stringify(dayReports)); }
         saveTasks(); render();
         notify('Копия загружена.', true);
       }, 'Заменить');
@@ -1623,6 +1741,8 @@ document.querySelectorAll('.modal').forEach(modal => {
     if (e.target === modal) {
       if (modal.id === 'confirmModal') { modal.classList.remove('open'); confirmCb = null; }
       else if (modal.id === 'dayModal') closeDayRequest();
+      else if (modal.id === 'dayReportModal') closeDayReportRequest();
+      else if (modal.id === 'reportPeriodModal') closeReportPeriod();
       else if (modal.id === 'addModal') closeAddRequest();
       else modal.classList.remove('open');
     }
