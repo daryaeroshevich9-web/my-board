@@ -210,11 +210,6 @@ textarea.sub-edit:focus{outline:none;border-color:var(--accent)}
 .personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
 .personal-notes{display:flex;flex-direction:column;gap:10px;min-height:420px;max-height:calc(100vh - 320px);overflow-y:auto;padding-right:2px}
 .note-editor{margin-bottom:10px}
-.note-editor .note-toolbar{flex-wrap:wrap}
-.note-editor .note-editable{min-height:170px;max-height:340px;overflow-y:auto;font-family:inherit;font-size:14px;line-height:1.5;color:var(--text)}
-.note-editor .note-editable ul,.note-editor .note-editable ol{margin:4px 0 4px 18px}
-.note-editor .note-editable table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
-.note-editor .note-editable td,.note-editor .note-editable th{border:1px solid var(--border);padding:4px 6px}
 textarea.ed-fallback{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:170px;max-height:340px;line-height:1.5}
 textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
 #editModal .modal-content,#addModal .modal-content,#dayReportModal .modal-content{max-width:780px}
@@ -296,6 +291,138 @@ textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
 .list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
 .list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
 .page-hidden{display:none !important}
+
+/* ---------- Quill editor ---------- */
+.note-editor .quill-editor{
+  background:var(--input-bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  transition:border-color .15s, box-shadow .15s;
+}
+.note-editor .quill-editor:focus-within{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-ring);
+  background:var(--card);
+}
+.note-editor .quill-editor .ql-toolbar.ql-snow{
+  border:none;
+  border-bottom:1px solid var(--border);
+  background:var(--card);
+  padding:6px 8px;
+  font-family:inherit;
+}
+.note-editor .quill-editor .ql-container.ql-snow{
+  border:none;
+  font-family:inherit;
+  font-size:14px;
+  color:var(--text);
+  background:transparent;
+}
+.note-editor .quill-editor .ql-editor{
+  min-height:170px;
+  max-height:340px;
+  overflow-y:auto;
+  padding:12px 14px;
+  line-height:1.5;
+  font-family:inherit;
+  font-size:14px;
+  color:var(--text);
+}
+.note-editor .quill-editor .ql-editor.ql-blank::before{
+  color:var(--text-muted);
+  font-style:normal;
+  left:14px;
+  right:14px;
+}
+.note-editor .quill-editor .ql-editor ul,
+.note-editor .quill-editor .ql-editor ol{
+  margin:4px 0 4px 18px;
+  padding:0;
+}
+.note-editor .quill-editor .ql-editor li{
+  margin:2px 0;
+}
+.note-editor .quill-editor .ql-editor blockquote{
+  border-left:3px solid var(--accent);
+  padding-left:10px;
+  color:var(--text-secondary);
+  margin:4px 0;
+}
+.note-editor .quill-editor .ql-editor pre.ql-syntax{
+  background:var(--soft);
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:var(--text);
+  padding:8px 10px;
+  font-size:13px;
+}
+.note-editor .quill-editor .ql-editor a{
+  color:var(--accent);
+  text-decoration:underline;
+}
+.note-editor .quill-editor .ql-editor h1,
+.note-editor .quill-editor .ql-editor h2,
+.note-editor .quill-editor .ql-editor h3{
+  font-family:'Unbounded',sans-serif;
+  color:var(--text);
+  margin:6px 0 4px;
+}
+/* Иконки тулбара */
+.note-editor .quill-editor .ql-snow .ql-stroke{
+  stroke:var(--text-secondary);
+}
+.note-editor .quill-editor .ql-snow .ql-fill,
+.note-editor .quill-editor .ql-snow .ql-stroke.ql-fill{
+  fill:var(--text-secondary);
+}
+.note-editor .quill-editor .ql-snow .ql-picker{
+  color:var(--text-secondary);
+}
+.note-editor .quill-editor .ql-snow .ql-picker-label:hover,
+.note-editor .quill-editor .ql-snow .ql-picker-label.ql-active,
+.note-editor .quill-editor .ql-snow .ql-picker-item:hover,
+.note-editor .quill-editor .ql-snow .ql-picker-item.ql-selected{
+  color:var(--accent);
+}
+.note-editor .quill-editor .ql-snow button:hover .ql-stroke,
+.note-editor .quill-editor .ql-snow button.ql-active .ql-stroke,
+.note-editor .quill-editor .ql-snow button:focus .ql-stroke{
+  stroke:var(--accent);
+}
+.note-editor .quill-editor .ql-snow button:hover .ql-fill,
+.note-editor .quill-editor .ql-snow button.ql-active .ql-fill,
+.note-editor .quill-editor .ql-snow button:focus .ql-fill{
+  fill:var(--accent);
+}
+.note-editor .quill-editor .ql-snow .ql-tooltip{
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  background:var(--card);
+  color:var(--text);
+  font-family:inherit;
+  z-index:10;
+}
+.note-editor .quill-editor .ql-snow .ql-tooltip input[type=text]{
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:4px 8px;
+  font-family:inherit;
+  color:var(--text);
+  background:var(--input-bg);
+}
+.note-editor .quill-editor .ql-snow .ql-tooltip a{
+  color:var(--accent);
+}
+/* Квилл-пикер в теме */
+.note-editor .quill-editor .ql-snow .ql-picker-options{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+}
+
 @media (max-width:1100px){
   .zones{columns:2}
 }
