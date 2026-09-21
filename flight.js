@@ -276,7 +276,8 @@ function renderSetup(){
     };
   }
 
-  $('randomBtn').onclick = function(){
+  var rb = $('randomBtn');
+  if(rb) rb.onclick = function(){
     var items = $('list').querySelectorAll('.item');
     if(items.length === 0){ alert('Нет доступных направлений'); return; }
     var pick = items[Math.floor(Math.random()*items.length)];
@@ -293,11 +294,14 @@ function renderSetup(){
     };
   }
 
-  $('onlyNew').checked = state.onlyNew;
-  $('onlyNew').onchange = function(){
-    state.onlyNew = this.checked;
-    renderDestinations();
-  };
+  var on = $('onlyNew');
+  if(on){
+    on.checked = state.onlyNew;
+    on.onchange = function(){
+      state.onlyNew = this.checked;
+      renderDestinations();
+    };
+  }
 
   renderDestinations();
 }
@@ -596,34 +600,53 @@ var rb = $('resetBtn'); if(rb) rb.onclick = function(){
   location.reload();
 };
 
-// Публичное API — для встраивания в switchPage
 window.FocusFlight = {
   init: startWithFallback,
   onShow: function(){ setTimeout(renderMap, 60); }
 };
 
-// Запуск инициализации в фоне
 startWithFallback();
 
 })();
 
-// ---------- Обёртка над switchPage ----------
+// ---------- Перехват кликов по навигации ----------
 (function(){
-  var orig = window.switchPage;
-  if(typeof orig !== 'function'){
-    console.warn('switchPage не найдена — вкладка Полёты не будет работать автоматически');
-    return;
-  }
-  window.switchPage = function(page){
-    try { orig(page); } catch(e){ console.warn('orig switchPage error:', e); }
+  function showFlightPage(){
+    var bp = document.getElementById('boardPage');
+    var pp = document.getElementById('personalPage');
     var fp = document.getElementById('flightPage');
-    if(fp) fp.classList.toggle('page-hidden', page !== 'flight');
-    if(page === 'flight' && window.FocusFlight) window.FocusFlight.onShow();
-  };
-  // Восстановление, если последняя страница была flight
-  try {
-    if(localStorage.getItem('darya_board_page') === 'flight'){
-      window.switchPage('flight');
+    if(bp) bp.classList.add('page-hidden');
+    if(pp) pp.classList.add('page-hidden');
+    if(fp) fp.classList.remove('page-hidden');
+    try { localStorage.setItem('darya_board_page', 'flight'); } catch(e){}
+    if(window.FocusFlight && window.FocusFlight.onShow) window.FocusFlight.onShow();
+  }
+
+  function hideFlightPage(){
+    var fp = document.getElementById('flightPage');
+    if(fp) fp.classList.add('page-hidden');
+  }
+
+  // Capture-фаза: срабатываем РАНЬШЕ inline onclick
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[onclick]') : null;
+    if(!el) return;
+    var oc = el.getAttribute('onclick') || '';
+    if(oc.indexOf("switchPage('flight')") >= 0){
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      showFlightPage();
+    } else if(oc.indexOf('switchPage(') >= 0){
+      hideFlightPage();
     }
-  } catch(e){}
+  }, true);
+
+  // Восстановление после перезагрузки
+  window.addEventListener('load', function(){
+    try {
+      if(localStorage.getItem('darya_board_page') === 'flight'){
+        showFlightPage();
+      }
+    } catch(e){}
+  });
 })();
