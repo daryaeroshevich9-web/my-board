@@ -40,7 +40,6 @@ function migratePersonalNote(t){
   if (t.done === undefined) t.done = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
-  t.subOpen = false;
   return t;
 }
 function migrateDayNote(d){
@@ -65,7 +64,10 @@ let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let currentDayDate = null;
 let dayInitial = '';
-let dayReportInitial = '';
+let dayReportInitialPlain = '';
+let editMode = null;
+let editInitialPlain = '';
+let subsMode = null;
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
@@ -84,7 +86,7 @@ function capFirst(s){
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 function shortText(s, n){
-  const t = String(s || '');
+  const t = String(s || '').replace(/<[^>]+>/g,' ');
   return t.length > (n || 40) ? t.slice(0, (n || 40)) + '…' : t;
 }
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
@@ -160,6 +162,86 @@ function parseMagic(raw){
   text = text.replace(/\s{2,}/g,' ').trim();
   return {text: text, due: due};
 }
+// --- HTML: детекция, санитизация, рендер, конвертация в текст ---
+function isHtmlText(t){
+  return /<\/?(p|ul|ol|li|table|thead|tbody|tr|td|th|div|br|b|strong|i|em|u|s|h[1-6]|blockquote|pre|hr|span|a)\b/i.test(String(t||''));
+}
+const ALLOWED_TAGS = {P:1,BR:1,B:1,STRONG:1,I:1,EM:1,U:1,S:1,UL:1,OL:1,LI:1,BLOCKQUOTE:1,PRE:1,CODE:1,H1:1,H2:1,H3:1,H4:1,H5:1,H6:1,TABLE:1,THEAD:1,TBODY:1,TFOOT:1,TR:1,TD:1,TH:1,A:1,SPAN:1,DIV:1,HR:1};
+const ALLOWED_ATTRS = {A:{href:1,target:1,rel:1},TD:{colspan:1,rowspan:1},TH:{colspan:1,rowspan:1},SPAN:{style:1},DIV:{style:1}};
+const KILL_TAGS = {SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,LINK:1,META:1,TITLE:1,FORM:1,INPUT:1,BUTTON:1};
+function cleanStyle(v){
+  const s = String(v||'');
+  if (/expression|javascript:|url\s*\(/i.test(s)) return '';
+  return s;
+}
+function cleanHref(v){
+  const s = String(v||'').trim();
+  if (/^(https?:|mailto:|#|\/)/i.test(s)) return s;
+  return '#';
+}
+function sanitizeNode(node){
+  const kids = Array.from(node.childNodes);
+  for (const child of kids) {
+    if (child.nodeType === 1) {
+      const tag = child.tagName;
+      if (KILL_TAGS[tag]) { child.remove(); continue; }
+      if (!ALLOWED_TAGS[tag]) {
+        while (child.firstChild) node.insertBefore(child.firstChild, child);
+        child.remove();
+        continue;
+      }
+      const allowed = ALLOWED_ATTRS[tag] || {};
+      for (const attr of Array.from(child.attributes)) {
+        const n = attr.name.toLowerCase();
+        if (n.startsWith('on') || !allowed[n]) { child.removeAttribute(attr.name); continue; }
+        if (n === 'href') child.setAttribute('href', cleanHref(attr.value));
+        if (n === 'style') { const c = cleanStyle(attr.value); if (c) child.setAttribute('style', c); else child.removeAttribute('style'); }
+      }
+      if (tag === 'A') { child.setAttribute('rel','noopener'); }
+      sanitizeNode(child);
+    }
+  }
+}
+function sanitizeHtml(html){
+  try {
+    const doc = new DOMParser().parseFromString(String(html||''), 'text/html');
+    sanitizeNode(doc.body);
+    return doc.body.innerHTML;
+  } catch(e) { return escapeHtml(String(html||'')); }
+}
+function inlinePlain(node){
+  let out = '';
+  node.childNodes.forEach(ch => {
+    if (ch.nodeType === 3) out += ch.textContent;
+    else if (ch.nodeType === 1) {
+      if (ch.tagName === 'BR') out += '\n';
+      else out += inlinePlain(ch);
+    }
+  });
+  return out;
+}
+function htmlToPlain(html){
+  if (!isHtmlText(html)) return String(html||'');
+  try {
+    const doc = new DOMParser().parseFromString(String(html), 'text/html');
+    const lines = [];
+    const walk = (node) => {
+      node.childNodes.forEach(ch => {
+        if (ch.nodeType === 3) { const t = ch.textContent.trim(); if (t) lines.push(t); return; }
+        if (ch.nodeType !== 1) return;
+        const tag = ch.tagName;
+        if (tag === 'LI') lines.push('- ' + inlinePlain(ch).trim());
+        else if (tag === 'TR') lines.push(Array.from(ch.querySelectorAll('td,th')).map(c => inlinePlain(c).trim()).join(' | '));
+        else if (tag === 'P' || tag === 'DIV' || tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'H4' || tag === 'H5' || tag === 'H6' || tag === 'BLOCKQUOTE') { const t = inlinePlain(ch).trim(); if (t) lines.push(t); }
+        else if (tag === 'PRE') lines.push(ch.textContent);
+        else if (tag === 'BR') lines.push('');
+        else walk(ch);
+      });
+    };
+    walk(doc.body);
+    return lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  } catch(e) { return String(html||''); }
+}
 function renderRich(raw){
   const lines = String(raw == null ? '' : raw).split('\n');
   let html = '';
@@ -181,6 +263,68 @@ function renderRich(raw){
   closeList();
   return html;
 }
+function renderContent(text){
+  return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
+}
+// --- Редактор: Summernote с фолбэком на textarea ---
+const SN_TOOLBAR = [
+  ['undo',['undo','redo']],
+  ['style',['style']],
+  ['font',['bold','italic','underline','strike','clear']],
+  ['color',['color']],
+  ['para',['ul','ol','indent','outdent']],
+  ['table',['table']],
+  ['insert',['link','hr']],
+  ['view',['codeview']]
+];
+function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote); }
+function makeEditor(hostId){
+  const host = document.getElementById(hostId);
+  let snEl = null, ta = null;
+  const useSn = () => snAvailable();
+  return {
+    init(content, asHtml){
+      this.destroy();
+      const html = asHtml ? sanitizeHtml(content||'') : (content ? renderRich(content) : '');
+      if (useSn()) {
+        snEl = window.jQuery('<div></div>');
+        window.jQuery(host).append(snEl);
+        snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
+        snEl.summernote('code', html || '');
+      } else {
+        ta = document.createElement('textarea');
+        ta.className = 'ed-fallback';
+        ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
+        host.appendChild(ta);
+      }
+    },
+    get(){
+      if (snEl) return sanitizeHtml(snEl.summernote('code'));
+      return ta ? ta.value : '';
+    },
+    plain(){ return htmlToPlain(this.get()).trim(); },
+    appendText(chunk){
+      if (!chunk) return;
+      if (snEl) {
+        let c = snEl.summernote('code');
+        c = c.replace(/<p><br\s*\/?><\/p>\s*$/,'');
+        c += '<p>' + escapeHtml(chunk).replace(/\n/g,'<br>') + '</p>';
+        snEl.summernote('code', c);
+      } else if (ta) {
+        ta.value += (ta.value && !/\n$/.test(ta.value) ? '\n' : '') + chunk;
+      }
+    },
+    focus(){ if (snEl) snEl.summernote('focus'); else if (ta) ta.focus(); },
+    destroy(){
+      if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
+      if (host) host.innerHTML = '';
+      ta = null;
+    }
+  };
+}
+const addEditor = makeEditor('addEditor');
+const editEditor = makeEditor('editEditor');
+const repEditor = makeEditor('dayReportEditor');
 function autoGrow(ta){
   if (!ta || ta.tagName !== 'TEXTAREA') return;
   ta.style.height = 'auto';
@@ -257,11 +401,7 @@ function fmtApply(ta, type){
   ta.selectionEnd = s + ins.length;
   autoGrow(ta);
 }
-function fmtAdd(type){ fmtApply(document.getElementById('addInput'), type); }
 function fmtDay(type){ fmtApply(document.getElementById('dayInput'), type); }
-function fmtReport(type){ fmtApply(document.getElementById('dayReportInput'), type); }
-function fmtSub(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-subadd="' + tid + '"]'), type); }
-function fmtSubP(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-psubadd="' + tid + '"]'), type); }
 let toastTimer = null;
 function notify(text, ok){
   const t = document.getElementById('toast');
@@ -419,30 +559,29 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
   if (e.key === 'Escape') closeDayRequest();
 });
-// --- Отчёты дня ---
+// --- Отчёт дня (FAB + модалка с редактором и голосом) ---
 function openDayReport(){
+  stopEdVoice();
   const date = todayISO();
   const p = parseLocal(date);
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
   const r = dayReportFor(date);
-  const v = r ? r.text : '';
-  dayReportInitial = v;
-  const ta = document.getElementById('dayReportInput');
-  ta.value = v;
+  repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
+  dayReportInitialPlain = repEditor.plain();
   document.getElementById('dayReportModal').classList.add('open');
-  setTimeout(() => { ta.focus(); autoGrow(ta); }, 0);
+  setTimeout(() => repEditor.focus(), 60);
 }
-function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); }
+function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); stopEdVoice(); repEditor.destroy(); }
 function closeDayReportRequest(){
-  const ta = document.getElementById('dayReportInput');
-  if (ta.value.trim() !== dayReportInitial.trim()) {
+  if (repEditor.plain() !== dayReportInitialPlain) {
     askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => closeDayReport(), 'Закрыть без сохранения');
   } else closeDayReport();
 }
 function saveDayReport(){
-  const text = document.getElementById('dayReportInput').value.trim();
+  const val = repEditor.get();
+  const plain = htmlToPlain(val).trim();
   const date = todayISO();
-  if (!text) {
+  if (!plain) {
     if (!dayReportFor(date)) { closeDayReport(); return; }
     askConfirm('Удалить отчёт за сегодня? Действие необратимо.', () => {
       dayReports = dayReports.filter(r => r.date !== date);
@@ -452,72 +591,123 @@ function saveDayReport(){
     return;
   }
   const ex = dayReportFor(date);
-  if (ex) { ex.text = text; ex.updated = new Date().toISOString(); }
-  else dayReports.push({date: date, text: text, updated: new Date().toISOString()});
+  if (ex) { ex.text = val; ex.updated = new Date().toISOString(); }
+  else dayReports.push({date: date, text: val, updated: new Date().toISOString()});
   saveDayReports(); closeDayReport();
   notify('Отчёт дня сохранён.', true);
 }
-function dayReportText(date){
+function dayReportPlain(date){
   const r = dayReportFor(date);
   if (!r) return null;
-  const p = parseLocal(date);
-  return 'Отчёт за ' + p.getDate() + '.' + String(p.getMonth()+1).padStart(2,'0') + '.' + p.getFullYear() + '\n' + r.text;
+  return htmlToPlain(r.text);
 }
 function copyDayReport(){
-  const t = dayReportText(todayISO());
+  const t = dayReportPlain(todayISO());
   if (!t) { notify('Отчёта за сегодня нет.'); return; }
-  navigator.clipboard.writeText(t).then(() => notify('Отчёт скопирован.', true));
+  const p = parseLocal(todayISO());
+  navigator.clipboard.writeText('Отчёт за ' + p.getDate() + '.' + String(p.getMonth()+1).padStart(2,'0') + '.' + p.getFullYear() + '\n' + t).then(() => notify('Отчёт скопирован.', true));
 }
 function downloadDayReportMd(){
-  const t = dayReportText(todayISO());
+  const t = dayReportPlain(todayISO());
   if (!t) { notify('Отчёта за сегодня нет.'); return; }
-  downloadBlob(t, 'otchet-' + todayISO() + '.md', 'text/markdown;charset=utf-8');
+  const p = parseLocal(todayISO());
+  downloadBlob('# Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n\n' + t + '\n', 'otchet-' + todayISO() + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
 }
-function openReportPeriod(){
-  const today = todayISO();
-  document.getElementById('rpFrom').value = mondayOf(today);
-  document.getElementById('rpTo').value = today;
-  renderReportPeriod();
-  document.getElementById('reportPeriodModal').classList.add('open');
+document.getElementById('cancelDayReport').addEventListener('click', closeDayReportRequest);
+// --- Голос: textarea (quickAdd) и редактор отчёта ---
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+const micBtn = document.getElementById('micBtn');
+const repMicBtn = document.getElementById('repMic');
+let recog = null, listening = false, voiceBase = '', voiceTarget = null;
+let voiceActive = false, voiceFinal = '';
+let edVoiceActive = false;
+function voiceJoin(base, add){
+  if (!add) return base;
+  return base + (base && !base.endsWith(' ') ? ' ' : '') + add;
 }
-function closeReportPeriod(){ document.getElementById('reportPeriodModal').classList.remove('open'); }
-function buildPeriodReport(){
-  const from = document.getElementById('rpFrom').value;
-  const to = document.getElementById('rpTo').value;
-  if (!from || !to) return '';
-  const list = dayReports.filter(r => r.date >= from && r.date <= to && r.text.trim()).sort((a,b) => a.date.localeCompare(b.date));
-  if (!list.length) return '';
-  const pf = parseLocal(from), pt = parseLocal(to);
-  let md = '# Отчёты за период ' + fmtDate(from) + '.' + pf.getFullYear() + ' — ' + fmtDate(to) + '.' + pt.getFullYear() + '\n\n';
-  list.forEach(r => {
-    const p = parseLocal(r.date);
-    md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n' + r.text + '\n\n';
-  });
-  return md.trim() + '\n';
+function startRecog(){
+  try { recog.start(); } catch (err) {}
+  listening = true;
+  updateMicUI();
 }
-function renderReportPeriod(){
-  const md = buildPeriodReport();
-  document.getElementById('rpPreview').textContent = md || 'За выбранный период отчётов нет.';
+function startVoice(el) {
+  if (!SpeechRec || !el) return;
+  if (voiceActive) {
+    voiceActive = false; listening = false;
+    try { recog.stop(); } catch (err) {}
+    updateMicUI();
+    return;
+  }
+  stopEdVoice();
+  voiceTarget = el;
+  voiceBase = el.value.trim();
+  voiceFinal = '';
+  voiceActive = true;
+  el.focus();
+  startRecog();
 }
-function copyReportPeriod(){
-  const md = buildPeriodReport();
-  if (!md) { notify('За период отчётов нет.'); return; }
-  navigator.clipboard.writeText(md).then(() => notify('Отчёты скопированы.', true));
+function startEdVoice() {
+  if (!SpeechRec) return;
+  if (edVoiceActive) { stopEdVoice(); return; }
+  if (voiceActive) { voiceActive = false; try { recog.stop(); } catch(e){} updateMicUI(); }
+  edVoiceActive = true;
+  voiceFinal = '';
+  updateMicUI();
+  startRecog();
 }
-function downloadReportPeriodMd(){
-  const md = buildPeriodReport();
-  if (!md) { notify('За период отчётов нет.'); return; }
-  downloadBlob(md, 'otchety-' + document.getElementById('rpFrom').value + '-' + document.getElementById('rpTo').value + '.md', 'text/markdown;charset=utf-8');
-  notify('Файл Markdown сохранён.', true);
+function stopEdVoice() {
+  if (!edVoiceActive) return;
+  edVoiceActive = false;
+  listening = false;
+  try { recog.stop(); } catch(e){}
+  updateMicUI();
 }
-document.getElementById('rpFrom').addEventListener('change', renderReportPeriod);
-document.getElementById('rpTo').addEventListener('change', renderReportPeriod);
-document.getElementById('dayReportInput').addEventListener('keydown', e => {
-  if (listKeydown(e)) return;
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDayReport(); }
-  if (e.key === 'Escape') closeDayReportRequest();
-});
+function updateMicUI() {
+  micBtn.classList.toggle('listening', voiceActive && voiceTarget === document.getElementById('quickAdd'));
+  repMicBtn.classList.toggle('listening', edVoiceActive);
+}
+if (!SpeechRec) { micBtn.classList.add('hidden'); repMicBtn.classList.add('hidden'); } else {
+  recog = new SpeechRec();
+  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = true; recog.maxAlternatives = 1;
+  recog.onresult = e => {
+    if (edVoiceActive) {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) repEditor.appendText(e.results[i][0].transcript.trim() + ' ');
+      }
+      return;
+    }
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) voiceFinal += t + ' ';
+      else interim += t;
+    }
+    const el = voiceTarget || document.getElementById('quickAdd');
+    el.value = voiceJoin(voiceBase, (voiceFinal + interim).trim());
+    autoGrow(el);
+  };
+  recog.onend = () => {
+    listening = false;
+    if (voiceActive) { setTimeout(() => { if (voiceActive) startRecog(); }, 250); }
+    else if (edVoiceActive) { setTimeout(() => { if (edVoiceActive) startRecog(); }, 250); }
+    else { voiceTarget = null; updateMicUI(); }
+  };
+  recog.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      voiceActive = false; edVoiceActive = false; listening = false; updateMicUI();
+      notify('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта.');
+      return;
+    }
+    if (e.error === 'network') {
+      voiceActive = false; edVoiceActive = false; listening = false; updateMicUI();
+      notify('Голосовой ввод недоступен: нет соединения с сервисом распознавания.');
+      return;
+    }
+  };
+  micBtn.addEventListener('click', () => startVoice(document.getElementById('quickAdd')));
+  repMicBtn.addEventListener('click', () => startEdVoice());
+}
 function clearTransientInputs() {
   const s = document.getElementById('searchInput');
   const qa = document.getElementById('quickAdd');
@@ -624,47 +814,25 @@ function sweepDoneToArchive() {
 function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 function splitEmoji(text) {
   const re = /^\s*(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u;
-  const m = text.match(re);
-  if (m) return {emoji: m[1], rest: text.slice(m[0].length)};
-  return {emoji: null, rest: text};
+  const m = String(text||'').match(re);
+  if (m) return {emoji: m[1], rest: String(text).slice(m[0].length)};
+  return {emoji: null, rest: String(text||'')};
 }
 function matchesQuery(t, q) {
   if (!q) return true;
-  if (t.text.toLowerCase().includes(q)) return true;
-  return (t.subtasks || []).some(s => s.text.toLowerCase().includes(q));
+  const plain = String(t.text || '').replace(/<[^>]+>/g,' ').toLowerCase();
+  if (plain.includes(q)) return true;
+  return (t.subtasks || []).some(s => String(s.text||'').replace(/<[^>]+>/g,' ').toLowerCase().includes(q));
 }
-const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-function subAddRowHtml(tid, isPersonal){
-  const attr = isPersonal ? 'data-psubadd' : 'data-subadd';
-  const keyHandler = isPersonal ? 'subKeyP' : 'subKey';
-  const blurHandler = isPersonal ? 'subBlurP' : 'subBlur';
-  const fmtFn = isPersonal ? 'fmtSubP' : 'fmtSub';
-  const voiceFn = isPersonal ? 'startSubVoiceP' : 'startSubVoice';
-  const mic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="' + voiceFn + '(' + tid + ')" title="Надиктовать подзадачу">🎤</button>' : '';
-  return '<div class="sub-add-row" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:stretch">' +
-    '<textarea class="sub-add" rows="1" style="width:100%" autocomplete="off" autocapitalize="sentences" name="darya_sub_' + tid + '" ' + attr + '="' + tid + '" placeholder="новая подзадача…" title="Enter — новая строка, Ctrl+Enter — сохранить" onkeydown="' + keyHandler + '(event,' + tid + ')" onblur="' + blurHandler + '(event,' + tid + ')"></textarea>' +
-    '<div class="sub-add-tools" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
-    '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'b\')" title="Жирный">Ж</button>' +
-    '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'i\')" title="Курсив">К</button>' +
-    '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'l\')" title="Список">•</button>' +
-    '<button class="fmt-btn save" onmousedown="event.preventDefault()" onclick="saveSubAddGeneric(event,' + tid + ',' + (isPersonal ? 'true' : 'false') + ')" title="Сохранить подзадачу">✓</button>' +
-    mic +
-    '</div></div>';
-}
-function subtaskHtml(t, s, idx, isPersonal){
-  const onchange = isPersonal ? 'toggleSubP' : 'toggleSub';
-  const editFn = isPersonal ? 'editSubStartP' : 'editSubStart';
-  const delFn = isPersonal ? 'delSubP' : 'delSub';
+function subtaskHtml(t, s, idx){
   const hidden = (!expandedSubs.has(t.id) && idx >= SUB_VISIBLE) ? ' sub-hidden' : '';
   const clamped = expandedSubText.has(s.id) ? '' : ' clamped-sub';
   return '<div class="subtask ' + (s.done ? 'done' : '') + hidden + '">' +
-    '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="' + onchange + '(' + t.id + ',' + s.id + ')">' +
-    '<div class="sub-text" ondblclick="' + editFn + '(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' +
-      '<div class="sub-content' + clamped + '">' + renderRich(s.text) + '</div>' +
+    '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSub(' + t.id + ',' + s.id + ')">' +
+    '<div class="sub-text">' +
+      '<div class="sub-content' + clamped + '">' + renderContent(s.text) + '</div>' +
       '<button type="button" class="collapse-toggle" data-cst="' + s.id + '" style="display:none"></button>' +
     '</div>' +
-    '<button class="sub-edit-btn" onclick="' + editFn + '(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
-    '<button class="sub-del" onclick="' + delFn + '(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
     '</div>';
 }
 function noteHtml(t) {
@@ -688,22 +856,23 @@ function noteHtml(t) {
   }
   const metaRow = dueChip ? '<div class="due-row">' + dueChip + '</div>' : '';
   let subBlock = '';
-  if (t.subtasks.length || t.subOpen) {
+  if (t.subtasks.length) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx, false)).join('') +
+      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx)).join('') +
       '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
-      (t.subOpen ? subAddRowHtml(t.id, false) : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + (t.pinned ? ' pinned' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + pinMark + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content">' + pinMark + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderContent(parts.rest) + '</span>' + subChip + '</div>' +
       '<button type="button" class="collapse-toggle" data-ct="' + t.id + '" style="display:none"></button>' +
       metaRow +
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
+      (t.subtasks.length || true ? '<button class="note-action" onclick="openSubsModal(' + t.id + ',false)" title="Подзадачи">' + ARROW_DOWN + '</button>' : '') +
+      '<button class="note-action" onclick="openEditModal({type:\'task\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action" onclick="openNoteMenu(' + t.id + ', event)" title="Действия">' + ELLIPSIS + '</button>' +
     '</div>' +
   '</div>';
@@ -715,23 +884,22 @@ function personalNoteHtml(t) {
   const subDone = t.subtasks.filter(s => s.done).length;
   const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
   let subBlock = '';
-  if (t.subtasks.length || t.subOpen) {
+  if (t.subtasks.length) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx, true)).join('') +
+      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx)).join('') +
       '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
-      (t.subOpen ? subAddRowHtml(t.id, true) : '') +
       '</div>';
   }
   return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
     '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="togglePersonalDone(' + t.id + ')">' +
     '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
+      '<div class="note-content">' + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderContent(parts.rest) + '</span>' + subChip + '</div>' +
       '<button type="button" class="collapse-toggle" data-ct="' + t.id + '" style="display:none"></button>' +
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openSubsP(' + t.id + ')" title="Подзадачи">' + ARROW_DOWN + '</button>' +
-      '<button class="note-action" onclick="editNoteInline(' + t.id + ')" title="Редактировать">' + PENCIL + '</button>' +
+      '<button class="note-action" onclick="openSubsModal(' + t.id + ',true)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="openEditModal({type:\'personal\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда">' + TRASH + '</button>' +
     '</div>' +
   '</div>';
@@ -855,6 +1023,7 @@ function switchPage(page) {
   document.getElementById('navBoard').classList.toggle('active', isBoard);
   document.getElementById('navPersonal').classList.toggle('active', !isBoard);
   document.querySelectorAll('.sb-board-only').forEach(el => el.classList.toggle('page-hidden', !isBoard));
+  document.getElementById('fabReport').classList.toggle('page-hidden', !isBoard);
   document.getElementById('pageTitle').textContent = isBoard ? 'Доска Дарьи' : 'Личное';
   document.getElementById('pageSubtitle').textContent = isBoard ? 'Авиабит · Портал 2.0 · Прочее' : 'Заметки только для меня';
   document.getElementById('quickAdd').placeholder = isBoard ? 'Быстрая задача' : 'Личная заметка';
@@ -875,68 +1044,123 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
-function editNoteInline(id){
-  const noteEl = document.querySelector('.note[data-id="' + id + '"]');
-  if (!noteEl) return;
-  const content = noteEl.querySelector('.note-content');
-  if (!content || content.dataset.editing) return;
-  const isPersonal = !!noteEl.closest('#personalPage');
-  const store = isPersonal ? personal : tasks;
-  const t = store.find(x => x.id === id);
+// --- Модалка редактирования (универсальная) ---
+function storeFor(mode){ return mode.type === 'personal' ? personal : tasks; }
+function openEditModal(mode){
+  editMode = mode;
+  let content = '', asHtml = false, title = 'Редактирование';
+  if (mode.type === 'task' || mode.type === 'personal') {
+    const t = storeFor(mode).find(x => x.id === mode.id);
+    if (!t) return;
+    content = t.text; asHtml = isHtmlText(t.text);
+    title = mode.type === 'personal' ? '✏️ Личная заметка' : '✏️ Задача';
+  } else if (mode.type === 'sub') {
+    const t = storeFor({type: mode.isPersonal ? 'personal' : 'task'}).find(x => x.id === mode.tid);
+    const s = t && t.subtasks.find(y => y.id === mode.sid);
+    if (!s) return;
+    content = s.text; asHtml = isHtmlText(s.text);
+    title = '✏️ Подзадача';
+  } else if (mode.type === 'subnew') {
+    title = '＋ Новая подзадача';
+  }
+  document.getElementById('editTitle').textContent = title;
+  editEditor.init(content, asHtml);
+  editInitialPlain = editEditor.plain();
+  document.getElementById('editModal').classList.add('open');
+  setTimeout(() => editEditor.focus(), 60);
+}
+function closeEdit(){ document.getElementById('editModal').classList.remove('open'); editEditor.destroy(); editMode = null; }
+function closeEditRequest(){
+  if (editEditor.plain() !== editInitialPlain) {
+    askConfirm('Закрыть без сохранения? Изменения будут потеряны.', () => closeEdit(), 'Закрыть без сохранения');
+  } else closeEdit();
+}
+function saveEdit(){
+  if (!editMode) return;
+  const val = editEditor.get();
+  const plain = htmlToPlain(val).trim();
+  if (!plain) { notify('Пустой текст не сохраняется.'); return; }
+  const m = editMode;
+  if (m.type === 'task' || m.type === 'personal') {
+    const t = storeFor(m).find(x => x.id === m.id);
+    if (t) { t.text = val; }
+    if (m.type === 'personal') { savePersonal(); renderPersonal(); } else { saveTasks(); render(); }
+  } else if (m.type === 'sub') {
+    const t = storeFor({type: m.isPersonal ? 'personal' : 'task'}).find(x => x.id === m.tid);
+    const s = t && t.subtasks.find(y => y.id === m.sid);
+    if (s) s.text = val;
+    if (m.isPersonal) { savePersonal(); renderPersonal(); } else { saveTasks(); render(); }
+    renderSubsList();
+  } else if (m.type === 'subnew') {
+    const t = storeFor({type: m.isPersonal ? 'personal' : 'task'}).find(x => x.id === m.tid);
+    if (t) t.subtasks.push({id: Date.now(), text: val, done: false});
+    if (m.isPersonal) { savePersonal(); renderPersonal(); } else { saveTasks(); render(); }
+    renderSubsList();
+  }
+  notify('Сохранено.', true);
+  closeEdit();
+}
+document.getElementById('cancelEdit').addEventListener('click', closeEditRequest);
+document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+// --- Модалка подзадач ---
+function openSubsModal(tid, isPersonal){
+  subsMode = {tid: tid, isPersonal: !!isPersonal};
+  const t = storeFor({type: isPersonal ? 'personal' : 'task'}).find(x => x.id === tid);
   if (!t) return;
-  content.dataset.editing = '1';
-  const ctog = noteEl.querySelector('.collapse-toggle[data-ct]');
-  if (ctog) ctog.style.display = 'none';
-  const wrap = document.createElement('div');
-  wrap.className = 'sub-edit-wrap';
-  wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:1';
-  wrap.innerHTML = '<textarea class="sub-edit" rows="2" style="width:100%" autocapitalize="sentences"></textarea>' +
-    '<div class="fmt-bar" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
-    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
-    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
-    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
-    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
-    '</div>';
-  const ta = wrap.querySelector('textarea');
-  ta.value = t.text;
-  content.replaceWith(wrap);
-  ta.focus();
-  autoGrow(ta);
-  let finished = false;
-  const finish = commit => {
-    if (finished) return;
-    finished = true;
-    if (commit) {
-      const v = capFirst(ta.value.trim());
-      if (v) t.text = v;
-      if (isPersonal) { savePersonal(); renderPersonal(); }
-      else { saveTasks(); render(); }
-      notify('Заметка сохранена.', true);
-    } else {
-      if (isPersonal) renderPersonal(); else render();
-    }
-  };
-  const requestCancel = () => {
-    if (ta.value.trim() !== t.text.trim()) {
-      askConfirm('Закрыть без сохранения? Изменения заметки будут потеряны.', () => finish(false), 'Закрыть без сохранения');
-    } else finish(false);
-  };
-  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
-    btn.addEventListener('mousedown', e => e.preventDefault());
-    btn.addEventListener('click', () => {
-      const f = btn.dataset.f;
-      if (f === 'save') finish(true);
-      else if (f === 'cancel') requestCancel();
-      else fmtApply(ta, f);
-    });
-  });
-  ta.addEventListener('keydown', e => {
-    if (listKeydown(e)) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
-    if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
-  });
-  ta.addEventListener('blur', () => finish(true));
+  document.getElementById('subsTitle').textContent = '📝 Подзадачи: ' + shortText(t.text, 40);
+  renderSubsList();
+  document.getElementById('subsModal').classList.add('open');
+}
+function closeSubs(){ document.getElementById('subsModal').classList.remove('open'); subsMode = null; }
+function renderSubsList(){
+  const list = document.getElementById('subsList');
+  if (!subsMode) return;
+  const t = storeFor({type: subsMode.isPersonal ? 'personal' : 'task'}).find(x => x.id === subsMode.tid);
+  if (!t) { list.innerHTML = ''; return; }
+  if (!t.subtasks.length) {
+    list.innerHTML = '<div class="empty">Подзадач пока нет</div>';
+    return;
+  }
+  list.innerHTML = t.subtasks.map(s =>
+    '<div class="subs-row ' + (s.done ? 'done' : '') + '">' +
+      '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSubFromModal(' + t.id + ',' + s.id + ')">' +
+      '<div class="sub-text">' + renderContent(s.text) + '</div>' +
+      '<button class="sub-edit-btn" onclick="openEditModal({type:\'sub\',tid:' + t.id + ',sid:' + s.id + ',isPersonal:' + subsMode.isPersonal + '})" title="Редактировать">' + PENCIL + '</button>' +
+      '<button class="sub-del" onclick="delSubFromModal(' + t.id + ',' + s.id + ')" title="Удалить">×</button>' +
+    '</div>'
+  ).join('');
+}
+function toggleSubFromModal(tid, sid){
+  const t = tasks.find(x => x.id === tid) || personal.find(x => x.id === tid);
+  if (!t) return;
+  const s = t.subtasks.find(y => y.id === sid);
+  if (!s) return;
+  s.done = !s.done;
+  if (personal.includes(t)) { savePersonal(); renderPersonal(); } else { saveTasks(); render(); }
+  renderSubsList();
+}
+function delSubFromModal(tid, sid){
+  const t = tasks.find(x => x.id === tid) || personal.find(x => x.id === tid);
+  if (!t) return;
+  const s = t.subtasks.find(y => y.id === sid);
+  if (!s) return;
+  askConfirm('Удалить подзадачу «' + shortText(s.text) + '»? Действие необратимо.', () => {
+    t.subtasks = t.subtasks.filter(y => y.id !== sid);
+    if (personal.includes(t)) { savePersonal(); renderPersonal(); } else { saveTasks(); render(); }
+    renderSubsList();
+  }, 'Удалить');
+}
+document.getElementById('subsAddBtn').addEventListener('click', () => {
+  if (!subsMode) return;
+  openEditModal({type:'subnew', tid: subsMode.tid, isPersonal: subsMode.isPersonal});
+});
+function toggleSub(tid, sid) {
+  const t = tasks.find(x => x.id === tid);
+  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
+}
+function toggleSubP(tid, sid) {
+  const t = personal.find(x => x.id === tid);
+  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; savePersonal(); renderPersonal(); } }
 }
 function deletePersonal(id) {
   const t = personal.find(x => x.id === id);
@@ -966,225 +1190,6 @@ function togglePinTask(id) {
   const t = tasks.find(x => x.id === id);
   if (t) { t.pinned = !t.pinned; saveTasks(); render(); }
 }
-function openSubs(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) {
-    t.subOpen = true; render();
-    const el = document.querySelector('[data-subadd="' + id + '"]');
-    if (el) el.focus();
-  }
-}
-function openSubsP(id) {
-  const t = personal.find(x => x.id === id);
-  if (t) {
-    t.subOpen = true; renderPersonal();
-    const el = document.querySelector('[data-psubadd="' + id + '"]');
-    if (el) el.focus();
-  }
-}
-function subKey(event, tid) {
-  if (listKeydown(event)) return;
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault();
-    saveSubAddGeneric(event, tid, false);
-    return;
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    event.target.dataset.handled = '1';
-    const t = tasks.find(x => x.id === tid);
-    if (t) { t.subOpen = false; localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); render(); }
-  }
-}
-function subKeyP(event, tid) {
-  if (listKeydown(event)) return;
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault();
-    saveSubAddGeneric(event, tid, true);
-    return;
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    event.target.dataset.handled = '1';
-    const t = personal.find(x => x.id === tid);
-    if (t) { t.subOpen = false; localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); renderPersonal(); }
-  }
-}
-function saveSubAddGeneric(event, tid, isPersonal){
-  if (event) event.preventDefault();
-  const sel = isPersonal ? '[data-psubadd="' + tid + '"]' : '[data-subadd="' + tid + '"]';
-  const ta = document.querySelector(sel);
-  if (!ta) return;
-  const v = capFirst(ta.value.trim());
-  ta.dataset.handled = '1';
-  if (v) {
-    const store = isPersonal ? personal : tasks;
-    const t = store.find(x => x.id === tid);
-    if (t) t.subtasks.push({id: Date.now(), text: v, done: false});
-  }
-  ta.value = '';
-  if (isPersonal) { savePersonal(); renderPersonal(); }
-  else { saveTasks(); render(); }
-  if (v) notify('Подзадача сохранена.', true);
-  setTimeout(() => { const el = document.querySelector(sel); if (el) el.focus(); }, 0);
-}
-function subBlur(event, tid) {
-  const input = event.target;
-  setTimeout(() => {
-    if (input.dataset && input.dataset.handled) return;
-    if (listening && voiceTarget === input) return;
-    const t = tasks.find(x => x.id === tid);
-    if (!t) return;
-    const v = capFirst(input.value.trim());
-    if (v) {
-      t.subtasks.push({id: Date.now(), text: v, done: false});
-      t.subOpen = false;
-      saveTasks();
-      notify('Подзадача сохранена.', true);
-    } else {
-      t.subOpen = false;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    }
-    render();
-  }, 0);
-}
-function subBlurP(event, tid) {
-  const input = event.target;
-  setTimeout(() => {
-    if (input.dataset && input.dataset.handled) return;
-    if (listening && voiceTarget === input) return;
-    const t = personal.find(x => x.id === tid);
-    if (!t) return;
-    const v = capFirst(input.value.trim());
-    if (v) {
-      t.subtasks.push({id: Date.now(), text: v, done: false});
-      t.subOpen = false;
-      savePersonal();
-      notify('Подзадача сохранена.', true);
-    } else {
-      t.subOpen = false;
-      localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
-    }
-    renderPersonal();
-  }, 0);
-}
-function buildSubEditWrap(tid, sid, isPersonal){
-  const store = isPersonal ? personal : tasks;
-  const t = store.find(x => x.id === tid);
-  if (!t) return null;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return null;
-  const wrap = document.createElement('div');
-  wrap.className = 'sub-edit-wrap';
-  wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:1';
-  wrap.innerHTML = '<textarea class="sub-edit" rows="2" style="width:100%" autocapitalize="sentences"></textarea>' +
-    '<div class="fmt-bar" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
-    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
-    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
-    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
-    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
-    '</div>';
-  const ta = wrap.querySelector('textarea');
-  ta.value = s.text;
-  let finished = false;
-  const finish = commit => {
-    if (finished) return;
-    finished = true;
-    if (commit) {
-      const v = capFirst(ta.value.trim());
-      if (v) s.text = v;
-      if (isPersonal) { savePersonal(); renderPersonal(); }
-      else { saveTasks(); render(); }
-      notify('Подзадача сохранена.', true);
-    } else {
-      if (isPersonal) renderPersonal(); else render();
-    }
-  };
-  const requestCancel = () => {
-    if (ta.value.trim() !== s.text.trim()) {
-      askConfirm('Закрыть без сохранения? Изменения подзадачи будут потеряны.', () => finish(false), 'Закрыть без сохранения');
-    } else finish(false);
-  };
-  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
-    btn.addEventListener('mousedown', e => e.preventDefault());
-    btn.addEventListener('click', () => {
-      const f = btn.dataset.f;
-      if (f === 'save') finish(true);
-      else if (f === 'cancel') requestCancel();
-      else fmtApply(ta, f);
-    });
-  });
-  ta.addEventListener('keydown', e => {
-    if (listKeydown(e)) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
-    if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
-  });
-  ta.addEventListener('blur', () => finish(true));
-  return {wrap: wrap, ta: ta};
-}
-function editSubStart(event, tid, sid) {
-  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
-  const span = row ? row.querySelector('.sub-text') : null;
-  if (!span) return;
-  const built = buildSubEditWrap(tid, sid, false);
-  if (!built) return;
-  span.replaceWith(built.wrap);
-  built.ta.focus();
-  autoGrow(built.ta);
-}
-function editSubStartP(event, tid, sid) {
-  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
-  const span = row ? row.querySelector('.sub-text') : null;
-  if (!span) return;
-  const built = buildSubEditWrap(tid, sid, true);
-  if (!built) return;
-  span.replaceWith(built.wrap);
-  built.ta.focus();
-  autoGrow(built.ta);
-}
-function toggleSub(tid, sid) {
-  const t = tasks.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
-}
-function toggleSubP(tid, sid) {
-  const t = personal.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; savePersonal(); renderPersonal(); } }
-}
-function delSub(event, tid, sid) {
-  event.preventDefault(); event.stopPropagation();
-  const t = tasks.find(x => x.id === tid);
-  if (!t) return;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return;
-  askConfirm('Удалить подзадачу «' + shortText(s.text) + '»? Действие необратимо.', () => {
-    const t2 = tasks.find(x => x.id === tid);
-    if (!t2) return;
-    t2.subtasks = t2.subtasks.filter(y => y.id !== sid);
-    saveTasks(); render();
-  }, 'Удалить');
-}
-function delSubP(event, tid, sid) {
-  event.preventDefault(); event.stopPropagation();
-  const t = personal.find(x => x.id === tid);
-  if (!t) return;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return;
-  askConfirm('Удалить подзадачу «' + shortText(s.text) + '»? Действие необратимо.', () => {
-    const t2 = personal.find(x => x.id === tid);
-    if (!t2) return;
-    t2.subtasks = t2.subtasks.filter(y => y.id !== sid);
-    savePersonal(); renderPersonal();
-  }, 'Удалить');
-}
-function startSubVoice(tid) {
-  const el = document.querySelector('[data-subadd="' + tid + '"]');
-  if (el) startVoice(el);
-}
-function startSubVoiceP(tid) {
-  const el = document.querySelector('[data-psubadd="' + tid + '"]');
-  if (el) startVoice(el);
-}
 const popEl = document.getElementById('notePop');
 function closeNoteMenu() { popEl.classList.remove('open'); }
 function openNoteMenu(id, ev) {
@@ -1192,12 +1197,8 @@ function openNoteMenu(id, ev) {
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
   const dueLabel = t && t.due ? ': ' + fmtDate(t.due) : '';
-  const pinLabel = t && t.pinned ? 'Открепить' : 'Закрепить';
   popEl.innerHTML =
-    '<button class="pop-item" onclick="popEdit()">✏️ Редактировать</button>' +
     '<button class="pop-item" onclick="popDue()">🔔 Срок' + dueLabel + '</button>' +
-    '<button class="pop-item" onclick="popPin()">📌 ' + pinLabel + '</button>' +
-    '<button class="pop-item" onclick="popSubs()">📝 Подзадачи</button>' +
     '<button class="pop-item" onclick="popArchive()">📦 В архив</button>';
   popEl.classList.add('open');
   const r = ev.currentTarget.getBoundingClientRect();
@@ -1209,10 +1210,7 @@ function openNoteMenu(id, ev) {
   popEl.style.left = left + 'px';
   popEl.style.top = top + 'px';
 }
-function popSubs(){ const id=currentNoteId; closeNoteMenu(); openSubs(id); }
-function popEdit(){ const id=currentNoteId; closeNoteMenu(); editNoteInline(id); }
 function popDue(){ const id=currentNoteId; closeNoteMenu(); openDue(id); }
-function popPin(){ const id=currentNoteId; closeNoteMenu(); togglePinTask(id); }
 function popArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id); }
 document.addEventListener('click', e => {
   if (popEl.classList.contains('open') && !e.target.closest('#notePop') && !e.target.closest('.note-action')) closeNoteMenu();
@@ -1266,7 +1264,7 @@ function renderArchList() {
   list.innerHTML = arch.map(t => {
     const z = zoneByKey(t.zone);
     const dateLabel = t.done ? (t.doneAt ? ' (' + t.doneAt.slice(0, 10) + ')' : '') : '';
-    return '<div class="list-note"><span class="zone-tag" style="' + (z ? zoneTagStyle(z) : '') + '">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + ' <span style="color:var(--text-muted);font-size:12px">' + dateLabel + '</span></span>' +
+    return '<div class="list-note"><span class="zone-tag" style="' + (z ? zoneTagStyle(z) : '') + '">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(shortText(t.text, 120)) + ' <span style="color:var(--text-muted);font-size:12px">' + dateLabel + '</span></span>' +
       '<div class="list-actions">' +
       '<button class="list-btn restore" onclick="unarchiveTask(' + t.id + ')">Вернуть</button>' +
       '<button class="list-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
@@ -1276,11 +1274,9 @@ function renderArchList() {
 document.getElementById('archSearch').addEventListener('input', renderArchList);
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
-  const ta = document.getElementById('addInput');
-  ta.value = '';
-  ta.style.height = '';
+  addEditor.init('', false);
   document.getElementById('addModal').classList.add('open');
-  setTimeout(() => ta.focus(), 0);
+  setTimeout(() => addEditor.focus(), 60);
 }
 function hideZone(key) {
   const z = zoneByKey(key);
@@ -1385,6 +1381,7 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
+// --- Итоги недели + отчёты за период (две половины) ---
 let lastResults = {md: '', rows: []};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1401,6 +1398,19 @@ function openResults() {
   closeSbMobile();
 }
 function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
+function reportsInPeriod(from, to){
+  return dayReports.filter(r => r.date >= from && r.date <= to && htmlToPlain(r.text).trim()).sort((a,b) => a.date.localeCompare(b.date));
+}
+function buildReportsMd(from, to){
+  const list = reportsInPeriod(from, to);
+  if (!list.length) return '';
+  let md = '';
+  list.forEach(r => {
+    const p = parseLocal(r.date);
+    md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n' + htmlToPlain(r.text) + '\n\n';
+  });
+  return md.trim() + '\n';
+}
 function renderResults() {
   const from = document.getElementById('resFrom').value;
   const to = document.getElementById('resTo').value;
@@ -1418,12 +1428,19 @@ function renderResults() {
     const zoneOpen = openTasks.filter(t => t.zone === z.key);
     if (!zoneDone.length && !zoneOpen.length) return;
     bodyHtml += '<div class="results-block"><h4>' + escapeHtml(z.label) + '</h4>';
-    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(t.text) + '<span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
-    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(t.text) + '</div>'; });
+    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(shortText(t.text, 90)) + '<span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
+    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(shortText(t.text, 90)) + '</div>'; });
     bodyHtml += '</div>';
   });
-  if (!bodyHtml) bodyHtml = '<div class="empty">За период данных нет</div>';
+  if (!bodyHtml) bodyHtml = '<div class="empty">За период задач нет</div>';
   document.getElementById('resBody').innerHTML = bodyHtml;
+  const reps = reportsInPeriod(from, to);
+  document.getElementById('resReports').innerHTML = reps.length
+    ? reps.map(r => {
+        const p = parseLocal(r.date);
+        return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h5><div class="res-rep-body">' + sanitizeHtml(r.text) + '</div></div>';
+      }).join('')
+    : '<div class="empty">За период отчётов нет</div>';
   let md = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
   md += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
   md += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
@@ -1432,12 +1449,14 @@ function renderResults() {
     const zoneOpen = openTasks.filter(t => t.zone === z.key);
     if (!zoneDone.length && !zoneOpen.length) return;
     md += '## ' + z.label + '\n\n';
-    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + t.text + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
-    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + t.text + '\n'); md += '\n'; }
+    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + htmlToPlain(t.text) + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
+    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + htmlToPlain(t.text) + '\n'); md += '\n'; }
   });
+  const repMd = buildReportsMd(from, to);
+  if (repMd) md += '\n# Отчёты по дням\n\n' + repMd;
   const rows = [];
-  doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
-  openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'В работе', created: t.created.slice(0, 10), done: ''}));
+  doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
+  openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'В работе', created: t.created.slice(0, 10), done: ''}));
   lastResults = {md: md, rows: rows};
 }
 function resultsCsv() {
@@ -1466,6 +1485,17 @@ function downloadResultsMd() {
 function downloadResultsCsv() {
   downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
   notify('Файл CSV сохранён.', true);
+}
+function copyReportsOnly() {
+  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
+  if (!md) { notify('За период отчётов нет.'); return; }
+  navigator.clipboard.writeText(md).then(() => notify('Отчёты скопированы.', true));
+}
+function downloadReportsOnly() {
+  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
+  if (!md) { notify('За период отчётов нет.'); return; }
+  downloadBlob(md, 'otchety-' + document.getElementById('resFrom').value + '-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
+  notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
@@ -1502,71 +1532,6 @@ document.getElementById('backupFile').addEventListener('change', e => {
     e.target.value = '';
   });
 });
-// --- Голосовой ввод: непрерывная диктовка с авто-возобновлением ---
-const micBtn = document.getElementById('micBtn');
-let recog = null, listening = false, voiceBase = '', voiceTarget = null;
-let voiceActive = false, voiceFinal = '';
-function voiceJoin(base, add){
-  if (!add) return base;
-  return base + (base && !base.endsWith(' ') ? ' ' : '') + add;
-}
-function startRecog(){
-  try { recog.start(); } catch (err) {}
-  listening = true;
-  updateMicUI();
-}
-function startVoice(el) {
-  if (!SpeechRec || !el) return;
-  if (voiceActive) {
-    voiceActive = false; listening = false;
-    try { recog.stop(); } catch (err) {}
-    updateMicUI();
-    return;
-  }
-  voiceTarget = el;
-  voiceBase = el.value.trim();
-  voiceFinal = '';
-  voiceActive = true;
-  el.focus();
-  startRecog();
-}
-function updateMicUI() {
-  micBtn.classList.toggle('listening', voiceActive && voiceTarget === document.getElementById('quickAdd'));
-}
-if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
-  recog = new SpeechRec();
-  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = true; recog.maxAlternatives = 1;
-  recog.onresult = e => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) voiceFinal += t + ' ';
-      else interim += t;
-    }
-    const el = voiceTarget || document.getElementById('quickAdd');
-    el.value = voiceJoin(voiceBase, (voiceFinal + interim).trim());
-    autoGrow(el);
-  };
-  recog.onend = () => {
-    listening = false;
-    if (voiceActive) { setTimeout(() => { if (voiceActive) startRecog(); }, 250); }
-    else { voiceTarget = null; updateMicUI(); }
-  };
-  recog.onerror = e => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      voiceActive = false; listening = false; updateMicUI();
-      notify('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта.');
-      return;
-    }
-    if (e.error === 'network') {
-      voiceActive = false; listening = false; updateMicUI();
-      notify('Голосовой ввод недоступен: нет соединения с сервисом распознавания.');
-      return;
-    }
-    // no-speech / aborted: onend сам перезапустит сессию
-  };
-  micBtn.addEventListener('click', () => startVoice(document.getElementById('quickAdd')));
-}
 let dragState = null;
 let justDragged = false;
 function beginDrag() {
@@ -1711,30 +1676,27 @@ document.getElementById('saveSettings').addEventListener('click', saveSettings);
 document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
 function closeAddRequest(){
-  const ta = document.getElementById('addInput');
-  if (ta.value.trim() !== '') {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { ta.value = ''; ta.style.height = ''; document.getElementById('addModal').classList.remove('open'); }, 'Закрыть без сохранения');
+  if (addEditor.plain() !== '') {
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { document.getElementById('addModal').classList.remove('open'); addEditor.destroy(); }, 'Закрыть без сохранения');
   } else {
     document.getElementById('addModal').classList.remove('open');
+    addEditor.destroy();
   }
 }
 document.getElementById('confirmAdd').addEventListener('click', () => {
-  const ta = document.getElementById('addInput');
-  const text = capFirst(ta.value.trim());
-  if (text) {
-    const p = parseMagic(text);
-    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: p.text || text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
-    clearLeakedSearch(text);
-    saveTasks(); render();
-    ta.value = ''; ta.style.height = '';
-    document.getElementById('addModal').classList.remove('open');
-    notify('Задача добавлена.', true);
-  }
-});
-document.getElementById('addInput').addEventListener('keydown', e => {
-  if (listKeydown(e)) return;
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
-  if (e.key === 'Escape') closeAddRequest();
+  const val = addEditor.get();
+  const plain = htmlToPlain(val).trim();
+  if (!plain) return;
+  const zoneKey = currentAddZone || 'other';
+  const p = parseMagic(plain);
+  let text = val;
+  if (p.due) text = capFirst(p.text || plain);
+  tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
+  clearLeakedSearch(plain);
+  saveTasks(); render();
+  document.getElementById('addModal').classList.remove('open');
+  addEditor.destroy();
+  notify('Задача добавлена.', true);
 });
 document.querySelectorAll('.modal').forEach(modal => {
   modal.addEventListener('click', e => {
@@ -1742,7 +1704,8 @@ document.querySelectorAll('.modal').forEach(modal => {
       if (modal.id === 'confirmModal') { modal.classList.remove('open'); confirmCb = null; }
       else if (modal.id === 'dayModal') closeDayRequest();
       else if (modal.id === 'dayReportModal') closeDayReportRequest();
-      else if (modal.id === 'reportPeriodModal') closeReportPeriod();
+      else if (modal.id === 'editModal') closeEditRequest();
+      else if (modal.id === 'subsModal') closeSubs();
       else if (modal.id === 'addModal') closeAddRequest();
       else modal.classList.remove('open');
     }
@@ -1750,6 +1713,17 @@ document.querySelectorAll('.modal').forEach(modal => {
 });
 document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    if (document.getElementById('editModal').classList.contains('open')) { e.preventDefault(); saveEdit(); }
+    else if (document.getElementById('dayReportModal').classList.contains('open')) { e.preventDefault(); saveDayReport(); }
+    else if (document.getElementById('addModal').classList.contains('open')) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
+  }
+  if (e.key === 'Escape') {
+    if (document.getElementById('editModal').classList.contains('open')) closeEditRequest();
+    else if (document.getElementById('dayReportModal').classList.contains('open')) closeDayReportRequest();
+  }
 });
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
