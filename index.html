@@ -17,6 +17,7 @@
 <aside class="sidebar" id="sidebar">
   <button class="sb-item" id="navBoard" onclick="switchPage('board')"><span class="sb-ico">🏠</span><span class="sb-label">Доска</span></button>
   <button class="sb-item" id="navPersonal" onclick="switchPage('personal')"><span class="sb-ico">📝</span><span class="sb-label">Личное</span></button>
+  <button class="sb-item" id="navFlight" onclick="switchPage('flight')"><span class="sb-ico">✈️</span><span class="sb-label">Полёты</span></button>
   <div class="sb-sep"></div>
   <div class="sb-search">
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
@@ -72,6 +73,94 @@
       </div>
       <div class="personal-zone">
         <div class="personal-notes" id="personalNotes"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="flightPage" class="page-hidden">
+  <header>
+    <h1>✈️ FocusFlight</h1>
+    <div class="sub">Сейчас в: <b id="currentHome">—</b></div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div id="loader" class="card loader">Загрузка…</div>
+
+      <div id="setup" class="card hidden">
+        <label>Аэропорт отправления</label>
+        <select id="homeSelect"></select>
+        <div style="margin-top:18px">
+          <label>Длительность полёта</label>
+          <input type="range" id="duration" min="0" max="1000" value="500">
+          <div class="dur" id="durationLabel">1 ч 30 мин</div>
+          <div class="chips">
+            <button class="chip" data-min="30">30 мин</button>
+            <button class="chip" data-min="60">1 ч</button>
+            <button class="chip" data-min="90">1,5 ч</button>
+            <button class="chip" data-min="120">2 ч</button>
+            <button class="chip" data-min="180">3 ч</button>
+          </div>
+        </div>
+        <button class="ghost" id="randomBtn" style="margin-top:18px;width:100%">🎲 Случайный полёт</button>
+      </div>
+
+      <div id="results" class="card hidden">
+        <label>Куда можно улететь <span style="color:var(--text-muted);font-weight:400">(топ-20)</span></label>
+        <div class="chips" id="sortChips">
+          <button class="chip active" data-sort="time">По времени</button>
+          <button class="chip" data-sort="alpha">По алфавиту</button>
+          <button class="chip" data-sort="country">По стране</button>
+        </div>
+        <div class="row">
+          <input type="checkbox" id="onlyNew" checked>
+          <label for="onlyNew" style="margin:0;cursor:pointer">Только непосещённые</label>
+        </div>
+        <div id="list" class="list"></div>
+      </div>
+    </div>
+
+    <div>
+      <div id="flight" class="card hidden">
+        <div class="route"><strong id="fromCode"></strong> → <strong id="toCode"></strong></div>
+        <div class="timer" id="timer">00:00</div>
+        <div class="route" id="destCity"></div>
+        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-pct" id="progressPct">0%</div>
+        <button class="ghost" style="margin-top:18px;width:100%" id="abortBtn">Прервать полёт</button>
+      </div>
+
+      <div id="done" class="card hidden">
+        <div class="big">🛬</div>
+        <div class="done-title">Приземление</div>
+        <div class="done-sub" id="doneMsg"></div>
+        <div class="stats" id="doneStats"></div>
+        <button style="margin-top:18px;width:100%" id="continueBtn">Продолжить путь</button>
+      </div>
+
+      <div id="stats" class="card hidden">
+        <label>Ваш прогресс</label>
+        <div class="stats" id="statsGrid"></div>
+        <div style="margin-top:18px">
+          <label>Достижения</label>
+          <div class="ach" id="achList"></div>
+        </div>
+        <div style="margin-top:18px">
+          <label>Последние полёты</label>
+          <div class="recent" id="recentList"></div>
+        </div>
+        <div style="margin-top:18px">
+          <label>Карта путешествий</label>
+          <div class="map-wrap" id="mapWrap">
+            <div class="map-bg"></div>
+            <canvas id="worldMap"></canvas>
+          </div>
+          <div class="legend">
+            <span><i style="background:#3A5F8A"></i>посещён</span>
+            <span><i style="background:#C5C8CE"></i>не посещён</span>
+          </div>
+        </div>
+        <button class="ghost" style="margin-top:18px;width:100%" id="resetBtn">Сбросить прогресс</button>
       </div>
     </div>
   </div>
@@ -230,5 +319,6 @@
   </div>
 </div>
 <script src="app.js"></script>
+<script src="flight.js"></script>
 </body>
 </html>
