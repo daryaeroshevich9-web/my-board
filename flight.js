@@ -76,11 +76,35 @@ var state = {
   airports: [], byCode: {}, visited: new Set(),
   home: null, durationMin: 90, history: [],
   timerId: null, activeFlight: null,
-  sortMode: 'time', onlyNew: true
+  sortMode: 'time', onlyNew: true,
+  selected: null, searchQuery: '', allOptions: [],
+  view: null, lastMapPts: null
 };
+var FF_CSS = '' +
+'#flightPage input.ff-search{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:#fff;color:var(--text);margin-bottom:8px}' +
+'#flightPage input.ff-search:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}' +
+'#flightPage .item.selected{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:#fff}' +
+'.ff-preview{margin-top:12px;padding:14px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-ring)}' +
+'.ff-preview-route{font-size:15px;font-weight:700;color:var(--text);text-align:center}' +
+'.ff-preview-sub{font-size:12px;color:var(--text-secondary);text-align:center;margin-top:4px}' +
+'.ff-preview-actions{display:flex;gap:8px;justify-content:center;margin-top:12px}' +
+'.ff-menu{position:fixed;top:10px;left:10px;z-index:250;width:40px;height:40px;border:1px solid var(--border);border-radius:10px;background:var(--card);display:none;align-items:center;justify-content:center;font-size:18px;cursor:pointer}' +
+'body.ff-flight .topbar{display:none!important}' +
+'@media(max-width:720px){body.ff-flight .ff-menu{display:flex}}';
 function $(id){ return document.getElementById(id); }
 function hideAll(){ ['loader','setup','results','flight','done'].forEach(function(i){ var el=$(i); if(el) el.classList.add('hidden'); }); }
 function show(id){ var el=$(id); if(el) el.classList.remove('hidden'); }
+var DN = null;
+try { DN = new Intl.DisplayNames(['ru'], {type:'region'}); } catch(e){}
+var countryCache = {};
+function countryName(code){
+  if(!code) return '';
+  if(countryCache[code]) return countryCache[code];
+  var name = code;
+  if(DN){ try { name = DN.of(code) || code; } catch(e){} }
+  countryCache[code] = name;
+  return name;
+}
 function hav(a,b){
   var R=6371, toRad=function(d){return d*Math.PI/180;};
   var dLat=toRad(b.lat-a.lat), dLon=toRad(b.lon-a.lon);
@@ -192,26 +216,45 @@ function bootstrap(){
       var af = JSON.parse(activeSaved);
       var from = state.byCode[af.fromCode], to = state.byCode[af.toCode];
       if(from && to){
-        var elapsed = Math.floor((Date.now() - af.startedAt) / 1000);
-        var remain = af.totalSec - elapsed;
-        if(remain <= 0){
-          state.activeFlight = {from:from,to:to,totalSec:af.totalSec,remainSec:0,distance:af.distance};
-          state.home = from;
-          finishFlight();
-          return;
-        } else {
-          state.activeFlight = {from:from,to:to,totalSec:af.totalSec,remainSec:remain,distance:af.distance};
+        if(af.paused){
+          state.activeFlight = {from:from,to:to,totalSec:af.totalSec,remainSec:af.remainSec,distance:af.distance,paused:true,startedAt:Date.now()};
           state.home = from;
           storage.setItem(LS.home, from.code);
           hideAll(); show('flight');
           $('fromCode').textContent = from.code;
           $('toCode').textContent = to.code;
-          $('destCity').textContent = to.city + (to.country ? ', '+to.country : '');
+          $('destCity').textContent = to.city + (to.country ? ', '+countryName(to.country) : '');
+          $('timer').textContent = fmtTime(af.remainSec);
+          var pp = 1 - af.remainSec/af.totalSec;
+          $('progressFill').style.width = (pp*100)+'%';
+          $('progressPct').textContent = Math.round(pp*100)+'%';
+          state.timerId = setInterval(tick, 1000);
+          updatePauseBtn();
+          renderMap([from,to]);
+          return;
+        }
+        var elapsed = Math.floor((Date.now() - af.startedAt) / 1000);
+        var remain = af.totalSec - elapsed;
+        if(remain <= 0){
+          state.activeFlight = {from:from,to:to,totalSec:af.totalSec,remainSec:0,distance:af.distance,paused:false};
+          state.home = from;
+          finishFlight();
+          return;
+        } else {
+          state.activeFlight = {from:from,to:to,totalSec:af.totalSec,remainSec:remain,distance:af.distance,paused:false,startedAt:af.startedAt};
+          state.home = from;
+          storage.setItem(LS.home, from.code);
+          hideAll(); show('flight');
+          $('fromCode').textContent = from.code;
+          $('toCode').textContent = to.code;
+          $('destCity').textContent = to.city + (to.country ? ', '+countryName(to.country) : '');
           $('timer').textContent = fmtTime(remain);
           var p = 1 - remain/af.totalSec;
           $('progressFill').style.width = (p*100)+'%';
           $('progressPct').textContent = Math.round(p*100)+'%';
           state.timerId = setInterval(tick, 1000);
+          updatePauseBtn();
+          renderMap([from,to]);
           return;
         }
       }
@@ -221,29 +264,100 @@ function bootstrap(){
   renderSetup();
   renderStats();
 }
-function renderSetup(){
-  hideAll();
-  show('setup'); show('stats'); show('results');
-  updateCurrentHomeLabel();
-  var sel = $('homeSelect');
-  if(!sel) return;
+function ensureExtraUI(){
+  if(!document.getElementById('ff-extra-style')){
+    var st = document.createElement('style');
+    st.id = 'ff-extra-style';
+    st.textContent = FF_CSS;
+    document.head.appendChild(st);
+  }
+  var hs = $('homeSearch');
+  if(!hs && $('homeSelect')){
+    hs = document.createElement('input');
+    hs.type = 'text'; hs.id = 'homeSearch'; hs.className = 'ff-search';
+    hs.placeholder = 'Поиск аэропорта: город, код или страна…';
+    hs.autocomplete = 'off';
+    $('homeSelect').parentNode.insertBefore(hs, $('homeSelect'));
+    hs.oninput = function(){ state.searchQuery = hs.value.trim().toLowerCase(); rebuildSelect(); };
+    hs.onkeydown = function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        var sel = $('homeSelect');
+        if(sel && sel.options.length){ sel.value = sel.options[0].value; sel.onchange(); }
+      }
+    };
+  }
+  var pv = $('routePreview');
+  if(!pv && $('setup')){
+    pv = document.createElement('div');
+    pv.id = 'routePreview'; pv.className = 'ff-preview hidden';
+    pv.innerHTML = '<div class="ff-preview-route"></div><div class="ff-preview-sub"></div>' +
+      '<div class="ff-preview-actions"><button type="button" class="ff-start">✈ Начать полёт</button> ' +
+      '<button type="button" class="ghost ff-cancel">Отмена</button></div>';
+    $('setup').appendChild(pv);
+    pv.querySelector('.ff-start').onclick = function(){ if(state.selected) startFlight(state.selected); };
+    pv.querySelector('.ff-cancel').onclick = function(){ cancelSelection(); };
+  }
+  var pb = $('pauseBtn');
+  if(!pb && $('abortBtn')){
+    pb = document.createElement('button');
+    pb.type = 'button'; pb.id = 'pauseBtn'; pb.className = 'ghost';
+    pb.textContent = '⏸ Пауза';
+    $('abortBtn').parentNode.insertBefore(pb, $('abortBtn'));
+    pb.onclick = pauseToggle;
+  }
+  var mb = document.querySelector('.ff-menu');
+  if(!mb){
+    mb = document.createElement('button');
+    mb.type = 'button'; mb.className = 'ff-menu'; mb.textContent = '☰';
+    mb.onclick = function(){
+      if(typeof openSbMobile === 'function'){ openSbMobile(); }
+      else {
+        var sb = document.getElementById('sidebar'), bd = document.getElementById('sbBackdrop');
+        if(sb) sb.classList.add('open');
+        if(bd) bd.classList.add('show');
+      }
+    };
+    document.body.appendChild(mb);
+  }
+}
+function buildAllOptions(){
   var sorted = state.airports.slice().sort(function(a,b){
     var av = state.visited.has(a.code) ? 1 : 0;
     var bv = state.visited.has(b.code) ? 1 : 0;
     if(av !== bv) return av - bv;
     return a.city.localeCompare(b.city);
   });
+  state.allOptions = sorted.map(function(a){
+    return {code:a.code, label:a.code+' — '+a.city+' ('+countryName(a.country)+')'+(state.visited.has(a.code)?' ✓':'')};
+  });
+}
+function rebuildSelect(){
+  var sel = $('homeSelect');
+  if(!sel) return;
+  var q = state.searchQuery;
+  var opts = q ? state.allOptions.filter(function(o){ return o.label.toLowerCase().indexOf(q) >= 0; }) : state.allOptions;
   var html = '';
-  for(var i=0;i<sorted.length;i++){
-    var a = sorted[i];
-    var mark = state.visited.has(a.code) ? ' ✓' : '';
-    html += '<option value="'+a.code+'"'+(a.code===state.home.code?' selected':'')+'>'+a.code+' — '+a.city+mark+'</option>';
+  for(var i=0;i<opts.length;i++){
+    html += '<option value="'+opts[i].code+'"'+(opts[i].code===state.home.code?' selected':'')+'>'+opts[i].label+'</option>';
   }
+  if(!opts.length) html = '<option value="">Ничего не найдено</option>';
   sel.innerHTML = html;
-  sel.onchange = function(){
+}
+function renderSetup(){
+  hideAll();
+  show('setup'); show('stats'); show('results');
+  ensureExtraUI();
+  updateCurrentHomeLabel();
+  buildAllOptions();
+  rebuildSelect();
+  var sel = $('homeSelect');
+  if(sel) sel.onchange = function(){
+    if(!sel.value) return;
     state.home = state.byCode[sel.value];
     storage.setItem(LS.home, state.home.code);
     updateCurrentHomeLabel();
+    cancelSelection();
     renderDestinations();
   };
   var slider = $('duration');
@@ -257,7 +371,7 @@ function renderSetup(){
     };
   }
   if($('durationLabel')) $('durationLabel').textContent = fmtMin(state.durationMin);
-  var chips = document.querySelectorAll('#setup .chip');
+  var chips = document.querySelectorAll('#setup .chip[data-min]');
   for(var c=0;c<chips.length;c++){
     chips[c].onclick = function(){
       var m = parseInt(this.dataset.min,10);
@@ -272,9 +386,9 @@ function renderSetup(){
     var items = $('list').querySelectorAll('.item');
     if(items.length === 0){ alert('Нет доступных направлений'); return; }
     var pick = items[Math.floor(Math.random()*items.length)];
-    startFlight(pick.dataset.code);
+    selectDestination(pick.dataset.code);
   };
-  var sortChips = document.querySelectorAll('#sortChips .chip');
+  var sortChips = document.querySelectorAll('#setup .chip[data-sort]');
   for(var s=0;s<sortChips.length;s++){
     sortChips[s].classList.toggle('active', sortChips[s].dataset.sort === state.sortMode);
     sortChips[s].onclick = function(){
@@ -297,6 +411,28 @@ function updateCurrentHomeLabel(){
   var el = $('currentHome');
   if(el && state.home) el.textContent = state.home.city + ' (' + state.home.code + ')';
 }
+function selectDestination(code){
+  var dest = state.byCode[code];
+  if(!dest) return;
+  state.selected = code;
+  var km = hav(state.home, dest);
+  var mins = Math.max(1, Math.round(km/SPEED_KMH*60));
+  var pv = $('routePreview');
+  if(pv){
+    pv.classList.remove('hidden');
+    pv.querySelector('.ff-preview-route').textContent = state.home.code + ' → ' + dest.code + ' · ' + dest.city;
+    pv.querySelector('.ff-preview-sub').textContent = Math.round(km) + ' км · в пути ~' + fmtMin(mins) + ' · ' + countryName(dest.country);
+  }
+  var items = $('list').querySelectorAll('.item');
+  for(var i=0;i<items.length;i++) items[i].classList.toggle('selected', items[i].dataset.code === code);
+}
+function cancelSelection(){
+  state.selected = null;
+  var pv = $('routePreview');
+  if(pv) pv.classList.add('hidden');
+  var items = $('list') ? $('list').querySelectorAll('.item') : [];
+  for(var i=0;i<items.length;i++) items[i].classList.remove('selected');
+}
 function renderDestinations(){
   var target = state.durationMin/60 * SPEED_KMH;
   var pool = [];
@@ -312,7 +448,7 @@ function renderDestinations(){
     pool.sort(function(x,y){ return x.a.city.localeCompare(y.a.city); });
   } else if(state.sortMode === 'country'){
     pool.sort(function(x,y){
-      var c = x.a.country.localeCompare(y.a.country);
+      var c = countryName(x.a.country).localeCompare(countryName(y.a.country), 'ru');
       return c !== 0 ? c : x.a.city.localeCompare(y.a.city);
     });
   }
@@ -321,6 +457,7 @@ function renderDestinations(){
   if(!el) return;
   if(list.length === 0){
     el.innerHTML = '<div class="empty">'+(state.onlyNew ? '🎉 Все аэропорты посещены!<br>Снимите галочку или сбросьте прогресс.' : 'Нет доступных аэропортов')+'</div>';
+    renderMap([state.home]);
     return;
   }
   var html = '';
@@ -329,12 +466,12 @@ function renderDestinations(){
     var mins = Math.round(it.d/SPEED_KMH*60);
     var visited = state.visited.has(it.a.code);
     var vmark = visited ? ' <span style="color:var(--accent)">✓</span>' : '';
-    var cls = 'item' + (visited ? ' visited' : '');
+    var cls = 'item' + (visited ? ' visited' : '') + (state.selected === it.a.code ? ' selected' : '');
     html += '<div class="'+cls+'" data-code="'+it.a.code+'">'+
       '<div class="code">'+it.a.code+'</div>'+
       '<div>'+
         '<div class="city">'+it.a.city+vmark+'</div>'+
-        (it.a.country ? '<div class="country">'+it.a.country+'</div>' : '')+
+        (it.a.country ? '<div class="country">'+countryName(it.a.country)+'</div>' : '')+
       '</div>'+
       '<div class="info">'+Math.round(it.d)+' км<br>'+fmtMin(mins)+'</div>'+
     '</div>';
@@ -342,33 +479,53 @@ function renderDestinations(){
   el.innerHTML = html;
   var items = el.querySelectorAll('.item');
   for(var j=0;j<items.length;j++){
-    items[j].onclick = function(){ startFlight(this.dataset.code); };
+    items[j].onclick = function(){ selectDestination(this.dataset.code); };
   }
+  renderMap([state.home].concat(list.map(function(x){ return x.a; })));
+}
+function saveActive(f){
+  storage.setItem(LS.active, JSON.stringify({
+    fromCode:f.from.code, toCode:f.to.code,
+    totalSec:f.totalSec, distance:f.distance,
+    startedAt:f.startedAt || Date.now(),
+    paused:!!f.paused, remainSec:f.remainSec
+  }));
 }
 function startFlight(code){
   var dest = state.byCode[code];
   if(!dest) return;
   var km = hav(state.home, dest);
   var mins = Math.max(1, Math.round(km/SPEED_KMH*60));
-  state.activeFlight = {from: state.home, to: dest, totalSec: mins*60, remainSec: mins*60, distance: km};
-  storage.setItem(LS.active, JSON.stringify({
-    fromCode: state.home.code, toCode: dest.code,
-    totalSec: state.activeFlight.totalSec,
-    distance: state.activeFlight.distance,
-    startedAt: Date.now()
-  }));
+  state.activeFlight = {from: state.home, to: dest, totalSec: mins*60, remainSec: mins*60, distance: km, paused:false, startedAt: Date.now()};
+  saveActive(state.activeFlight);
+  cancelSelection();
   hideAll(); show('flight');
   $('fromCode').textContent = state.home.code;
   $('toCode').textContent = dest.code;
-  $('destCity').textContent = dest.city + (dest.country ? ', '+dest.country : '');
+  $('destCity').textContent = dest.city + (dest.country ? ', '+countryName(dest.country) : '');
   $('progressFill').style.width = '0%';
   $('progressPct').textContent = '0%';
   $('timer').textContent = fmtTime(state.activeFlight.totalSec);
+  updatePauseBtn();
   state.timerId = setInterval(tick, 1000);
+  renderMap([state.home, dest]);
+}
+function pauseToggle(){
+  var f = state.activeFlight;
+  if(!f) return;
+  f.paused = !f.paused;
+  if(!f.paused) f.startedAt = Date.now();
+  saveActive(f);
+  updatePauseBtn();
+}
+function updatePauseBtn(){
+  var b = $('pauseBtn');
+  var f = state.activeFlight;
+  if(b) b.textContent = (f && f.paused) ? '▶ Продолжить' : '⏸ Пауза';
 }
 function tick(){
   var f = state.activeFlight;
-  if(!f) return;
+  if(!f || f.paused) return;
   f.remainSec--;
   if(f.remainSec <= 0) return finishFlight();
   $('timer').textContent = fmtTime(f.remainSec);
@@ -402,9 +559,10 @@ function finishFlight(){
     '<div class="stat"><b>'+state.visited.size+'</b> <span>посещено</span></div>'+
     '<div class="stat"><b>'+state.history.length+'</b> <span>полётов всего</span></div>';
   renderStats();
+  renderMap([f.from, f.to]);
 }
 function abortFlight(){
-  if(!state.timerId) return;
+  if(!state.timerId && !state.activeFlight) return;
   if(!confirm('Прервать полёт? Прогресс не сохранится.')) return;
   clearInterval(state.timerId); state.timerId = null;
   storage.removeItem(LS.active);
@@ -429,7 +587,6 @@ function renderStats(){
     '<div class="stat"><b>'+totalKm.toLocaleString('ru-RU')+'</b> <span>км пройдено</span></div>';
   renderAchievements();
   renderRecent();
-  renderMap();
   updateCurrentHomeLabel();
 }
 function renderAchievements(){
@@ -480,21 +637,52 @@ function renderRecent(){
   }
   el.innerHTML = html;
 }
-function lonToX(lon, W){ return (lon + 180) / 360 * W; }
-function latToY(lat, H){ return (90 - lat) / 180 * H; }
-function renderMap(){
+function fitView(pts){
+  if(!pts || !pts.length) return {lonMin:-180,lonMax:180,latMin:-90,latMax:90};
+  var lonMin=180,lonMax=-180,latMin=90,latMax=-90;
+  for(var i=0;i<pts.length;i++){
+    var p = pts[i];
+    if(p.lon<lonMin)lonMin=p.lon; if(p.lon>lonMax)lonMax=p.lon;
+    if(p.lat<latMin)latMin=p.lat; if(p.lat>latMax)latMax=p.lat;
+  }
+  var dlon = Math.max(lonMax-lonMin, 24);
+  var dlat = Math.max(latMax-latMin, dlon/2);
+  var cx = (lonMin+lonMax)/2, cy = (latMin+latMax)/2;
+  lonMin = cx - dlon*0.65; lonMax = cx + dlon*0.65;
+  latMin = cy - dlat*0.65; latMax = cy + dlat*0.65;
+  if(lonMin<-180){ lonMax += (-180-lonMin); lonMin = -180; }
+  if(lonMax>180){ lonMin -= (lonMax-180); lonMax = 180; }
+  if(latMin<-90){ latMax += (-90-latMin); latMin = -90; }
+  if(latMax>90){ latMin -= (latMax-90); latMax = 90; }
+  lonMin=Math.max(lonMin,-180); lonMax=Math.min(lonMax,180);
+  latMin=Math.max(latMin,-90); latMax=Math.min(latMax,90);
+  return {lonMin:lonMin,lonMax:lonMax,latMin:latMin,latMax:latMax};
+}
+function renderMap(pts){
+  if(pts && pts.length) state.lastMapPts = pts;
   var canvas = $('worldMap');
   var wrap = $('mapWrap');
   if(!canvas || !wrap) return;
   var W = wrap.clientWidth;
   var H = wrap.clientHeight;
   if(W < 10 || H < 10) return;
+  var view = fitView(state.lastMapPts);
+  state.view = view;
+  var bg = wrap.querySelector('.map-bg');
+  if(bg){
+    var sx = 360/(view.lonMax-view.lonMin);
+    var sy = 180/(view.latMax-view.latMin);
+    bg.style.backgroundSize = (W*sx)+'px '+(H*sy)+'px';
+    bg.style.backgroundPosition = (-((view.lonMin+180)/360)*(W*sx))+'px '+(-((90-view.latMax)/180)*(H*sy))+'px';
+  }
   var dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   var ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
+  function X(lon){ return (lon-view.lonMin)/(view.lonMax-view.lonMin)*W; }
+  function Y(lat){ return (view.latMax-lat)/(view.latMax-view.latMin)*H; }
   ctx.strokeStyle = 'rgba(58,95,138,.25)';
   ctx.lineWidth = 1;
   for(var h=0; h<state.history.length; h++){
@@ -502,15 +690,15 @@ function renderMap(){
     var a = state.byCode[f.from], b = state.byCode[f.to];
     if(!a || !b) continue;
     ctx.beginPath();
-    ctx.moveTo(lonToX(a.lon, W), latToY(a.lat, H));
-    ctx.lineTo(lonToX(b.lon, W), latToY(b.lat, H));
+    ctx.moveTo(X(a.lon), Y(a.lat));
+    ctx.lineTo(X(b.lon), Y(b.lat));
     ctx.stroke();
   }
   for(var k=0; k<state.airports.length; k++){
     var ap = state.airports[k];
+    var px = X(ap.lon), py = Y(ap.lat);
+    if(px < -5 || px > W+5 || py < -5 || py > H+5) continue;
     var visited = state.visited.has(ap.code);
-    var px = lonToX(ap.lon, W);
-    var py = latToY(ap.lat, H);
     if(visited){
       ctx.fillStyle = '#3A5F8A';
       ctx.beginPath();
@@ -524,15 +712,16 @@ function renderMap(){
     }
   }
   if(state.home){
-    var hx = lonToX(state.home.lon, W);
-    var hy = latToY(state.home.lat, H);
-    ctx.fillStyle = '#B04A5E';
-    ctx.beginPath();
-    ctx.arc(hx, hy, 4.5, 0, Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    var hx = X(state.home.lon), hy = Y(state.home.lat);
+    if(hx >= -5 && hx <= W+5 && hy >= -5 && hy <= H+5){
+      ctx.fillStyle = '#B04A5E';
+      ctx.beginPath();
+      ctx.arc(hx, hy, 4.5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
   }
 }
 var resizeTimer = null;
@@ -554,7 +743,6 @@ var rb = $('resetBtn'); if(rb) rb.onclick = function(){
   storage.removeItem(LS.active);
   location.reload();
 };
-// Принудительная видимость страницы игры по сохранённой вкладке (не зависит от class в HTML)
 (function initPageVisibility(){
   try {
     var page = localStorage.getItem('darya_board_page');
@@ -563,16 +751,20 @@ var rb = $('resetBtn'); if(rb) rb.onclick = function(){
       if (page === 'flight') fp.classList.remove('page-hidden');
       else fp.classList.add('page-hidden');
     }
+    if (page === 'flight') document.body.classList.add('ff-flight');
   } catch(e){}
 })();
 window.FocusFlight = {
   init: startWithFallback,
-  onShow: function(){ setTimeout(renderMap, 60); }
+  onShow: function(){ setTimeout(function(){ renderMap(); }, 60); }
 };
 startWithFallback();
 })();
 // ---------- Перехват кликов по навигации ----------
 (function(){
+function flightNavBtn(){
+  return document.querySelector('[onclick*="switchPage(\'flight\')"]');
+}
 function showFlightPage(){
   var bp = document.getElementById('boardPage');
   var pp = document.getElementById('personalPage');
@@ -580,10 +772,13 @@ function showFlightPage(){
   if(bp) bp.classList.add('page-hidden');
   if(pp) pp.classList.add('page-hidden');
   if(fp) fp.classList.remove('page-hidden');
+  document.body.classList.add('ff-flight');
   var nb = document.getElementById('navBoard');
   var np = document.getElementById('navPersonal');
   if(nb) nb.classList.remove('active');
   if(np) np.classList.remove('active');
+  var fn = flightNavBtn();
+  if(fn) fn.classList.add('active');
   var pt = document.getElementById('pageTitle');
   var ps = document.getElementById('pageSubtitle');
   if(pt) pt.textContent = 'FocusFlight';
@@ -594,6 +789,9 @@ function showFlightPage(){
 function hideFlightPage(){
   var fp = document.getElementById('flightPage');
   if(fp) fp.classList.add('page-hidden');
+  document.body.classList.remove('ff-flight');
+  var fn = flightNavBtn();
+  if(fn) fn.classList.remove('active');
 }
 document.addEventListener('click', function(e){
   var el = e.target && e.target.closest ? e.target.closest('[onclick]') : null;
