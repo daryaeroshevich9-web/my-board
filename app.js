@@ -26,6 +26,7 @@ const ELLIPSIS = '⋯';
 let expandedText = new Set();
 let expandedSubs = new Set();
 let expandedSubText = new Set();
+let editingReportDate = null;
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -162,6 +163,7 @@ function parseMagic(raw){
   text = text.replace(/\s{2,}/g,' ').trim();
   return {text: text, due: due};
 }
+// --- HTML: детекция, санитизация, рендер, конвертация в текст ---
 function isHtmlText(t){
   return /<\/?(p|ul|ol|li|table|thead|tbody|tr|td|th|div|br|b|strong|i|em|u|s|h[1-6]|blockquote|pre|hr|span|a)\b/i.test(String(t||''));
 }
@@ -265,7 +267,7 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Summernote (таблицы, списки, отступы) + фолбэк ---
+// --- Редактор: Summernote (таблицы, списки, отступы) + textarea-фолбэк для офлайна ---
 const SN_TOOLBAR = [
   ['undo',['undo','redo']],
   ['style',['style']],
@@ -277,6 +279,7 @@ const SN_TOOLBAR = [
   ['view',['codeview']]
 ];
 function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote); }
+const FALLBACK_TABLE = '<table><tbody><tr><td>1</td><td>2</td></tr><tr><td>3</td><td>4</td></tr></tbody></table>';
 function indentLines(ta, dir){
   const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
   const ls = v.lastIndexOf('\n', s - 1) + 1;
@@ -299,12 +302,12 @@ function makeEditor(hostId){
         try {
           snEl = window.jQuery('<div></div>');
           window.jQuery(host).append(snEl);
-          snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
+          snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true, height:220});
           snEl.summernote('code', html || '');
           return;
         } catch(e) {
-          try { snEl.summernote('destroy'); } catch(e2){}
           snEl = null;
+          host.innerHTML = '';
         }
       }
       const tb = document.createElement('div');
@@ -313,7 +316,8 @@ function makeEditor(hostId){
         '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
         '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
         '<button class="fmt-btn" data-f="ind" title="Отступ">⇥</button>' +
-        '<button class="fmt-btn" data-f="outd" title="Убрать отступ">⇤</button>';
+        '<button class="fmt-btn" data-f="outd" title="Убрать отступ">⇤</button>' +
+        '<button class="fmt-btn" data-f="table" title="Таблица 2×2">⊞</button>';
       ta = document.createElement('textarea');
       ta.className = 'ed-fallback';
       ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
@@ -325,7 +329,13 @@ function makeEditor(hostId){
           const f = btn.dataset.f;
           if (f === 'ind') indentLines(ta, 1);
           else if (f === 'outd') indentLines(ta, -1);
+          else if (f === 'table') {
+            const s = ta.selectionStart || ta.value.length;
+            ta.value = ta.value.slice(0, s) + (s ? '\n' : '') + FALLBACK_TABLE + ta.value.slice(ta.selectionEnd || s);
+            ta.focus();
+          }
           else fmtApply(ta, f);
+          autoGrow(ta);
         });
       });
       autoGrow(ta);
@@ -347,7 +357,10 @@ function makeEditor(hostId){
         autoGrow(ta);
       }
     },
-    focus(){ if (snEl) { try{ snEl.summernote('focus'); }catch(e){} } else if (ta) ta.focus(); },
+    focus(){
+      if (snEl) { try { snEl.summernote('focus'); } catch(e){} }
+      else if (ta) ta.focus();
+    },
     destroy(){
       if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
       if (host) host.innerHTML = '';
@@ -606,14 +619,14 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
 });
-// --- Отчёт дня ---
-function openDayReport(){
+// --- Отчёт дня (за произвольную дату) ---
+function openDayReport(date){
   stopEdVoice();
-  const date = todayISO();
-  const p = parseLocal(date);
+  editingReportDate = date || todayISO();
+  const p = parseLocal(editingReportDate);
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
   document.getElementById('dayReportModal').classList.add('open');
-  const r = dayReportFor(date);
+  const r = dayReportFor(editingReportDate);
   try {
     repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
   } catch(e) {
@@ -621,7 +634,7 @@ function openDayReport(){
     repEditor.init(r ? r.text : '', false);
   }
   dayReportInitialPlain = repEditor.plain();
-  renderDayReportAuto(date);
+  renderDayReportAuto(editingReportDate);
   setTimeout(() => repEditor.focus(), 60);
 }
 function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); stopEdVoice(); repEditor.destroy(); }
@@ -633,10 +646,10 @@ function closeDayReportRequest(){
 function saveDayReport(){
   const val = repEditor.get();
   const plain = htmlToPlain(val).trim();
-  const date = todayISO();
+  const date = editingReportDate || todayISO();
   if (!plain) {
     if (!dayReportFor(date)) { closeDayReport(); return; }
-    askConfirm('Удалить отчёт за сегодня? Действие необратимо.', () => {
+    askConfirm('Удалить отчёт за эту дату? Действие необратимо.', () => {
       dayReports = dayReports.filter(r => r.date !== date);
       saveDayReports(); closeDayReport();
       notify('Отчёт удалён.');
@@ -647,7 +660,7 @@ function saveDayReport(){
   if (ex) { ex.text = val; ex.updated = new Date().toISOString(); }
   else dayReports.push({date: date, text: val, updated: new Date().toISOString()});
   saveDayReports(); closeDayReport();
-  notify('Отчёт дня сохранён.', true);
+  notify('Отчёт сохранён.', true);
 }
 function dayReportFullText(date){
   const r = dayReportFor(date);
@@ -661,18 +674,18 @@ function dayReportFullText(date){
   return out.trim();
 }
 function copyDayReport(){
-  const t = dayReportFullText(todayISO());
-  if (!t) { notify('Отчёта за сегодня нет.'); return; }
+  const t = dayReportFullText(editingReportDate || todayISO());
+  if (!t) { notify('Отчёта за эту дату нет.'); return; }
   navigator.clipboard.writeText(t).then(() => notify('Отчёт скопирован.', true));
 }
 function downloadDayReportMd(){
-  const t = dayReportFullText(todayISO());
-  if (!t) { notify('Отчёта за сегодня нет.'); return; }
-  downloadBlob('# ' + t.split('\n')[0] + '\n\n' + t.split('\n').slice(1).join('\n') + '\n', 'otchet-' + todayISO() + '.md', 'text/markdown;charset=utf-8');
+  const t = dayReportFullText(editingReportDate || todayISO());
+  if (!t) { notify('Отчёта за эту дату нет.'); return; }
+  downloadBlob('# ' + t.split('\n')[0] + '\n\n' + t.split('\n').slice(1).join('\n') + '\n', 'otchet-' + (editingReportDate || todayISO()) + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('cancelDayReport').addEventListener('click', closeDayReportRequest);
-// --- Голос ---
+// --- Голос: textarea (quickAdd) и редактор отчёта ---
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 const micBtn = document.getElementById('micBtn');
 const repMicBtn = document.getElementById('repMic');
@@ -1443,7 +1456,7 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-// --- Итоги: лента отчётов по дням ---
+// --- Итоги: отчёты по дням с редактированием ---
 let lastResults = {md: ''};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1507,9 +1520,8 @@ function renderResults() {
   const from = document.getElementById('resFrom').value;
   const to = document.getElementById('resTo').value;
   if (!from || !to) return;
-  const box = document.getElementById('resBody');
-  if (!box) return;
   const dates = reportDatesInPeriod(from, to);
+  const box = document.getElementById('resBody');
   if (!dates.length) {
     box.innerHTML = '<div class="empty">За период отчётов нет</div>';
     lastResults = {md: ''};
@@ -1518,10 +1530,16 @@ function renderResults() {
   box.innerHTML = dates.map(d => {
     const p = parseLocal(d);
     const r = dayReportFor(d);
-    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
+    const manual = (r && htmlToPlain(r.text).trim())
+      ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>'
+      : '<div class="res-rep-body empty-inline">Отчёта пока нет — нажми «Изменить», чтобы добавить.</div>';
     const auto = autoLinesForDate(d);
     const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
-    return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' + manual + autoHtml + '</div>';
+    return '<div class="res-rep">' +
+      '<div class="res-rep-head"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' +
+      '<button class="res-rep-edit" onclick="openDayReport(\'' + d + '\')">✏️ Изменить</button></div>' +
+      manual + autoHtml +
+    '</div>';
   }).join('');
   lastResults = {md: buildReportsMd(from, to)};
 }
@@ -1747,7 +1765,7 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   addEditor.destroy();
   notify('Задача добавлена.', true);
 });
-// Закрытие модалок — ТОЛЬКО кнопками.
+// Закрытие модалок — ТОЛЬКО кнопками: ни клик вне окна, ни Esc не закрывают.
 document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
