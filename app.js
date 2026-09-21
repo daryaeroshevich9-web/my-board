@@ -1291,4 +1291,529 @@ function closeNoteMenu() { popEl.classList.remove('open'); }
 function openNoteMenu(id, ev) {
   ev.stopPropagation();
   currentNoteId = id;
-  const
+  const t = tasks.find(x => x.id === id);
+  const dueLabel = t && t.due ? ': ' + fmtDate(t.due) : '';
+  popEl.innerHTML =
+    '<button class="pop-item" onclick="popDue()">🔔 Срок' + dueLabel + '</button>' +
+    '<button class="pop-item" onclick="popArchive()">📦 В архив</button>';
+  popEl.classList.add('open');
+  const r = ev.currentTarget.getBoundingClientRect();
+  const pw = popEl.offsetWidth, ph = popEl.offsetHeight;
+  let left = r.left;
+  if (left + pw > window.innerWidth - 8) left = Math.max(8, window.innerWidth - pw - 8);
+  let top = r.bottom + 6;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+  popEl.style.left = left + 'px';
+  popEl.style.top = top + 'px';
+}
+function popDue(){ const id=currentNoteId; closeNoteMenu(); openDue(id); }
+function popArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id); }
+document.addEventListener('click', e => {
+  if (popEl.classList.contains('open') && !e.target.closest('#notePop') && !e.target.closest('.note-action')) closeNoteMenu();
+});
+window.addEventListener('scroll', () => { if (popEl.classList.contains('open')) closeNoteMenu(); calHide(); }, true);
+window.addEventListener('resize', () => { closeNoteMenu(); calHide(); });
+function openDue(id) {
+  currentNoteId = id;
+  const t = tasks.find(x => x.id === id);
+  document.getElementById('dueInput').value = t && t.due ? t.due : '';
+  document.getElementById('dueModal').classList.add('open');
+}
+function closeDue() { document.getElementById('dueModal').classList.remove('open'); }
+function saveDue() {
+  const t = tasks.find(x => x.id === currentNoteId);
+  if (t) { t.due = document.getElementById('dueInput').value || null; saveTasks(); render(); }
+  closeDue();
+}
+function clearDue() {
+  const t = tasks.find(x => x.id === currentNoteId);
+  if (t) { t.due = null; saveTasks(); render(); }
+  closeDue();
+}
+document.getElementById('clearDoneBtn').addEventListener('click', () => {
+  const n = tasks.filter(t => t.done && !t.archived).length;
+  if (!n) { notify('Нет выполненных задач для отправки в архив.'); return; }
+  document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
+  document.getElementById('broomModal').classList.add('open');
+});
+function closeBroom() { document.getElementById('broomModal').classList.remove('open'); }
+function confirmBroom() {
+  tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
+  saveTasks(); render(); closeBroom();
+}
+function openArchive() {
+  document.getElementById('archSearch').value = '';
+  renderArchList();
+  document.getElementById('archiveModal').classList.add('open');
+  closeSbMobile();
+}
+function closeArchive() { document.getElementById('archiveModal').classList.remove('open'); }
+function renderArchList() {
+  const q = (document.getElementById('archSearch').value || '').trim().toLowerCase();
+  const list = document.getElementById('archList');
+  const arch = tasks.filter(t => t.archived && matchesQuery(t, q))
+    .sort((a, b) => (b.doneAt || b.created || '').localeCompare(a.doneAt || a.created || ''));
+  if (!arch.length) {
+    list.innerHTML = '<div class="empty">' + (q ? 'Ничего не найдено' : 'Архив пуст') + '</div>';
+    return;
+  }
+  list.innerHTML = arch.map(t => {
+    const z = zoneByKey(t.zone);
+    const dateLabel = t.done ? (t.doneAt ? ' (' + t.doneAt.slice(0, 10) + ')' : '') : '';
+    return '<div class="list-note"><span class="zone-tag" style="' + (z ? zoneTagStyle(z) : '') + '">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(shortText(t.text, 120)) + ' <span style="color:var(--text-muted);font-size:12px">' + dateLabel + '</span></span>' +
+      '<div class="list-actions">' +
+      '<button class="list-btn restore" onclick="unarchiveTask(' + t.id + ')">Вернуть</button>' +
+      '<button class="list-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
+      '</div></div>';
+  }).join('');
+}
+document.getElementById('archSearch').addEventListener('input', renderArchList);
+function openAddFor(zoneKey) {
+  currentAddZone = zoneKey;
+  document.getElementById('addModal').classList.add('open');
+  addEditor.init('', false);
+  setTimeout(() => addEditor.focus(), 60);
+}
+function hideZone(key) {
+  const z = zoneByKey(key);
+  if (z) { z.hidden = true; saveZones(); render(); }
+}
+function toggleZone(key) {
+  const z = zoneByKey(key);
+  if (z) { z.hidden = !z.hidden; saveZones(); render(); renderZonesList(); }
+}
+function setZoneColor(key, val) {
+  const z = zoneByKey(key);
+  if (z) { z.color = val; saveZones(); render(); renderZonesList(); }
+}
+function resetZoneColor(key) {
+  const z = zoneByKey(key);
+  if (z) { z.color = null; saveZones(); render(); renderZonesList(); }
+}
+function renderZonesList() {
+  const list = document.getElementById('zonesList');
+  list.innerHTML = zones.map(z =>
+    '<div class="zone-row">' +
+      '<span class="zone-row-emoji">' + (z.emoji || '🗂️') + '</span>' +
+      '<span class="zone-row-label">' + escapeHtml(z.label) + '</span>' +
+      '<input type="color" class="zone-color-pick" value="' + (z.color || TINT_HEX[tintIndex(z)]) + '" onchange="setZoneColor(\'' + z.key + '\', this.value)" title="Цвет раздела">' +
+      (z.color ? '<button class="modal-btn secondary" onclick="resetZoneColor(\'' + z.key + '\')">Авто</button>' : '') +
+      '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button>' +
+    '</div>'
+  ).join('');
+}
+function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); closeSbMobile(); }
+function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
+document.getElementById('addZoneBtn').addEventListener('click', () => {
+  const label = capFirst(document.getElementById('newZoneLabel').value.trim());
+  if (!label) { notify('Введите название раздела.'); return; }
+  const emoji = document.getElementById('newZoneEmoji').value.trim() || '🗂️';
+  zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % TINT_COUNT, color: null});
+  saveZones(); render(); renderZonesList();
+  document.getElementById('newZoneLabel').value = '';
+  document.getElementById('newZoneEmoji').value = '';
+});
+function createParsed(line, zoneKey) {
+  const p = parseMagic(line);
+  const text = capFirst(p.text || line.trim());
+  tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
+  clearLeakedSearch(text);
+  saveTasks(); render();
+  notify('Задача добавлена.', true);
+}
+function addPersonalNote(line) {
+  const text = capFirst(line.trim());
+  if (!text) return;
+  personal.push(migratePersonalNote({id: Date.now() + Math.floor(Math.random()*10000), text: text, created: new Date().toISOString(), done: false, doneAt: null, subtasks: []}));
+  savePersonal(); renderPersonal();
+  notify('Заметка добавлена.', true);
+}
+function quickAddMany(lines) {
+  if (currentPage === 'personal') {
+    lines.forEach(l => addPersonalNote(l));
+    return;
+  }
+  const other = zoneByKey('other');
+  if (other && !other.hidden) {
+    lines.forEach(l => createParsed(l, 'other'));
+    return;
+  }
+  pendingQuickLines = lines;
+  const wrap = document.getElementById('quickZoneList');
+  wrap.innerHTML = zones.map(z =>
+    '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
+    (z.hidden ? ' (скрыт — появится при выборе)' : '') + '</button>'
+  ).join('');
+  document.getElementById('quickZoneModal').classList.add('open');
+}
+function chooseQuickZone(zoneKey) {
+  const z = zoneByKey(zoneKey);
+  if (!z) return;
+  if (z.hidden) { z.hidden = false; saveZones(); }
+  pendingQuickLines.forEach(l => createParsed(l, zoneKey));
+  pendingQuickLines = [];
+  document.getElementById('quickZoneModal').classList.remove('open');
+}
+function closeQuickZone() {
+  document.getElementById('quickZoneModal').classList.remove('open');
+  if (pendingQuickLines.length) {
+    document.getElementById('quickAdd').value = pendingQuickLines.join('\n');
+    pendingQuickLines = [];
+  }
+}
+document.getElementById('quickAdd').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const text = e.target.value.trim();
+    if (!text) return;
+    e.target.value = ''; voiceBase = '';
+    quickAddMany([text]);
+  }
+});
+document.getElementById('quickAdd').addEventListener('paste', e => {
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (text && text.includes('\n')) {
+    e.preventDefault();
+    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
+  }
+});
+// --- Отчёты по дням за период (одноколоночные итоги) ---
+let lastResults = {md: ''};
+function mondayOf(dateStr) {
+  const x = parseLocal(dateStr);
+  const day = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - day);
+  return isoOf(x);
+}
+function setResultsPeriod(kind) {
+  const today = todayISO();
+  const d = parseLocal(today);
+  if (kind === 'week') {
+    const mon = mondayOf(today);
+    const sun = isoOf(addDays(parseLocal(mon), 6));
+    document.getElementById('resFrom').value = mon;
+    document.getElementById('resTo').value = sun;
+  } else if (kind === 'lastweek') {
+    const mon = isoOf(addDays(parseLocal(mondayOf(today)), -7));
+    const sun = isoOf(addDays(parseLocal(mon), 6));
+    document.getElementById('resFrom').value = mon;
+    document.getElementById('resTo').value = sun;
+  } else if (kind === 'month') {
+    const y = d.getFullYear(), m = d.getMonth();
+    document.getElementById('resFrom').value = isoOf(new Date(y, m, 1));
+    document.getElementById('resTo').value = isoOf(new Date(y, m + 1, 0));
+  }
+  renderResults();
+}
+function openResults() {
+  setResultsPeriod('week');
+  document.getElementById('resultsModal').classList.add('open');
+  closeSbMobile();
+}
+function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
+function reportDatesInPeriod(from, to){
+  const set = new Set();
+  dayReports.forEach(r => { if (r.date >= from && r.date <= to && htmlToPlain(r.text).trim()) set.add(r.date); });
+  tasks.forEach(t => {
+    if (t.done && t.doneAt) {
+      const d = String(t.doneAt).slice(0,10);
+      if (d >= from && d <= to) set.add(d);
+    }
+  });
+  return Array.from(set).sort();
+}
+function buildReportsMd(from, to){
+  const dates = reportDatesInPeriod(from, to);
+  if (!dates.length) return '';
+  let md = '# Отчёты за период ' + from + ' — ' + to + '\n\n';
+  dates.forEach(d => {
+    const p = parseLocal(d);
+    md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n';
+    const r = dayReportFor(d);
+    if (r && htmlToPlain(r.text).trim()) md += htmlToPlain(r.text).trim() + '\n';
+    const auto = autoLinesForDate(d);
+    if (auto.length) md += 'Закрыто на доске:\n' + auto.join('\n') + '\n';
+    md += '\n';
+  });
+  return md.trim() + '\n';
+}
+function renderResults() {
+  const from = document.getElementById('resFrom').value;
+  const to = document.getElementById('resTo').value;
+  if (!from || !to) return;
+  const dates = reportDatesInPeriod(from, to);
+  const box = document.getElementById('resReports');
+  if (!dates.length) {
+    box.innerHTML = '<div class="empty">За период отчётов нет</div>';
+    lastResults = {md: ''};
+    return;
+  }
+  box.innerHTML = dates.map(d => {
+    const p = parseLocal(d);
+    const r = dayReportFor(d);
+    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
+    const auto = autoLinesForDate(d);
+    const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
+    return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' + manual + autoHtml + '</div>';
+  }).join('');
+  lastResults = {md: buildReportsMd(from, to)};
+}
+function downloadBlob(content, name, mime) {
+  const blob = new Blob([content], {type: mime});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+function copyResultsMd() {
+  if (!lastResults.md) { notify('За период отчётов нет — копировать нечего.'); return; }
+  navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёты скопированы в буфер обмена!', true));
+}
+function downloadResultsMd() {
+  const from = document.getElementById('resFrom').value;
+  const to = document.getElementById('resTo').value;
+  if (!lastResults.md) { notify('За период отчётов нет.'); return; }
+  downloadBlob(lastResults.md, 'otchety-' + from + '-' + to + '.md', 'text/markdown;charset=utf-8');
+  notify('Файл Markdown сохранён.', true);
+}
+document.getElementById('resFrom').addEventListener('change', renderResults);
+document.getElementById('resTo').addEventListener('change', renderResults);
+function backupDownload() {
+  const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes, dayreports: dayReports}, null, 2);
+  downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
+  notify('Резервная копия сохранена.', true);
+}
+function backupUploadClick() { document.getElementById('backupFile').click(); }
+document.getElementById('backupFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  file.text().then(raw => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.tasks)) { notify('Файл не похож на резервную копию доски.'); return; }
+      const count = parsed.tasks.length;
+      const zonesBackup = Array.isArray(parsed.zones) && parsed.zones.length ? parsed.zones : null;
+      const personalBackup = Array.isArray(parsed.personal) ? parsed.personal : null;
+      const daynotesBackup = Array.isArray(parsed.daynotes) ? parsed.daynotes : null;
+      const dayreportsBackup = Array.isArray(parsed.dayreports) ? parsed.dayreports : null;
+      askConfirm('Заменить текущие данные данными из файла (' + count + ' задач)?', () => {
+        tasks = parsed.tasks.map(migrateTask);
+        if (zonesBackup) { zones = zonesBackup.map(migrateZone); localStorage.setItem(ZONES_KEY, JSON.stringify(zones)); }
+        if (personalBackup) { personal = personalBackup.map(migratePersonalNote); localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); }
+        if (daynotesBackup) { dayNotes = daynotesBackup.map(migrateDayNote).filter(Boolean); localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes)); }
+        if (dayreportsBackup) { dayReports = dayreportsBackup.map(migrateDayReport).filter(Boolean); localStorage.setItem(DAYREPORTS_KEY, JSON.stringify(dayReports)); }
+        saveTasks(); render();
+        notify('Копия загружена.', true);
+      }, 'Заменить');
+    } catch (err) {
+      notify('Не удалось прочитать файл: ' + err.message);
+    }
+    e.target.value = '';
+  });
+});
+let dragState = null;
+let justDragged = false;
+function beginDrag() {
+  if (!dragState) return;
+  const note = dragState.note;
+  const r = note.getBoundingClientRect();
+  const ghost = note.cloneNode(true);
+  ghost.className = 'drag-ghost';
+  ghost.style.width = r.width + 'px';
+  ghost.style.left = r.left + 'px';
+  ghost.style.top = r.top + 'px';
+  document.body.appendChild(ghost);
+  dragState.ghost = ghost;
+  dragState.ox = dragState.x0 - r.left;
+  dragState.oy = dragState.y0 - r.top;
+  dragState.lastX = dragState.x0;
+  dragState.lastY = dragState.y0;
+  dragState.active = true;
+  note.classList.add('dragging-src');
+  positionGhost(dragState.x0, dragState.y0);
+}
+function positionGhost(x, y) {
+  if (!dragState || !dragState.ghost) return;
+  dragState.ghost.style.left = (x - dragState.ox) + 'px';
+  dragState.ghost.style.top = (y - dragState.oy) + 'px';
+  let found = null;
+  document.querySelectorAll('.zone').forEach(z => {
+    const r = z.getBoundingClientRect();
+    const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    z.classList.toggle('drop-hover', inside);
+    if (inside) found = z;
+  });
+  dragState.zone = found;
+}
+function endDrag(commit) {
+  if (!dragState) return;
+  clearTimeout(dragState.timer);
+  if (dragState.active) {
+    if (dragState.ghost) dragState.ghost.remove();
+    document.querySelectorAll('.zone').forEach(z => z.classList.remove('drop-hover'));
+    dragState.note.classList.remove('dragging-src');
+    if (commit && dragState.zone) {
+      const draggedId = dragState.id;
+      const targetZone = dragState.zone.dataset.zone;
+      const dropY = dragState.lastY;
+      const t = tasks.find(x => x.id === draggedId);
+      if (t && !t.archived) {
+        const noteEls = Array.from(dragState.zone.querySelectorAll('.note'))
+          .filter(el => Number(el.dataset.id) !== draggedId);
+        let insertBeforeId = null;
+        for (const el of noteEls) {
+          const r = el.getBoundingClientRect();
+          if (dropY < r.top + r.height / 2) { insertBeforeId = Number(el.dataset.id); break; }
+        }
+        const draggedIdx = tasks.findIndex(x => x.id === draggedId);
+        if (draggedIdx !== -1) {
+          const draggedTask = tasks.splice(draggedIdx, 1)[0];
+          draggedTask.zone = targetZone;
+          if (insertBeforeId !== null) {
+            const refIdx = tasks.findIndex(x => x.id === insertBeforeId);
+            tasks.splice(refIdx === -1 ? tasks.length : refIdx, 0, draggedTask);
+          } else {
+            let lastIdx = -1;
+            for (let i = 0; i < tasks.length; i++) {
+              if (tasks[i].zone === targetZone && !tasks[i].archived) lastIdx = i;
+            }
+            tasks.splice(lastIdx + 1, 0, draggedTask);
+          }
+          saveTasks();
+        }
+      }
+    }
+    justDragged = true;
+    setTimeout(() => { justDragged = false; }, 0);
+    render();
+  }
+  dragState = null;
+}
+document.addEventListener('pointerdown', e => {
+  const note = e.target.closest ? e.target.closest('.note') : null;
+  if (!note) return;
+  if (e.target.closest && e.target.closest('input,button,textarea,.subtask,.sub-edit,.sub-edit-wrap')) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  dragState = {id: Number(note.dataset.id), x0: e.clientX, y0: e.clientY, active: false, type: e.pointerType, note: note, timer: null, ghost: null, zone: null, ox: 0, oy: 0, lastX: e.clientX, lastY: e.clientY};
+  if (e.pointerType !== 'mouse') {
+    dragState.timer = setTimeout(() => { if (dragState && !dragState.active) beginDrag(); }, 280);
+  }
+});
+document.addEventListener('pointermove', e => {
+  if (!dragState) return;
+  if (!dragState.active) {
+    const dx = e.clientX - dragState.x0, dy = e.clientY - dragState.y0;
+    if (Math.hypot(dx, dy) > 6) {
+      if (dragState.type === 'mouse') beginDrag();
+      else { clearTimeout(dragState.timer); dragState = null; return; }
+    } else return;
+  }
+  dragState.lastX = e.clientX;
+  dragState.lastY = e.clientY;
+  positionGhost(e.clientX, e.clientY);
+});
+document.addEventListener('pointerup', () => endDrag(true));
+document.addEventListener('pointercancel', () => endDrag(false));
+document.addEventListener('touchmove', e => { if (dragState && dragState.active) e.preventDefault(); }, {passive: false});
+document.addEventListener('contextmenu', e => { if (dragState) e.preventDefault(); });
+document.addEventListener('click', e => {
+  if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; }
+}, true);
+function openSettings(hint) {
+  if (hint) document.getElementById('settingsHint').textContent = hint;
+  else document.getElementById('settingsHint').textContent = 'Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.';
+  const wrap = document.getElementById('tokenInputWrap');
+  wrap.innerHTML = '';
+  const inp = document.createElement('input');
+  inp.type = 'password';
+  inp.id = 'tokenInput';
+  inp.name = 'darya_token';
+  inp.placeholder = 'github_pat_...';
+  inp.autocomplete = 'new-password';
+  inp.value = getToken();
+  wrap.appendChild(inp);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
+  document.getElementById('settingsModal').classList.add('open');
+  setTimeout(() => inp.focus(), 0);
+  closeSbMobile();
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+  const wrap = document.getElementById('tokenInputWrap');
+  if (wrap) wrap.innerHTML = '';
+}
+function saveSettings() {
+  const inp = document.getElementById('tokenInput');
+  const v = inp ? inp.value.trim() : '';
+  if (v) localStorage.setItem(TOKEN_KEY, v); else localStorage.removeItem(TOKEN_KEY);
+  closeSettings();
+  schedulePush();
+}
+document.getElementById('logoBtn').addEventListener('click', () => openSettings());
+document.getElementById('cancelSettings').addEventListener('click', closeSettings);
+document.getElementById('saveSettings').addEventListener('click', saveSettings);
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
+function closeAddRequest(){
+  if (addEditor.plain() !== '') {
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { document.getElementById('addModal').classList.remove('open'); addEditor.destroy(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
+  } else {
+    document.getElementById('addModal').classList.remove('open');
+    addEditor.destroy();
+  }
+}
+document.getElementById('confirmAdd').addEventListener('click', () => {
+  const val = addEditor.get();
+  const plain = htmlToPlain(val).trim();
+  if (!plain) return;
+  const zoneKey = currentAddZone || 'other';
+  const p = parseMagic(plain);
+  let text = val;
+  if (p.due) text = capFirst(p.text || plain);
+  tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
+  clearLeakedSearch(plain);
+  saveTasks(); render();
+  document.getElementById('addModal').classList.remove('open');
+  addEditor.destroy();
+  notify('Задача добавлена.', true);
+});
+// Закрытие модалок — ТОЛЬКО кнопками: ни клик вне окна, ни Esc не закрывают.
+document.getElementById('quickZoneModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeQuickZone();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    if (document.getElementById('editModal').classList.contains('open')) { e.preventDefault(); saveEdit(); }
+    else if (document.getElementById('dayReportModal').classList.contains('open')) { e.preventDefault(); saveDayReport(); }
+    else if (document.getElementById('addModal').classList.contains('open')) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
+  }
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+clearTransientInputs();
+switchPage(currentPage);
+render();
+if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по логотипу.');
+cloudRead()
+  .then(data => {
+    if (data && Array.isArray(data.tasks)) {
+      const cloudTasks = data.tasks.map(migrateTask);
+      if (cloudTasks.length > 0) {
+        tasks = cloudTasks;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        localStorage.setItem(INIT_KEY, '1');
+      }
+    }
+  })
+  .catch(() => {})
+  .then(() => {
+    suppressPush = false;
+    sweepDoneToArchive();
+    render();
+  });
