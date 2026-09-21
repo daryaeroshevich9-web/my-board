@@ -208,7 +208,7 @@ textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--
 .personal-zone .note{background:var(--personal-bg);border-color:var(--personal-bd);--zone-color:var(--text-muted)}
 .personal-zone .note-checkbox{accent-color:var(--text-muted)}
 .personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
-.personal-notes{display:flex;flex-direction:column;gap:10px;min-height:40px;max-height:322px;overflow-y:auto;padding-right:2px}
+.personal-notes{display:flex;flex-direction:column;gap:10px;min-height:420px;max-height:calc(100vh - 320px);overflow-y:auto;padding-right:2px}
 .popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
 .popmenu.open{display:block}
 .pop-item{display:flex;gap:8px;align-items:center;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;color:var(--text);text-align:left;white-space:nowrap}
@@ -268,6 +268,7 @@ textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--
 .page-hidden{display:none !important}
 @media (max-width:900px){
   .personal-layout{grid-template-columns:1fr}
+  .personal-notes{min-height:40px;max-height:none;overflow:visible}
 }
 @media (max-width:720px){
   .topbar-inner{padding:12px 16px;gap:10px}
