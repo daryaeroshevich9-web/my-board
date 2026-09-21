@@ -98,10 +98,19 @@ function fmtTime(sec){
   var s=(sec%60).toString().padStart(2,'0');
   return h>0 ? h+':'+m+':'+s : m+':'+s;
 }
-function sliderToMinutes(v){ return Math.round(DUR_MIN*Math.pow(DUR_MAX/DUR_MIN, v/1000)); }
+function sliderMax(){
+  var s = $('duration');
+  var m = s ? parseInt(s.max, 10) : 0;
+  return (isFinite(m) && m > 0) ? m : 1000;
+}
+function sliderToMinutes(v){
+  var max = sliderMax();
+  return Math.round(DUR_MIN * Math.pow(DUR_MAX / DUR_MIN, v / max));
+}
 function minutesToSlider(m){
-  var c=Math.max(DUR_MIN,Math.min(DUR_MAX,m));
-  return Math.round(1000*Math.log(c/DUR_MIN)/Math.log(DUR_MAX/DUR_MIN));
+  var max = sliderMax();
+  var c = Math.max(DUR_MIN, Math.min(DUR_MAX, m));
+  return Math.round(max * Math.log(c / DUR_MIN) / Math.log(DUR_MAX / DUR_MIN));
 }
 function parseCSV(t){
   var rows=[],row=[],field='',inQ=false,i=0;
@@ -318,7 +327,7 @@ function renderDestinations(){
   for(var i=0;i<list.length;i++){
     var it = list[i];
     var mins = Math.round(it.d/SPEED_KMH*60);
-    var visited = state.visited(it.a.code);
+    var visited = state.visited.has(it.a.code);
     var vmark = visited ? ' <span style="color:var(--accent)">✓</span>' : '';
     var cls = 'item' + (visited ? ' visited' : '');
     html += '<div class="'+cls+'" data-code="'+it.a.code+'">'+
@@ -545,6 +554,17 @@ var rb = $('resetBtn'); if(rb) rb.onclick = function(){
   storage.removeItem(LS.active);
   location.reload();
 };
+// Принудительная видимость страницы игры по сохранённой вкладке (не зависит от class в HTML)
+(function initPageVisibility(){
+  try {
+    var page = localStorage.getItem('darya_board_page');
+    var fp = document.getElementById('flightPage');
+    if (fp) {
+      if (page === 'flight') fp.classList.remove('page-hidden');
+      else fp.classList.add('page-hidden');
+    }
+  } catch(e){}
+})();
 window.FocusFlight = {
   init: startWithFallback,
   onShow: function(){ setTimeout(renderMap, 60); }
