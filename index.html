@@ -11,11 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
-<link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -27,7 +24,7 @@
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
-  <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги</span></button>
+  <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
   <button class="sb-item sb-board-only" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
   <button class="sb-item sb-board-only" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
@@ -207,8 +204,8 @@
   </div>
 </div>
 <div class="modal" id="resultsModal">
-  <div class="modal-content modal-wide">
-    <h3>📊 Итоги</h3>
+  <div class="modal-content">
+    <h3>📊 Отчёты по дням</h3>
     <div class="results-period">
       <div class="results-period-dates">
         <input type="date" id="resFrom">
@@ -216,17 +213,15 @@
         <input type="date" id="resTo">
       </div>
       <div class="results-period-quick">
-        <button type="button" class="modal-btn secondary" onclick="setResultsPeriod('week')">Текущая неделя</button>
-        <button type="button" class="modal-btn secondary" onclick="setResultsPeriod('lastweek')">Прошлая неделя</button>
-        <button type="button" class="modal-btn secondary" onclick="setResultsPeriod('month')">Текущий месяц</button>
+        <button class="modal-btn secondary" onclick="setResultsPeriod('week')">Текущая неделя</button>
+        <button class="modal-btn secondary" onclick="setResultsPeriod('lastweek')">Прошлая неделя</button>
+        <button class="modal-btn secondary" onclick="setResultsPeriod('month')">Текущий месяц</button>
       </div>
     </div>
-    <div class="results-stats" id="resStats"></div>
-    <div id="resBody"></div>
+    <div id="resReports"></div>
     <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать всё</button>
+      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать</button>
       <button class="modal-btn secondary" onclick="downloadResultsMd()">⬇ Markdown</button>
-      <button class="modal-btn secondary" onclick="downloadResultsCsv()">⬇ CSV</button>
       <button class="modal-btn primary" onclick="closeResults()">Закрыть</button>
     </div>
   </div>
