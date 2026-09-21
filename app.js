@@ -321,7 +321,6 @@ function makeEditor(hostId){
         }
       }
 
-      // Fallback: обычный textarea
       const tb = document.createElement('div');
       tb.className = 'fmt-toolbar';
       tb.innerHTML = '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
@@ -1470,7 +1469,7 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-// --- Итоги + отчёты по дням ---
+// --- Итоги ---
 let lastResults = {md: '', rows: []};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1478,11 +1477,28 @@ function mondayOf(dateStr) {
   x.setDate(x.getDate() - day);
   return isoOf(x);
 }
-function openResults() {
+function setResultsPeriod(kind) {
   const today = todayISO();
-  document.getElementById('resFrom').value = mondayOf(today);
-  document.getElementById('resTo').value = today;
+  const d = parseLocal(today);
+  if (kind === 'week') {
+    const mon = mondayOf(today);
+    const sun = isoOf(addDays(parseLocal(mon), 6));
+    document.getElementById('resFrom').value = mon;
+    document.getElementById('resTo').value = sun;
+  } else if (kind === 'lastweek') {
+    const mon = isoOf(addDays(parseLocal(mondayOf(today)), -7));
+    const sun = isoOf(addDays(parseLocal(mon), 6));
+    document.getElementById('resFrom').value = mon;
+    document.getElementById('resTo').value = sun;
+  } else if (kind === 'month') {
+    const y = d.getFullYear(), m = d.getMonth();
+    document.getElementById('resFrom').value = isoOf(new Date(y, m, 1));
+    document.getElementById('resTo').value = isoOf(new Date(y, m + 1, 0));
+  }
   renderResults();
+}
+function openResults() {
+  setResultsPeriod('week');
   document.getElementById('resultsModal').classList.add('open');
   closeSbMobile();
 }
@@ -1530,24 +1546,14 @@ function renderResults() {
     const zoneOpen = openTasks.filter(t => t.zone === z.key);
     if (!zoneDone.length && !zoneOpen.length) return;
     bodyHtml += '<div class="results-block"><h4>' + escapeHtml(z.label) + '</h4>';
-    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(shortText(t.text, 90)) + '<span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
-    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(shortText(t.text, 90)) + '</div>'; });
+    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(shortText(t.text, 120)) + '<span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
+    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(shortText(t.text, 120)) + '</div>'; });
     bodyHtml += '</div>';
   });
   if (!bodyHtml) bodyHtml = '<div class="empty">За период задач нет</div>';
   document.getElementById('resBody').innerHTML = bodyHtml;
-  const dates = reportDatesInPeriod(from, to);
-  document.getElementById('resReports').innerHTML = dates.length
-    ? dates.map(d => {
-        const p = parseLocal(d);
-        const r = dayReportFor(d);
-        const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
-        const auto = autoLinesForDate(d);
-        const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
-        return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h5>' + manual + autoHtml + '</div>';
-      }).join('')
-    : '<div class="empty">За период отчётов нет</div>';
-  let md = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
+
+  let md = '# Итоги\n**Период:** ' + from + ' — ' + to + '\n\n';
   md += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
   md += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
   zones.forEach(z => {
@@ -1582,26 +1588,20 @@ function downloadBlob(content, name, mime) {
   URL.revokeObjectURL(a.href);
 }
 function copyResultsMd() {
+  if (!lastResults.md) { notify('Пусто — нечего копировать.'); return; }
   navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!', true));
 }
 function downloadResultsMd() {
-  downloadBlob(lastResults.md, 'itogi-nedeli-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
+  const from = document.getElementById('resFrom').value;
+  const to = document.getElementById('resTo').value;
+  downloadBlob(lastResults.md || '', 'itogi-' + from + '_' + to + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
 }
 function downloadResultsCsv() {
-  downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
+  const from = document.getElementById('resFrom').value;
+  const to = document.getElementById('resTo').value;
+  downloadBlob('\ufeff' + resultsCsv(), 'itogi-' + from + '_' + to + '.csv', 'text/csv;charset=utf-8');
   notify('Файл CSV сохранён.', true);
-}
-function copyReportsOnly() {
-  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
-  if (!md) { notify('За период отчётов нет.'); return; }
-  navigator.clipboard.writeText(md).then(() => notify('Отчёты скопированы.', true));
-}
-function downloadReportsOnly() {
-  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
-  if (!md) { notify('За период отчётов нет.'); return; }
-  downloadBlob(md, 'otchety-' + document.getElementById('resFrom').value + '-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
-  notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
@@ -1808,7 +1808,6 @@ document.getElementById('addInput') && document.getElementById('addInput').addEv
   if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
 });
-// Закрытие модалок — ТОЛЬКО кнопками: ни клик вне окна, ни Esc не закрывают.
 document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
