@@ -133,12 +133,13 @@
       "done": false,
       "created": "2026-09-21T06:03:07.586884",
       "doneAt": null,
-      "archived": false,
+      "archived": true,
       "deleted": false,
       "due": "2026-09-22",
       "tags": [],
       "subtasks": [],
-      "subOpen": false
+      "subOpen": false,
+      "pinned": false
     }
   ],
   "zones": [
