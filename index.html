@@ -138,7 +138,7 @@
     <h3 id="dayReportTitle">📄 Отчёт дня</h3>
     <div class="note-editor" id="dayReportEditor"></div>
     <div class="dayreport-auto" id="dayReportAuto"></div>
-    <div class="fmt-hint">Отчёт сохраняется за выбранную дату. Закрытые на доске задачи попадают в отчёт и в выгрузки автоматически. Микрофон дописывает распознанные фразы в конец текста.</div>
+    <div class="fmt-hint">Отчёт сохраняется за сегодняшнее число. Закрытые на доске задачи попадают в отчёт и в выгрузки автоматически. Микрофон дописывает распознанные фразы в конец текста.</div>
     <div class="modal-actions">
       <button class="mic-btn" id="repMic" title="Голосовой ввод в отчёт">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
@@ -206,7 +206,7 @@
   </div>
 </div>
 <div class="modal" id="resultsModal">
-  <div class="modal-content">
+  <div class="modal-content modal-wide">
     <h3>📊 Итоги: отчёты по дням</h3>
     <div class="results-period">
       <div class="results-period-dates">
@@ -222,7 +222,7 @@
     </div>
     <div id="resBody"></div>
     <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать</button>
+      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать всё</button>
       <button class="modal-btn secondary" onclick="downloadResultsMd()">⬇ Markdown</button>
       <button class="modal-btn primary" onclick="closeResults()">Закрыть</button>
     </div>
