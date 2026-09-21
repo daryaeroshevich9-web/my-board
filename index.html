@@ -24,7 +24,7 @@
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
-  <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
+  <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги</span></button>
   <button class="sb-item sb-board-only" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
   <button class="sb-item sb-board-only" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
@@ -205,23 +205,21 @@
 </div>
 <div class="modal" id="resultsModal">
   <div class="modal-content modal-wide">
-    <h3>📊 Итоги и отчёты</h3>
+    <h3>📊 Итоги</h3>
     <div class="results-period">
-      <input type="date" id="resFrom">
-      <span style="color:var(--text-muted)">—</span>
-      <input type="date" id="resTo">
-    </div>
-    <div class="results-split">
-      <div class="results-half">
-        <h4>Задачи</h4>
-        <div class="results-stats" id="resStats"></div>
-        <div id="resBody"></div>
+      <div class="results-period-dates">
+        <input type="date" id="resFrom">
+        <span class="results-period-sep">—</span>
+        <input type="date" id="resTo">
       </div>
-      <div class="results-half">
-        <h4>Отчёты по дням <span style="float:right"><button class="modal-btn secondary" style="padding:4px 10px;font-size:12px" onclick="copyReportsOnly()">📋</button> <button class="modal-btn secondary" style="padding:4px 10px;font-size:12px" onclick="downloadReportsOnly()">⬇</button></span></h4>
-        <div id="resReports"></div>
+      <div class="results-period-quick">
+        <button type="button" class="modal-btn secondary" onclick="setResultsPeriod('week')">Текущая неделя</button>
+        <button type="button" class="modal-btn secondary" onclick="setResultsPeriod('lastweek')">Прошлая неделя</button>
+        <button type="button" class="modal-btn secondary" onclick="setResultsPeriod('month')">Текущий месяц</button>
       </div>
     </div>
+    <div class="results-stats" id="resStats"></div>
+    <div id="resBody"></div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать всё</button>
       <button class="modal-btn secondary" onclick="downloadResultsMd()">⬇ Markdown</button>
