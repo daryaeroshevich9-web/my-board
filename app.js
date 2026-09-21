@@ -266,18 +266,18 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Summernote с аккуратным фолбэком ---
-const SN_TOOLBAR = [
-  ['undo',['undo','redo']],
-  ['style',['style']],
-  ['font',['bold','italic','underline','strike','clear']],
-  ['color',['color']],
-  ['para',['ul','ol','indent','outdent']],
-  ['table',['table']],
-  ['insert',['link','hr']],
-  ['view',['codeview']]
+// --- Редактор: Quill с аккуратным фолбэком ---
+const QUILL_TOOLBAR = [
+  [{ 'header': [1, 2, 3, false] }],
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'color': [] }, { 'background': [] }],
+  [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+  [{ 'indent': '-1' }, { 'indent': '+1' }],
+  ['blockquote', 'code-block'],
+  ['link'],
+  ['clean']
 ];
-function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote); }
+function quillAvailable(){ return typeof window.Quill !== 'undefined'; }
 function indentLines(ta, dir){
   const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
   const ls = v.lastIndexOf('\n', s - 1) + 1;
@@ -290,23 +290,38 @@ function indentLines(ta, dir){
 }
 function makeEditor(hostId){
   const host = document.getElementById(hostId);
-  let snEl = null, ta = null;
+  let quill = null;
+  let quillWrap = null;
+  let ta = null;
   return {
     init(content, asHtml){
       this.destroy();
+      if (!host) return;
       const html = asHtml ? sanitizeHtml(content||'') : (content ? renderRich(content) : '');
-      if (snAvailable()) {
+
+      if (quillAvailable()) {
         try {
-          snEl = window.jQuery('<div></div>');
-          window.jQuery(host).append(snEl);
-          snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
-          snEl.summernote('code', html || '');
+          quillWrap = document.createElement('div');
+          quillWrap.className = 'quill-editor';
+          host.appendChild(quillWrap);
+          quill = new window.Quill(quillWrap, {
+            theme: 'snow',
+            placeholder: 'Текст…',
+            modules: { toolbar: QUILL_TOOLBAR }
+          });
+          if (html) {
+            try { quill.clipboard.dangerouslyPasteHTML(html); }
+            catch(e) { quill.root.innerHTML = html; }
+          }
           return;
         } catch(e) {
-          try { snEl.summernote('destroy'); } catch(e2){}
-          snEl = null;
+          quill = null;
+          if (quillWrap) { quillWrap.remove(); quillWrap = null; }
+          host.innerHTML = '';
         }
       }
+
+      // Fallback: обычный textarea
       const tb = document.createElement('div');
       tb.className = 'fmt-toolbar';
       tb.innerHTML = '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
@@ -331,25 +346,37 @@ function makeEditor(hostId){
       autoGrow(ta);
     },
     get(){
-      if (snEl) return sanitizeHtml(snEl.summernote('code'));
+      if (quill) {
+        let html;
+        try {
+          html = (typeof quill.getSemanticHTML === 'function') ? quill.getSemanticHTML() : quill.root.innerHTML;
+        } catch(e) {
+          html = quill.root.innerHTML;
+        }
+        return sanitizeHtml(html);
+      }
       return ta ? ta.value : '';
     },
     plain(){ return htmlToPlain(this.get()).trim(); },
     appendText(chunk){
       if (!chunk) return;
-      if (snEl) {
-        let c = snEl.summernote('code');
-        c = c.replace(/<p><br\s*\/?><\/p>\s*$/,'');
-        c += '<p>' + escapeHtml(chunk).replace(/\n/g,'<br>') + '</p>';
-        snEl.summernote('code', c);
+      if (quill) {
+        const existing = quill.getText().trim();
+        const toInsert = (existing ? '\n' : '') + chunk;
+        quill.insertText(quill.getLength(), toInsert, 'user');
+        try { quill.setSelection(quill.getLength(), 0); } catch(e){}
       } else if (ta) {
         ta.value += (ta.value && !/\n$/.test(ta.value) ? '\n' : '') + chunk;
         autoGrow(ta);
       }
     },
-    focus(){ if (snEl) { try{ snEl.summernote('focus'); }catch(e){} } else if (ta) ta.focus(); },
+    focus(){
+      if (quill) { try { quill.focus(); } catch(e){} }
+      else if (ta) ta.focus();
+    },
     destroy(){
-      if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
+      if (quill) { try { quill = null; } catch(e){} }
+      if (quillWrap) { quillWrap.remove(); quillWrap = null; }
       if (host) host.innerHTML = '';
       ta = null;
     }
