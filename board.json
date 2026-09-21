@@ -283,8 +283,8 @@
   "dayreports": [
     {
       "date": "2026-09-21",
-      "text": "<ul><li>Тестирование&nbsp;доставки&nbsp;в&nbsp;LED</li><li>3&nbsp;взлета&nbsp;3&nbsp;посадки</li><li>интервью&nbsp;по&nbsp;Софb</li><li>второе&nbsp;тестирование&nbsp;supervision</li></ul>",
-      "updated": "2026-09-21T18:03:16.366Z"
+      "text": "- Тестирование доставки в LED\n- 3 взлета 3 посадки\n- интервью по Софb\n- второе тестирование supervision",
+      "updated": "2026-09-21T18:43:14.486Z"
     }
   ]
 }
