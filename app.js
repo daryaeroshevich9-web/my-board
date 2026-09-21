@@ -1,1660 +1,353 @@
-const STORAGE_KEY = 'darya_board_tasks';
-const PERSONAL_KEY = 'darya_personal_notes';
-const DAYNOTES_KEY = 'darya_board_daynotes';
-const ZONES_KEY = 'darya_board_zones';
-const TOKEN_KEY = 'darya_board_token';
-const INIT_KEY = 'darya_board_init';
-const PIN_KEY = 'darya_board_sbpinned';
-const PAGE_KEY = 'darya_board_page';
-const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
-const TINT_COUNT = 6;
-const TINT_HEX = ['#3A5F8A', '#B04A5E', '#A67C00', '#3E7A5E', '#6B4FA0', '#0E7490'];
-const SUB_VISIBLE = 5;
-const DEFAULT_ZONES = [
-  {key:'other', label:'Прочее', emoji:'📋', hidden:false, tint:0, color:null},
-  {key:'portal', label:'Портал 2.0', emoji:'🚪', hidden:false, tint:1, color:null},
-  {key:'aviabit', label:'Авиабит', emoji:'🛩️', hidden:false, tint:2, color:null}
-];
-const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-const ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
-const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
-const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
-const ELLIPSIS = '⋯';
-let expandedText = new Set();
-let expandedSubs = new Set();
-let expandedSubText = new Set();
-function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
-function loadZones(){
-  try{
-    const raw = localStorage.getItem(ZONES_KEY);
-    if(raw){ const z=JSON.parse(raw); if(Array.isArray(z)&&z.length) return z.map(migrateZone); }
-  }catch(e){}
-  return DEFAULT_ZONES.map(z=>Object.assign({},z));
-}
-function migratePersonalNote(t){
-  if (!t.id) t.id = Date.now() + Math.floor(Math.random()*10000);
-  if (!t.created) t.created = new Date().toISOString();
-  if (t.done === undefined) t.done = false;
-  if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
-  if (!Array.isArray(t.subtasks)) t.subtasks = [];
-  t.subOpen = false;
-  return t;
-}
-function migrateDayNote(d){
-  if (!d || !d.date) return null;
-  return {date: d.date, text: String(d.text || ''), updated: d.updated || new Date().toISOString()};
-}
-let zones = loadZones();
-let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-let personal = (JSON.parse(localStorage.getItem(PERSONAL_KEY) || '[]')).map(migratePersonalNote);
-let dayNotes = (JSON.parse(localStorage.getItem(DAYNOTES_KEY) || '[]')).map(migrateDayNote).filter(Boolean);
-tasks.forEach(migrateTask);
-let currentAddZone = null, currentNoteId = null;
-let cloudSha = null, suppressPush = true, pushTimer = null;
-let pendingQuickLines = [];
-let currentPage = localStorage.getItem(PAGE_KEY) || 'board';
-let calYear = new Date().getFullYear();
-let calMonth = new Date().getMonth();
-let currentDayDate = null;
-let dayInitial = '';
-function migrateTask(t) {
-  if (t.deleted) t.archived = true;
-  t.deleted = false;
-  if (!Array.isArray(t.subtasks)) t.subtasks = [];
-  if (!Array.isArray(t.tags)) t.tags = [];
-  t.subOpen = false;
-  if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
-  if (t.archived === undefined) t.archived = false;
-  if (t.due === undefined) t.due = null;
-  if (t.pinned === undefined) t.pinned = false;
-  if (!t.created) t.created = new Date().toISOString();
-  return t;
-}
-function capFirst(s){
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-function shortText(s, n){
-  const t = String(s || '');
-  return t.length > (n || 40) ? t.slice(0, (n || 40)) + '…' : t;
-}
-function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
-function zoneByKey(key){ return zones.find(z=>z.key===key); }
-function tintIndex(z){ return (z.tint||0) % TINT_COUNT; }
-function labelFor(key){ const z=zoneByKey(key); return z? z.label : key; }
-function b64e(str) { const b = new TextEncoder().encode(str); let s = ''; b.forEach(x => s += String.fromCharCode(x)); return btoa(s); }
-function b64d(str) { const bin = atob(str.replace(/\n/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
-function hexA(hex, a){
-  let h = String(hex||'').replace('#','');
-  if (h.length === 3) h = h.split('').map(x=>x+x).join('');
-  if (h.length !== 6) return 'rgba(127,127,127,' + a + ')';
-  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
-  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
-}
-function zoneStyle(z){
-  if (z.color) return '--zone-color:' + z.color + ';--z-bg:' + hexA(z.color,.22) + ';--z-bd:' + hexA(z.color,.5);
-  const n = tintIndex(z);
-  return '--zone-color:var(--tint-c-' + n + ');--z-bg:var(--tint-bg-' + n + ');--z-bd:var(--tint-bd-' + n + ')';
-}
-function zoneTagStyle(z){
-  if (z.color) return 'background:' + hexA(z.color,.22) + ';border-color:' + hexA(z.color,.5) + ';color:' + z.color;
-  const n = tintIndex(z);
-  return 'background:var(--tint-bg-' + n + ');border-color:var(--tint-bd-' + n + ');color:var(--tint-c-' + n + ')';
-}
-function isoOf(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-function todayISO(){ return isoOf(new Date()); }
-function parseLocal(s){ const p = s.split('-'); return new Date(Number(p[0]), Number(p[1])-1, Number(p[2])); }
-function fmtDate(s){ return s.slice(8,10) + '.' + s.slice(5,7); }
-function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-function dueState(t){
-  if (!t.due) return null;
-  if (t.done) return 'done';
-  const today = parseLocal(todayISO());
-  const d = parseLocal(t.due);
-  const diff = Math.round((d - today) / 86400000);
-  if (diff < 0) return 'over';
-  if (diff === 0) return 'today';
-  if (diff === 1) return 'tomorrow';
-  return 'later';
-}
-const WEEKDAYS = {'понедельник':1,'вторник':2,'среда':3,'четверг':4,'пятница':5,'суббота':6,'воскресенье':0};
-function parseMagic(raw){
-  let text = String(raw||'');
-  let due = null;
-  const today = parseLocal(todayISO());
-  if (/\bпослезавтра\b/i.test(text)) { due = isoOf(addDays(today,2)); text = text.replace(/послезавтра/ig,' '); }
-  else if (/\bзавтра\b/i.test(text)) { due = isoOf(addDays(today,1)); text = text.replace(/завтра/ig,' '); }
-  else if (/\bсегодня\b/i.test(text)) { due = isoOf(today); text = text.replace(/сегодня/ig,' '); }
-  if (!due) {
-    const wdRe = /\b(?:в|во)\s+(понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\b/i;
-    const m = text.match(wdRe);
-    if (m) {
-      const target = WEEKDAYS[m[1].toLowerCase()];
-      const cur = today.getDay();
-      const diff = (target - cur + 7) % 7;
-      due = isoOf(addDays(today, diff));
-      text = text.replace(wdRe, ' ');
-    }
-  }
-  if (!due) {
-    const dm = text.match(/\b(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?\b/);
-    if (dm) {
-      const day = +dm[1], mon = +dm[2];
-      let year = dm[3] ? +dm[3] : today.getFullYear();
-      if (year < 100) year += 2000;
-      let d = new Date(year, mon-1, day);
-      if (!dm[3] && d < today) d = new Date(year+1, mon-1, day);
-      due = isoOf(d);
-      text = text.replace(/\b\d{1,2}\.\d{1,2}(?:\.\d{2,4})?\b/, ' ');
-    }
-  }
-  text = text.replace(/\s{2,}/g,' ').trim();
-  return {text: text, due: due};
-}
-function renderRich(raw){
-  const lines = String(raw == null ? '' : raw).split('\n');
-  let html = '';
-  let listType = null;
-  const closeList = () => { if (listType) { html += '</' + listType + '>'; listType = null; } };
-  const inline = s => escapeHtml(s)
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/_([^_]+)_/g, '<em>$1</em>');
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const ul = line.match(/^\s*[-•*]\s+(.*)$/);
-    const ol = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
-    if (ul) { if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
-    if (ol) { if (listType !== 'ol') { closeList(); html += '<ol>'; listType = 'ol'; } html += '<li>' + inline(ol[2]) + '</li>'; continue; }
-    closeList();
-    html += '<div class="rich-line">' + inline(line) + '</div>';
-  }
-  closeList();
-  return html;
-}
-function autoGrow(ta){
-  if (!ta || ta.tagName !== 'TEXTAREA') return;
-  ta.style.height = 'auto';
-  const max = parseFloat(getComputedStyle(ta).maxHeight);
-  const h = Math.min(ta.scrollHeight, isNaN(max) ? ta.scrollHeight : max);
-  ta.style.height = h + 'px';
-}
-document.addEventListener('input', e => {
-  if (e.target && e.target.tagName === 'TEXTAREA') autoGrow(e.target);
-});
-function listKeydown(e){
-  if (e.key !== 'Enter' || e.ctrlKey || e.metaKey) return false;
-  const ta = e.target;
-  if (!ta || ta.tagName !== 'TEXTAREA') return false;
-  const pos = ta.selectionStart;
-  if (pos !== ta.selectionEnd) return false;
-  const before = ta.value.slice(0, pos);
-  const lineStart = before.lastIndexOf('\n') + 1;
-  const line = before.slice(lineStart);
-  const m = line.match(/^(\s*)([-•*]|\d+[.)])(\s+)(.*)$/);
-  if (!m) return false;
-  e.preventDefault();
-  if (m[4].trim() === '') {
-    ta.value = ta.value.slice(0, lineStart) + ta.value.slice(pos);
-    ta.selectionStart = ta.selectionEnd = lineStart;
-  } else {
-    let marker;
-    const num = m[2].match(/^(\d+)([.)])$/);
-    if (num) marker = (parseInt(num[1], 10) + 1) + num[2] + m[3];
-    else marker = m[2] + m[3];
-    const ins = '\n' + m[1] + marker;
-    ta.value = before + ins + ta.value.slice(pos);
-    ta.selectionStart = ta.selectionEnd = pos + ins.length;
-  }
-  autoGrow(ta);
-  return true;
-}
-function fmtApply(ta, type){
-  if (!ta) return;
-  const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
-  if (type === 'b' || type === 'i') {
-    const sel = v.slice(s, e) || 'текст';
-    const ins = type === 'b' ? '**' + sel + '**' : '*' + sel + '*';
-    ta.value = v.slice(0, s) + ins + v.slice(e);
-    ta.focus();
-    ta.selectionStart = s;
-    ta.selectionEnd = s + ins.length;
-    autoGrow(ta);
-    return;
-  }
-  if (s === e) {
-    const before = v.slice(0, s);
-    const lineStart = before.lastIndexOf('\n') + 1;
-    const lineEnd = v.indexOf('\n', s);
-    const lineEndPos = lineEnd === -1 ? v.length : lineEnd;
-    const line = v.slice(lineStart, lineEndPos);
-    const has = line.match(/^(\s*)[-•]\s+/);
-    if (has) {
-      ta.value = v.slice(0, lineStart) + line.slice(has[0].length) + v.slice(lineEndPos);
-      ta.selectionStart = ta.selectionEnd = s - has[0].length;
-    } else {
-      ta.value = v.slice(0, lineStart) + '- ' + line + v.slice(lineEndPos);
-      ta.selectionStart = ta.selectionEnd = s + 2;
-    }
-    ta.focus();
-    autoGrow(ta);
-    return;
-  }
-  const sel = v.slice(s, e);
-  const ins = sel.split('\n').map(l => '- ' + l.replace(/^\s*[-•]\s+/, '')).join('\n');
-  ta.value = v.slice(0, s) + ins + v.slice(e);
-  ta.focus();
-  ta.selectionStart = s;
-  ta.selectionEnd = s + ins.length;
-  autoGrow(ta);
-}
-function fmtAdd(type){ fmtApply(document.getElementById('addInput'), type); }
-function fmtDay(type){ fmtApply(document.getElementById('dayInput'), type); }
-function fmtSub(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-subadd="' + tid + '"]'), type); }
-function fmtSubP(event, tid, type){ event.preventDefault(); fmtApply(document.querySelector('[data-psubadd="' + tid + '"]'), type); }
-let toastTimer = null;
-function notify(text, ok){
-  const t = document.getElementById('toast');
-  t.textContent = text;
-  t.classList.toggle('success', !!ok);
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
-}
-let confirmCb = null;
-function askConfirm(text, cb, yesLabel){
-  document.getElementById('confirmText').textContent = text;
-  document.getElementById('confirmYes').textContent = yesLabel || 'Подтвердить';
-  confirmCb = cb;
-  document.getElementById('confirmModal').classList.add('open');
-}
-document.getElementById('confirmYes').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('open');
-  const cb = confirmCb; confirmCb = null;
-  if (cb) cb();
-});
-document.getElementById('confirmNo').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('open');
-  confirmCb = null;
-});
-const sidebarEl = document.getElementById('sidebar');
-const backdropEl = document.getElementById('sbBackdrop');
-function togglePin(){
-  const pinned = sidebarEl.classList.toggle('pinned');
-  document.body.classList.toggle('sb-pinned', pinned);
-  localStorage.setItem(PIN_KEY, pinned ? '1' : '0');
-}
-function openSbMobile(){ sidebarEl.classList.add('open'); backdropEl.classList.add('show'); }
-function closeSb(){ sidebarEl.classList.remove('open'); backdropEl.classList.remove('show'); }
-function closeSbMobile(){ if (window.innerWidth <= 720) closeSb(); }
-document.getElementById('sbToggle').addEventListener('click', () => {
-  if (sidebarEl.classList.contains('open')) closeSb(); else openSbMobile();
-});
-if (localStorage.getItem(PIN_KEY) === '1') {
-  sidebarEl.classList.add('pinned');
-  document.body.classList.add('sb-pinned');
-}
-const sbSearchIco = document.getElementById('sbSearchIco');
-const sbSearchInput = document.getElementById('searchInput');
-sbSearchIco.addEventListener('click', () => {
-  sidebarEl.classList.add('search-open');
-  sbSearchInput.focus();
-});
-sbSearchInput.addEventListener('blur', () => {
-  sidebarEl.classList.remove('search-open');
-});
-function saveDayNotes(){
-  localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
-  if (!suppressPush) schedulePush();
-}
-function dayNoteFor(date){ return dayNotes.find(d => d.date === date); }
-function calPrev(){ calMonth--; if (calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
-function calNext(){ calMonth++; if (calMonth > 11){ calMonth = 0; calYear++; } renderCalendar(); }
-function calToday(){ const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); }
-function monthBlock(year, month){
-  const first = new Date(year, month, 1);
-  const offset = (first.getDay() + 6) % 7;
-  const daysIn = new Date(year, month + 1, 0).getDate();
-  const prevDays = new Date(year, month, 0).getDate();
-  const todayStr = todayISO();
-  let cells = '';
-  for (let i = offset - 1; i >= 0; i--) cells += '<span class="cal-day other">' + (prevDays - i) + '</span>';
-  for (let d = 1; d <= daysIn; d++) {
-    const date = isoOf(new Date(year, month, d));
-    const note = dayNoteFor(date);
-    const cls = ['cal-day'];
-    if (date === todayStr) cls.push('today');
-    if (note) cls.push('has-note');
-    const dot = note ? '<span class="cal-dot"></span>' : '';
-    cells += '<button class="' + cls.join(' ') + '" onclick="openDay(\'' + date + '\')" onmouseenter="calHover(event,\'' + date + '\')" onmouseleave="calHide()">' + d + dot + '</button>';
-  }
-  const trail = (7 - ((offset + daysIn) % 7)) % 7;
-  for (let i = 1; i <= trail; i++) cells += '<span class="cal-day other">' + i + '</span>';
-  return '<div class="cal-month">' +
-    '<h4>' + MONTHS_NOM[month] + ' ' + year + '</h4>' +
-    '<div class="cal-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>' +
-    '<div class="cal-grid">' + cells + '</div>' +
-    '</div>';
-}
-function renderCalendar(){
-  const m2 = (calMonth + 1) % 12;
-  const y2 = calYear + (calMonth === 11 ? 1 : 0);
-  document.getElementById('calTitle').textContent = MONTHS_NOM[calMonth] + ' — ' + MONTHS_NOM[m2] + ' ' + y2;
-  document.getElementById('calGrid').innerHTML = monthBlock(calYear, calMonth) + monthBlock(y2, m2);
-}
-function calHover(event, date){
-  if (!window.matchMedia('(hover:hover)').matches) return;
-  const note = dayNoteFor(date);
-  if (!note) { calHide(); return; }
-  const pop = document.getElementById('calPop');
-  const p = parseLocal(date);
-  pop.innerHTML = '<div class="cal-pop-date">' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</div>' +
-    '<div class="cal-pop-note">' + renderRich(capFirst(note.text)) + '</div>';
-  pop.classList.add('show');
-  const r = event.currentTarget.getBoundingClientRect();
-  const pw = pop.offsetWidth, ph = pop.offsetHeight;
-  let left = r.right + 8;
-  if (left + pw > window.innerWidth - 8) left = Math.max(8, r.left - pw - 8);
-  let top = r.top;
-  if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
-  pop.style.left = left + 'px';
-  pop.style.top = top + 'px';
-}
-function calHide(){ document.getElementById('calPop').classList.remove('show'); }
-function openDay(date){
-  calHide();
-  currentDayDate = date;
-  const p = parseLocal(date);
-  document.getElementById('dayTitle').textContent = '📅 ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
-  const note = dayNoteFor(date);
-  const v = capFirst(note ? note.text : '');
-  dayInitial = v;
-  const dayTa = document.getElementById('dayInput');
-  dayTa.value = v;
-  document.getElementById('dayDelete').style.display = note ? '' : 'none';
-  document.getElementById('dayModal').classList.add('open');
-  setTimeout(() => { dayTa.focus(); autoGrow(dayTa); }, 0);
-}
-function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
-function closeDayRequest(){
-  const ta = document.getElementById('dayInput');
-  if (ta.value.trim() !== dayInitial.trim()) {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => closeDay(), 'Закрыть без сохранения');
-  } else closeDay();
-}
-function saveDay(){
-  const text = capFirst(document.getElementById('dayInput').value.trim());
-  if (!text) { deleteDayNote(); return; }
-  const ex = dayNoteFor(currentDayDate);
-  if (ex) { ex.text = text; ex.updated = new Date().toISOString(); }
-  else dayNotes.push({date: currentDayDate, text: text, updated: new Date().toISOString()});
-  saveDayNotes(); renderCalendar(); closeDay(); notify('Заметка сохранена.', true);
-}
-function deleteDayNote(){
-  askConfirm('Удалить заметку за эту дату? Действие необратимо.', () => {
-    dayNotes = dayNotes.filter(d => d.date !== currentDayDate);
-    saveDayNotes(); renderCalendar(); closeDay();
-    notify('Заметка удалена.');
-  }, 'Удалить');
-}
-document.getElementById('dayDelete').addEventListener('click', deleteDayNote);
-document.getElementById('dayCancel').addEventListener('click', closeDayRequest);
-document.getElementById('dayInput').addEventListener('keydown', e => {
-  if (listKeydown(e)) return;
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
-  if (e.key === 'Escape') closeDayRequest();
-});
-function clearTransientInputs() {
-  const s = document.getElementById('searchInput');
-  const qa = document.getElementById('quickAdd');
-  if (s) s.value = '';
-  if (qa) qa.value = '';
-}
-function clearSearchOnly() {
-  const s = document.getElementById('searchInput');
-  if (s && document.activeElement !== s) s.value = '';
-}
-window.addEventListener('load', clearTransientInputs);
-window.addEventListener('pageshow', clearTransientInputs);
-setTimeout(clearSearchOnly, 300);
-setTimeout(clearSearchOnly, 1200);
-function clearLeakedSearch(text) {
-  if (!text) return;
-  const s = document.getElementById('searchInput');
-  if (s && s.value.trim() === text.trim()) s.value = '';
-  setTimeout(() => {
-    const s2 = document.getElementById('searchInput');
-    if (s2 && s2.value.trim() === text.trim()) { s2.value = ''; render(); }
-  }, 60);
-}
-function saveTasks() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  if (!suppressPush) schedulePush();
-}
-function savePersonal() {
-  localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
-  if (!suppressPush) schedulePush();
-}
-function saveZones() {
-  localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
-  if (!suppressPush) schedulePush();
-}
-function schedulePush() {
-  clearTimeout(pushTimer);
-  pushTimer = setTimeout(() => { cloudWrite().catch(() => {}); }, 800);
-}
-function cloudRead() {
-  return fetch(API_URL + '?t=' + Date.now(), {headers: {'Accept': 'application/vnd.github.v3+json'}})
-    .then(r => {
-      if (r.status === 404) return null;
-      if (!r.ok) throw new Error('http ' + r.status);
-      return r.json();
-    })
-    .then(d => {
-      if (!d) return null;
-      cloudSha = d.sha;
-      const parsed = JSON.parse(b64d(d.content));
-      if (parsed && Array.isArray(parsed.zones) && parsed.zones.length) {
-        zones = parsed.zones.map(migrateZone);
-        localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
-      }
-      if (parsed && Array.isArray(parsed.personal)) {
-        personal = parsed.personal.map(migratePersonalNote);
-        localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
-      }
-      if (parsed && Array.isArray(parsed.daynotes)) {
-        dayNotes = parsed.daynotes.map(migrateDayNote).filter(Boolean);
-        localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
-      }
-      return parsed;
-    });
-}
-function cloudWrite() {
-  const token = getToken();
-  if (!token) {
-    openSettings('Без токена изменения останутся только на этом устройстве. Вставь токен, чтобы синхронизироваться с облаком.');
-    return Promise.reject('no-token');
-  }
-  const payload = () => {
-    const b = {message: 'board: sync ' + new Date().toISOString(), content: b64e(JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes}, null, 2))};
-    if (cloudSha) b.sha = cloudSha;
-    return b;
-  };
-  const headers = {'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json'};
-  return fetch(API_URL, {method: 'PUT', headers: headers, body: JSON.stringify(payload())})
-    .then(r => {
-      if (r.status === 409 || r.status === 422) {
-        return cloudRead().then(() => fetch(API_URL, {method: 'PUT', headers: headers, body: JSON.stringify(payload())}));
-      }
-      return r;
-    })
-    .then(r => {
-      if (!r.ok) throw new Error('http ' + r.status);
-      return r.json();
-    })
-    .then(d => { if (d && d.content) cloudSha = d.content.sha; });
-}
-const DONE_ARCHIVE_DELAY = 3 * 24 * 60 * 60 * 1000;
-function sweepDoneToArchive() {
-  const cutoff = Date.now() - DONE_ARCHIVE_DELAY;
-  let changed = false;
-  tasks.forEach(t => {
-    if (t.done && t.doneAt && !t.archived && new Date(t.doneAt).getTime() <= cutoff) { t.archived = true; changed = true; }
-  });
-  if (changed) saveTasks();
-}
-function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
-function splitEmoji(text) {
-  const re = /^\s*(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u;
-  const m = text.match(re);
-  if (m) return {emoji: m[1], rest: text.slice(m[0].length)};
-  return {emoji: null, rest: text};
-}
-function matchesQuery(t, q) {
-  if (!q) return true;
-  if (t.text.toLowerCase().includes(q)) return true;
-  return (t.subtasks || []).some(s => s.text.toLowerCase().includes(q));
-}
-const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-function subAddRowHtml(tid, isPersonal){
-  const attr = isPersonal ? 'data-psubadd' : 'data-subadd';
-  const keyHandler = isPersonal ? 'subKeyP' : 'subKey';
-  const blurHandler = isPersonal ? 'subBlurP' : 'subBlur';
-  const fmtFn = isPersonal ? 'fmtSubP' : 'fmtSub';
-  const voiceFn = isPersonal ? 'startSubVoiceP' : 'startSubVoice';
-  const mic = SpeechRec ? '<button class="sub-mic" onmousedown="event.preventDefault()" onclick="' + voiceFn + '(' + tid + ')" title="Надиктовать подзадачу">🎤</button>' : '';
-  return '<div class="sub-add-row" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:stretch">' +
-    '<textarea class="sub-add" rows="1" style="width:100%" autocomplete="off" autocapitalize="sentences" name="darya_sub_' + tid + '" ' + attr + '="' + tid + '" placeholder="новая подзадача…" title="Enter — новая строка, Ctrl+Enter — сохранить" onkeydown="' + keyHandler + '(event,' + tid + ')" onblur="' + blurHandler + '(event,' + tid + ')"></textarea>' +
-    '<div class="sub-add-tools" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
-    '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'b\')" title="Жирный">Ж</button>' +
-    '<button class="fmt-btn i" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'i\')" title="Курсив">К</button>' +
-    '<button class="fmt-btn" onmousedown="event.preventDefault()" onclick="' + fmtFn + '(event,' + tid + ',\'l\')" title="Список">•</button>' +
-    '<button class="fmt-btn save" onmousedown="event.preventDefault()" onclick="saveSubAddGeneric(event,' + tid + ',' + (isPersonal ? 'true' : 'false') + ')" title="Сохранить подзадачу">✓</button>' +
-    mic +
-    '</div></div>';
-}
-function subtaskHtml(t, s, idx, isPersonal){
-  const onchange = isPersonal ? 'toggleSubP' : 'toggleSub';
-  const editFn = isPersonal ? 'editSubStartP' : 'editSubStart';
-  const delFn = isPersonal ? 'delSubP' : 'delSub';
-  const hidden = (!expandedSubs.has(t.id) && idx >= SUB_VISIBLE) ? ' sub-hidden' : '';
-  const clamped = expandedSubText.has(s.id) ? '' : ' clamped-sub';
-  return '<div class="subtask ' + (s.done ? 'done' : '') + hidden + '">' +
-    '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="' + onchange + '(' + t.id + ',' + s.id + ')">' +
-    '<div class="sub-text" ondblclick="' + editFn + '(event,' + t.id + ',' + s.id + ')" title="Двойной клик — редактировать">' +
-      '<div class="sub-content' + clamped + '">' + renderRich(s.text) + '</div>' +
-      '<button type="button" class="collapse-toggle" data-cst="' + s.id + '" style="display:none"></button>' +
-    '</div>' +
-    '<button class="sub-edit-btn" onclick="' + editFn + '(event,' + t.id + ',' + s.id + ')" title="Редактировать подзадачу">' + PENCIL + '</button>' +
-    '<button class="sub-del" onclick="' + delFn + '(event,' + t.id + ',' + s.id + ')" title="Удалить подзадачу">×</button>' +
-    '</div>';
-}
-function noteHtml(t) {
-  const parts = splitEmoji(t.text);
-  parts.rest = capFirst(parts.rest);
-  const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
-  const pinMark = t.pinned ? '<span class="pin-mark" title="Закреплено">📌</span>' : '';
-  const subDone = t.subtasks.filter(s => s.done).length;
-  const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
-  let dueChip = '';
-  if (t.due) {
-    const st = dueState(t);
-    let cls = 'due-chip ';
-    let content = '';
-    if (st === 'done') { cls += 'due-done'; content = '🔕 ' + fmtDate(t.due); }
-    else if (st === 'over') { cls += 'due-r'; content = '🔔 ' + fmtDate(t.due) + ' · просрочено'; }
-    else if (st === 'today') { cls += 'due-r'; content = '🔔 ' + fmtDate(t.due) + ' · сегодня'; }
-    else if (st === 'tomorrow') { cls += 'due-o'; content = '🔔 ' + fmtDate(t.due) + ' · завтра'; }
-    else { cls += 'due-y'; content = '🔔 ' + fmtDate(t.due); }
-    dueChip = '<span class="' + cls + '">' + content + '</span>';
-  }
-  const metaRow = dueChip ? '<div class="due-row">' + dueChip + '</div>' : '';
-  let subBlock = '';
-  if (t.subtasks.length || t.subOpen) {
-    subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx, false)).join('') +
-      '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
-      (t.subOpen ? subAddRowHtml(t.id, false) : '') +
-      '</div>';
-  }
-  return '<div class="note ' + (t.done ? 'done' : '') + (t.pinned ? ' pinned' : '') + '" data-id="' + t.id + '">' +
-    '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleDone(' + t.id + ')">' +
-    '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + pinMark + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
-      '<button type="button" class="collapse-toggle" data-ct="' + t.id + '" style="display:none"></button>' +
-      metaRow +
-      subBlock +
-    '</div>' +
-    '<div class="note-actions">' +
-      '<button class="note-action" onclick="openNoteMenu(' + t.id + ', event)" title="Действия">' + ELLIPSIS + '</button>' +
-    '</div>' +
-  '</div>';
-}
-function personalNoteHtml(t) {
-  const parts = splitEmoji(t.text);
-  parts.rest = capFirst(parts.rest);
-  const chip = parts.emoji ? '<span class="emoji-chip">' + parts.emoji + '</span>' : '';
-  const subDone = t.subtasks.filter(s => s.done).length;
-  const subChip = t.subtasks.length ? '<span class="sub-count">' + subDone + '/' + t.subtasks.length + '</span>' : '';
-  let subBlock = '';
-  if (t.subtasks.length || t.subOpen) {
-    subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx, true)).join('') +
-      '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
-      (t.subOpen ? subAddRowHtml(t.id, true) : '') +
-      '</div>';
-  }
-  return '<div class="note ' + (t.done ? 'done' : '') + '" data-id="' + t.id + '">' +
-    '<input type="checkbox" class="note-checkbox" ' + (t.done ? 'checked' : '') + ' onchange="togglePersonalDone(' + t.id + ')">' +
-    '<div class="note-body">' +
-      '<div class="note-content" ondblclick="editNoteInline(' + t.id + ')">' + chip + '<span class="note-text' + (expandedText.has(t.id) ? '' : ' clamped') + '">' + renderRich(parts.rest) + '</span>' + subChip + '</div>' +
-      '<button type="button" class="collapse-toggle" data-ct="' + t.id + '" style="display:none"></button>' +
-      subBlock +
-    '</div>' +
-    '<div class="note-actions">' +
-      '<button class="note-action" onclick="openSubsP(' + t.id + ')" title="Подзадачи">' + ARROW_DOWN + '</button>' +
-      '<button class="note-action" onclick="editNoteInline(' + t.id + ')" title="Редактировать">' + PENCIL + '</button>' +
-      '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда">' + TRASH + '</button>' +
-    '</div>' +
-  '</div>';
-}
-function applyTextCollapse(noteEl){
-  const nt = noteEl.querySelector('.note-text');
-  const tog = noteEl.querySelector('.collapse-toggle[data-ct]');
-  if (!nt || !tog) return;
-  const id = Number(tog.getAttribute('data-ct'));
-  if (expandedText.has(id)) {
-    nt.classList.remove('clamped');
-    tog.textContent = 'свернуть ▴';
-    tog.style.display = '';
-  } else {
-    nt.classList.add('clamped');
-    if (nt.scrollHeight > nt.clientHeight + 2) { tog.textContent = 'развернуть ▾'; tog.style.display = ''; }
-    else { tog.style.display = 'none'; }
-  }
-}
-function applySubCollapse(noteEl){
-  const tog = noteEl.querySelector('.collapse-toggle[data-cs]');
-  if (!tog) return;
-  const id = Number(tog.getAttribute('data-cs'));
-  const subs = noteEl.querySelectorAll('.subtask');
-  const expanded = expandedSubs.has(id);
-  subs.forEach((s, i) => s.classList.toggle('sub-hidden', !expanded && i >= SUB_VISIBLE));
-  if (subs.length > SUB_VISIBLE) {
-    tog.style.display = '';
-    tog.textContent = expanded ? 'свернуть ▴' : 'развернуть (ещё ' + (subs.length - SUB_VISIBLE) + ') ▾';
-  } else {
-    tog.style.display = 'none';
-  }
-}
-function applySubTextCollapse(noteEl){
-  noteEl.querySelectorAll('.collapse-toggle[data-cst]').forEach(tog => {
-    const content = tog.parentElement ? tog.parentElement.querySelector('.sub-content') : null;
-    if (!content) return;
-    const id = Number(tog.getAttribute('data-cst'));
-    if (expandedSubText.has(id)) {
-      content.classList.remove('clamped-sub');
-      tog.textContent = 'свернуть ▴';
-      tog.style.display = '';
-    } else {
-      content.classList.add('clamped-sub');
-      if (content.scrollHeight > content.clientHeight + 2) { tog.textContent = 'развернуть ▾'; tog.style.display = ''; }
-      else { tog.style.display = 'none'; }
-    }
-  });
-}
-function refreshCollapses(){
-  document.querySelectorAll('.note').forEach(el => {
-    applyTextCollapse(el);
-    applySubCollapse(el);
-    applySubTextCollapse(el);
-  });
-}
-document.addEventListener('click', e => {
-  const tog = e.target && e.target.closest ? e.target.closest('.collapse-toggle') : null;
-  if (!tog) return;
-  const noteEl = tog.closest('.note');
-  if (!noteEl) return;
-  if (tog.hasAttribute('data-ct')) {
-    const id = Number(tog.getAttribute('data-ct'));
-    if (expandedText.has(id)) expandedText.delete(id); else expandedText.add(id);
-    applyTextCollapse(noteEl);
-  } else if (tog.hasAttribute('data-cs')) {
-    const id = Number(tog.getAttribute('data-cs'));
-    if (expandedSubs.has(id)) expandedSubs.delete(id); else expandedSubs.add(id);
-    applySubCollapse(noteEl);
-  } else if (tog.hasAttribute('data-cst')) {
-    const id = Number(tog.getAttribute('data-cst'));
-    if (expandedSubText.has(id)) expandedSubText.delete(id); else expandedSubText.add(id);
-    applySubTextCollapse(noteEl);
-  }
-});
-function render() {
-  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-  const active = tasks.filter(t => !t.archived);
-  document.getElementById('totalCount').textContent = active.length;
-  document.getElementById('progressCount').textContent = active.filter(t => !t.done).length;
-  document.getElementById('doneCount').textContent = active.filter(t => t.done).length;
-  const wrap = document.getElementById('zonesWrap');
-  const visible = zones.filter(z => !z.hidden);
-  wrap.innerHTML = visible.map(z => {
-    const zoneActive = active.filter(x => x.zone === z.key);
-    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q)).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-    let notesHtml;
-    if (zoneTasks.length === 0) notesHtml = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
-    else notesHtml = zoneTasks.map(noteHtml).join('');
-    return '<section class="zone" data-zone="' + z.key + '" style="' + zoneStyle(z) + '">' +
-      '<header class="zone-head">' +
-        '<div class="zone-emoji">' + (z.emoji || '🗂️') + '</div>' +
-        '<h2>' + escapeHtml(z.label) + '</h2>' +
-        '<span class="count">' + zoneTasks.length + '</span>' +
-        '<button class="add-btn" onclick="openAddFor(\'' + z.key + '\')" title="Добавить задачу">+</button>' +
-        '<button class="zone-hide-btn" onclick="hideZone(\'' + z.key + '\')" title="Скрыть раздел">' + EYE_OFF + '</button>' +
-      '</header>' +
-      '<div class="notes">' + notesHtml + '</div>' +
-    '</section>';
-  }).join('');
-  renderPersonal();
-}
-function renderPersonal() {
-  const list = document.getElementById('personalNotes');
-  const n = personal.length;
-  document.getElementById('personalCount').textContent = n + (n === 1 ? ' заметка' : (n > 1 && n < 5 ? ' заметки' : ' заметок'));
-  if (!n) {
-    list.innerHTML = '<div class="empty">Пока нет личных заметок — добавьте через поле в шапке</div>';
-  } else {
-    list.innerHTML = personal.slice().reverse().map(personalNoteHtml).join('');
-  }
-  renderCalendar();
-  refreshCollapses();
-}
-function switchPage(page) {
-  currentPage = page;
-  localStorage.setItem(PAGE_KEY, page);
-  const isBoard = page === 'board';
-  document.getElementById('boardPage').classList.toggle('page-hidden', !isBoard);
-  document.getElementById('personalPage').classList.toggle('page-hidden', isBoard);
-  document.getElementById('navBoard').classList.toggle('active', isBoard);
-  document.getElementById('navPersonal').classList.toggle('active', !isBoard);
-  document.querySelectorAll('.sb-board-only').forEach(el => el.classList.toggle('page-hidden', !isBoard));
-  document.getElementById('pageTitle').textContent = isBoard ? 'Доска Дарьи' : 'Личное';
-  document.getElementById('pageSubtitle').textContent = isBoard ? 'Авиабит · Портал 2.0 · Прочее' : 'Заметки только для меня';
-  document.getElementById('quickAdd').placeholder = isBoard ? 'Быстрая задача' : 'Личная заметка';
-  calHide();
-  if (!isBoard) renderCalendar();
-}
-function toggleDone(id) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  t.done = !t.done;
-  t.doneAt = t.done ? new Date().toISOString() : null;
-  saveTasks(); render();
-}
-function togglePersonalDone(id) {
-  const t = personal.find(x => x.id === id);
-  if (!t) return;
-  t.done = !t.done;
-  t.doneAt = t.done ? new Date().toISOString() : null;
-  savePersonal(); renderPersonal();
-}
-function editNoteInline(id){
-  const noteEl = document.querySelector('.note[data-id="' + id + '"]');
-  if (!noteEl) return;
-  const content = noteEl.querySelector('.note-content');
-  if (!content || content.dataset.editing) return;
-  const isPersonal = !!noteEl.closest('#personalPage');
-  const store = isPersonal ? personal : tasks;
-  const t = store.find(x => x.id === id);
-  if (!t) return;
-  content.dataset.editing = '1';
-  const ctog = noteEl.querySelector('.collapse-toggle[data-ct]');
-  if (ctog) ctog.style.display = 'none';
-  const wrap = document.createElement('div');
-  wrap.className = 'sub-edit-wrap';
-  wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:1';
-  wrap.innerHTML = '<textarea class="sub-edit" rows="2" style="width:100%" autocapitalize="sentences"></textarea>' +
-    '<div class="fmt-bar" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
-    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
-    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
-    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
-    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
-    '</div>';
-  const ta = wrap.querySelector('textarea');
-  ta.value = t.text;
-  content.replaceWith(wrap);
-  ta.focus();
-  autoGrow(ta);
-  let finished = false;
-  const finish = commit => {
-    if (finished) return;
-    finished = true;
-    if (commit) {
-      const v = capFirst(ta.value.trim());
-      if (v) t.text = v;
-      if (isPersonal) { savePersonal(); renderPersonal(); }
-      else { saveTasks(); render(); }
-      notify('Заметка сохранена.', true);
-    } else {
-      if (isPersonal) renderPersonal(); else render();
-    }
-  };
-  const requestCancel = () => {
-    if (ta.value.trim() !== t.text.trim()) {
-      askConfirm('Закрыть без сохранения? Изменения заметки будут потеряны.', () => finish(false), 'Закрыть без сохранения');
-    } else finish(false);
-  };
-  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
-    btn.addEventListener('mousedown', e => e.preventDefault());
-    btn.addEventListener('click', () => {
-      const f = btn.dataset.f;
-      if (f === 'save') finish(true);
-      else if (f === 'cancel') requestCancel();
-      else fmtApply(ta, f);
-    });
-  });
-  ta.addEventListener('keydown', e => {
-    if (listKeydown(e)) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
-    if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
-  });
-  ta.addEventListener('blur', () => finish(true));
-}
-function deletePersonal(id) {
-  const t = personal.find(x => x.id === id);
-  const label = t ? shortText(t.text) : '';
-  askConfirm('Удалить личную заметку «' + label + '» навсегда? Это действие необратимо.', () => {
-    personal = personal.filter(x => x.id !== id);
-    savePersonal(); renderPersonal();
-  }, 'Удалить');
-}
-function archiveTask(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) { t.archived = true; saveTasks(); render(); }
-}
-function unarchiveTask(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) { t.archived = false; saveTasks(); render(); renderArchList(); }
-}
-function permanentDelete(id) {
-  const t = tasks.find(x => x.id === id);
-  const label = t ? shortText(t.text) : '';
-  askConfirm('Удалить задачу «' + label + '» навсегда? Это действие необратимо.', () => {
-    tasks = tasks.filter(x => x.id !== id);
-    saveTasks(); render(); renderArchList();
-  }, 'Удалить');
-}
-function togglePinTask(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) { t.pinned = !t.pinned; saveTasks(); render(); }
-}
-function openSubs(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) {
-    t.subOpen = true; render();
-    const el = document.querySelector('[data-subadd="' + id + '"]');
-    if (el) el.focus();
-  }
-}
-function openSubsP(id) {
-  const t = personal.find(x => x.id === id);
-  if (t) {
-    t.subOpen = true; renderPersonal();
-    const el = document.querySelector('[data-psubadd="' + id + '"]');
-    if (el) el.focus();
-  }
-}
-function subKey(event, tid) {
-  if (listKeydown(event)) return;
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault();
-    saveSubAddGeneric(event, tid, false);
-    return;
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    event.target.dataset.handled = '1';
-    const t = tasks.find(x => x.id === tid);
-    if (t) { t.subOpen = false; localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); render(); }
-  }
-}
-function subKeyP(event, tid) {
-  if (listKeydown(event)) return;
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault();
-    saveSubAddGeneric(event, tid, true);
-    return;
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    event.target.dataset.handled = '1';
-    const t = personal.find(x => x.id === tid);
-    if (t) { t.subOpen = false; localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); renderPersonal(); }
-  }
-}
-function saveSubAddGeneric(event, tid, isPersonal){
-  if (event) event.preventDefault();
-  const sel = isPersonal ? '[data-psubadd="' + tid + '"]' : '[data-subadd="' + tid + '"]';
-  const ta = document.querySelector(sel);
-  if (!ta) return;
-  const v = capFirst(ta.value.trim());
-  ta.dataset.handled = '1';
-  if (v) {
-    const store = isPersonal ? personal : tasks;
-    const t = store.find(x => x.id === tid);
-    if (t) t.subtasks.push({id: Date.now(), text: v, done: false});
-  }
-  ta.value = '';
-  if (isPersonal) { savePersonal(); renderPersonal(); }
-  else { saveTasks(); render(); }
-  if (v) notify('Подзадача сохранена.', true);
-  setTimeout(() => { const el = document.querySelector(sel); if (el) el.focus(); }, 0);
-}
-function subBlur(event, tid) {
-  const input = event.target;
-  setTimeout(() => {
-    if (input.dataset && input.dataset.handled) return;
-    if (listening && voiceTarget === input) return;
-    const t = tasks.find(x => x.id === tid);
-    if (!t) return;
-    const v = capFirst(input.value.trim());
-    if (v) {
-      t.subtasks.push({id: Date.now(), text: v, done: false});
-      t.subOpen = false;
-      saveTasks();
-      notify('Подзадача сохранена.', true);
-    } else {
-      t.subOpen = false;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    }
-    render();
-  }, 0);
-}
-function subBlurP(event, tid) {
-  const input = event.target;
-  setTimeout(() => {
-    if (input.dataset && input.dataset.handled) return;
-    if (listening && voiceTarget === input) return;
-    const t = personal.find(x => x.id === tid);
-    if (!t) return;
-    const v = capFirst(input.value.trim());
-    if (v) {
-      t.subtasks.push({id: Date.now(), text: v, done: false});
-      t.subOpen = false;
-      savePersonal();
-      notify('Подзадача сохранена.', true);
-    } else {
-      t.subOpen = false;
-      localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal));
-    }
-    renderPersonal();
-  }, 0);
-}
-function buildSubEditWrap(tid, sid, isPersonal){
-  const store = isPersonal ? personal : tasks;
-  const t = store.find(x => x.id === tid);
-  if (!t) return null;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return null;
-  const wrap = document.createElement('div');
-  wrap.className = 'sub-edit-wrap';
-  wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;flex:1';
-  wrap.innerHTML = '<textarea class="sub-edit" rows="2" style="width:100%" autocapitalize="sentences"></textarea>' +
-    '<div class="fmt-bar" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
-    '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
-    '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
-    '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
-    '<button class="fmt-btn save" data-f="save" title="Сохранить">✓</button>' +
-    '<button class="fmt-btn cancel" data-f="cancel" title="Отмена">✕</button>' +
-    '</div>';
-  const ta = wrap.querySelector('textarea');
-  ta.value = s.text;
-  let finished = false;
-  const finish = commit => {
-    if (finished) return;
-    finished = true;
-    if (commit) {
-      const v = capFirst(ta.value.trim());
-      if (v) s.text = v;
-      if (isPersonal) { savePersonal(); renderPersonal(); }
-      else { saveTasks(); render(); }
-      notify('Подзадача сохранена.', true);
-    } else {
-      if (isPersonal) renderPersonal(); else render();
-    }
-  };
-  const requestCancel = () => {
-    if (ta.value.trim() !== s.text.trim()) {
-      askConfirm('Закрыть без сохранения? Изменения подзадачи будут потеряны.', () => finish(false), 'Закрыть без сохранения');
-    } else finish(false);
-  };
-  wrap.querySelectorAll('.fmt-btn').forEach(btn => {
-    btn.addEventListener('mousedown', e => e.preventDefault());
-    btn.addEventListener('click', () => {
-      const f = btn.dataset.f;
-      if (f === 'save') finish(true);
-      else if (f === 'cancel') requestCancel();
-      else fmtApply(ta, f);
-    });
-  });
-  ta.addEventListener('keydown', e => {
-    if (listKeydown(e)) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); }
-    if (e.key === 'Escape') { e.preventDefault(); requestCancel(); }
-  });
-  ta.addEventListener('blur', () => finish(true));
-  return {wrap: wrap, ta: ta};
-}
-function editSubStart(event, tid, sid) {
-  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
-  const span = row ? row.querySelector('.sub-text') : null;
-  if (!span) return;
-  const built = buildSubEditWrap(tid, sid, false);
-  if (!built) return;
-  span.replaceWith(built.wrap);
-  built.ta.focus();
-  autoGrow(built.ta);
-}
-function editSubStartP(event, tid, sid) {
-  const row = event.currentTarget.closest ? event.currentTarget.closest('.subtask') : null;
-  const span = row ? row.querySelector('.sub-text') : null;
-  if (!span) return;
-  const built = buildSubEditWrap(tid, sid, true);
-  if (!built) return;
-  span.replaceWith(built.wrap);
-  built.ta.focus();
-  autoGrow(built.ta);
-}
-function toggleSub(tid, sid) {
-  const t = tasks.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
-}
-function toggleSubP(tid, sid) {
-  const t = personal.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; savePersonal(); renderPersonal(); } }
-}
-function delSub(event, tid, sid) {
-  event.preventDefault(); event.stopPropagation();
-  const t = tasks.find(x => x.id === tid);
-  if (!t) return;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return;
-  askConfirm('Удалить подзадачу «' + shortText(s.text) + '»? Действие необратимо.', () => {
-    const t2 = tasks.find(x => x.id === tid);
-    if (!t2) return;
-    t2.subtasks = t2.subtasks.filter(y => y.id !== sid);
-    saveTasks(); render();
-  }, 'Удалить');
-}
-function delSubP(event, tid, sid) {
-  event.preventDefault(); event.stopPropagation();
-  const t = personal.find(x => x.id === tid);
-  if (!t) return;
-  const s = t.subtasks.find(y => y.id === sid);
-  if (!s) return;
-  askConfirm('Удалить подзадачу «' + shortText(s.text) + '»? Действие необратимо.', () => {
-    const t2 = personal.find(x => x.id === tid);
-    if (!t2) return;
-    t2.subtasks = t2.subtasks.filter(y => y.id !== sid);
-    savePersonal(); renderPersonal();
-  }, 'Удалить');
-}
-function startSubVoice(tid) {
-  const el = document.querySelector('[data-subadd="' + tid + '"]');
-  if (el) startVoice(el);
-}
-function startSubVoiceP(tid) {
-  const el = document.querySelector('[data-psubadd="' + tid + '"]');
-  if (el) startVoice(el);
-}
-const popEl = document.getElementById('notePop');
-function closeNoteMenu() { popEl.classList.remove('open'); }
-function openNoteMenu(id, ev) {
-  ev.stopPropagation();
-  currentNoteId = id;
-  const t = tasks.find(x => x.id === id);
-  const dueLabel = t && t.due ? ': ' + fmtDate(t.due) : '';
-  const pinLabel = t && t.pinned ? 'Открепить' : 'Закрепить';
-  popEl.innerHTML =
-    '<button class="pop-item" onclick="popEdit()">✏️ Редактировать</button>' +
-    '<button class="pop-item" onclick="popDue()">🔔 Срок' + dueLabel + '</button>' +
-    '<button class="pop-item" onclick="popPin()">📌 ' + pinLabel + '</button>' +
-    '<button class="pop-item" onclick="popSubs()">📝 Подзадачи</button>' +
-    '<button class="pop-item" onclick="popArchive()">📦 В архив</button>';
-  popEl.classList.add('open');
-  const r = ev.currentTarget.getBoundingClientRect();
-  const pw = popEl.offsetWidth, ph = popEl.offsetHeight;
-  let left = r.left;
-  if (left + pw > window.innerWidth - 8) left = Math.max(8, window.innerWidth - pw - 8);
-  let top = r.bottom + 6;
-  if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
-  popEl.style.left = left + 'px';
-  popEl.style.top = top + 'px';
-}
-function popSubs(){ const id=currentNoteId; closeNoteMenu(); openSubs(id); }
-function popEdit(){ const id=currentNoteId; closeNoteMenu(); editNoteInline(id); }
-function popDue(){ const id=currentNoteId; closeNoteMenu(); openDue(id); }
-function popPin(){ const id=currentNoteId; closeNoteMenu(); togglePinTask(id); }
-function popArchive(){ const id=currentNoteId; closeNoteMenu(); archiveTask(id); }
-document.addEventListener('click', e => {
-  if (popEl.classList.contains('open') && !e.target.closest('#notePop') && !e.target.closest('.note-action')) closeNoteMenu();
-});
-window.addEventListener('scroll', () => { if (popEl.classList.contains('open')) closeNoteMenu(); calHide(); }, true);
-window.addEventListener('resize', () => { closeNoteMenu(); calHide(); });
-function openDue(id) {
-  currentNoteId = id;
-  const t = tasks.find(x => x.id === id);
-  document.getElementById('dueInput').value = t && t.due ? t.due : '';
-  document.getElementById('dueModal').classList.add('open');
-}
-function closeDue() { document.getElementById('dueModal').classList.remove('open'); }
-function saveDue() {
-  const t = tasks.find(x => x.id === currentNoteId);
-  if (t) { t.due = document.getElementById('dueInput').value || null; saveTasks(); render(); }
-  closeDue();
-}
-function clearDue() {
-  const t = tasks.find(x => x.id === currentNoteId);
-  if (t) { t.due = null; saveTasks(); render(); }
-  closeDue();
-}
-document.getElementById('clearDoneBtn').addEventListener('click', () => {
-  const n = tasks.filter(t => t.done && !t.archived).length;
-  if (!n) { notify('Нет выполненных задач для отправки в архив.'); return; }
-  document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
-  document.getElementById('broomModal').classList.add('open');
-});
-function closeBroom() { document.getElementById('broomModal').classList.remove('open'); }
-function confirmBroom() {
-  tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
-  saveTasks(); render(); closeBroom();
-}
-function openArchive() {
-  document.getElementById('archSearch').value = '';
-  renderArchList();
-  document.getElementById('archiveModal').classList.add('open');
-  closeSbMobile();
-}
-function closeArchive() { document.getElementById('archiveModal').classList.remove('open'); }
-function renderArchList() {
-  const q = (document.getElementById('archSearch').value || '').trim().toLowerCase();
-  const list = document.getElementById('archList');
-  const arch = tasks.filter(t => t.archived && matchesQuery(t, q))
-    .sort((a, b) => (b.doneAt || b.created || '').localeCompare(a.doneAt || a.created || ''));
-  if (!arch.length) {
-    list.innerHTML = '<div class="empty">' + (q ? 'Ничего не найдено' : 'Архив пуст') + '</div>';
-    return;
-  }
-  list.innerHTML = arch.map(t => {
-    const z = zoneByKey(t.zone);
-    const dateLabel = t.done ? (t.doneAt ? ' (' + t.doneAt.slice(0, 10) + ')' : '') : '';
-    return '<div class="list-note"><span class="zone-tag" style="' + (z ? zoneTagStyle(z) : '') + '">' + escapeHtml(labelFor(t.zone)) + '</span><span class="note-text">' + escapeHtml(t.text) + ' <span style="color:var(--text-muted);font-size:12px">' + dateLabel + '</span></span>' +
-      '<div class="list-actions">' +
-      '<button class="list-btn restore" onclick="unarchiveTask(' + t.id + ')">Вернуть</button>' +
-      '<button class="list-btn delete" onclick="permanentDelete(' + t.id + ')">Удалить</button>' +
-      '</div></div>';
-  }).join('');
-}
-document.getElementById('archSearch').addEventListener('input', renderArchList);
-function openAddFor(zoneKey) {
-  currentAddZone = zoneKey;
-  const ta = document.getElementById('addInput');
-  ta.value = '';
-  ta.style.height = '';
-  document.getElementById('addModal').classList.add('open');
-  setTimeout(() => ta.focus(), 0);
-}
-function hideZone(key) {
-  const z = zoneByKey(key);
-  if (z) { z.hidden = true; saveZones(); render(); }
-}
-function toggleZone(key) {
-  const z = zoneByKey(key);
-  if (z) { z.hidden = !z.hidden; saveZones(); render(); renderZonesList(); }
-}
-function setZoneColor(key, val) {
-  const z = zoneByKey(key);
-  if (z) { z.color = val; saveZones(); render(); renderZonesList(); }
-}
-function resetZoneColor(key) {
-  const z = zoneByKey(key);
-  if (z) { z.color = null; saveZones(); render(); renderZonesList(); }
-}
-function renderZonesList() {
-  const list = document.getElementById('zonesList');
-  list.innerHTML = zones.map(z =>
-    '<div class="zone-row">' +
-      '<span class="zone-row-emoji">' + (z.emoji || '🗂️') + '</span>' +
-      '<span class="zone-row-label">' + escapeHtml(z.label) + '</span>' +
-      '<input type="color" class="zone-color-pick" value="' + (z.color || TINT_HEX[tintIndex(z)]) + '" onchange="setZoneColor(\'' + z.key + '\', this.value)" title="Цвет раздела">' +
-      (z.color ? '<button class="modal-btn secondary" onclick="resetZoneColor(\'' + z.key + '\')">Авто</button>' : '') +
-      '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button>' +
-    '</div>'
-  ).join('');
-}
-function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); closeSbMobile(); }
-function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
-document.getElementById('addZoneBtn').addEventListener('click', () => {
-  const label = capFirst(document.getElementById('newZoneLabel').value.trim());
-  if (!label) { notify('Введите название раздела.'); return; }
-  const emoji = document.getElementById('newZoneEmoji').value.trim() || '🗂️';
-  zones.push({key: 'z' + Date.now(), label: label, emoji: emoji, hidden: false, tint: zones.length % TINT_COUNT, color: null});
-  saveZones(); render(); renderZonesList();
-  document.getElementById('newZoneLabel').value = '';
-  document.getElementById('newZoneEmoji').value = '';
-});
-function createParsed(line, zoneKey) {
-  const p = parseMagic(line);
-  const text = capFirst(p.text || line.trim());
-  tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
-  clearLeakedSearch(text);
-  saveTasks(); render();
-  notify('Задача добавлена.', true);
-}
-function addPersonalNote(line) {
-  const text = capFirst(line.trim());
-  if (!text) return;
-  personal.push(migratePersonalNote({id: Date.now() + Math.floor(Math.random()*10000), text: text, created: new Date().toISOString(), done: false, doneAt: null, subtasks: []}));
-  savePersonal(); renderPersonal();
-  notify('Заметка добавлена.', true);
-}
-function quickAddMany(lines) {
-  if (currentPage === 'personal') {
-    lines.forEach(l => addPersonalNote(l));
-    return;
-  }
-  const other = zoneByKey('other');
-  if (other && !other.hidden) {
-    lines.forEach(l => createParsed(l, 'other'));
-    return;
-  }
-  pendingQuickLines = lines;
-  const wrap = document.getElementById('quickZoneList');
-  wrap.innerHTML = zones.map(z =>
-    '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
-    (z.hidden ? ' (скрыт — появится при выборе)' : '') + '</button>'
-  ).join('');
-  document.getElementById('quickZoneModal').classList.add('open');
-}
-function chooseQuickZone(zoneKey) {
-  const z = zoneByKey(zoneKey);
-  if (!z) return;
-  if (z.hidden) { z.hidden = false; saveZones(); }
-  pendingQuickLines.forEach(l => createParsed(l, zoneKey));
-  pendingQuickLines = [];
-  document.getElementById('quickZoneModal').classList.remove('open');
-}
-function closeQuickZone() {
-  document.getElementById('quickZoneModal').classList.remove('open');
-  if (pendingQuickLines.length) {
-    document.getElementById('quickAdd').value = pendingQuickLines.join('\n');
-    pendingQuickLines = [];
-  }
-}
-document.getElementById('quickAdd').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const text = e.target.value.trim();
-    if (!text) return;
-    e.target.value = ''; voiceBase = '';
-    quickAddMany([text]);
-  }
-});
-document.getElementById('quickAdd').addEventListener('paste', e => {
-  const text = (e.clipboardData || window.clipboardData).getData('text');
-  if (text && text.includes('\n')) {
-    e.preventDefault();
-    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
-  }
-});
-let lastResults = {md: '', rows: []};
-function mondayOf(dateStr) {
-  const x = parseLocal(dateStr);
-  const day = (x.getDay() + 6) % 7;
-  x.setDate(x.getDate() - day);
-  return isoOf(x);
-}
-function openResults() {
-  const today = todayISO();
-  document.getElementById('resFrom').value = mondayOf(today);
-  document.getElementById('resTo').value = today;
-  renderResults();
-  document.getElementById('resultsModal').classList.add('open');
-  closeSbMobile();
-}
-function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
-function renderResults() {
-  const from = document.getElementById('resFrom').value;
-  const to = document.getElementById('resTo').value;
-  if (!from || !to) return;
-  const fromDate = parseLocal(from);
-  const toDate = parseLocal(to); toDate.setHours(23, 59, 59, 999);
-  const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
-  const openTasks = tasks.filter(t => !t.archived && !t.done && new Date(t.created) <= toDate);
-  document.getElementById('resStats').innerHTML =
-    '<span class="results-chip">✅ Выполнено: ' + doneInPeriod.length + '</span>' +
-    '<span class="results-chip">⚡ В работе: ' + openTasks.length + '</span>';
-  let bodyHtml = '';
-  zones.forEach(z => {
-    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
-    const zoneOpen = openTasks.filter(t => t.zone === z.key);
-    if (!zoneDone.length && !zoneOpen.length) return;
-    bodyHtml += '<div class="results-block"><h4>' + escapeHtml(z.label) + '</h4>';
-    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(t.text) + '<span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
-    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(t.text) + '</div>'; });
-    bodyHtml += '</div>';
-  });
-  if (!bodyHtml) bodyHtml = '<div class="empty">За период данных нет</div>';
-  document.getElementById('resBody').innerHTML = bodyHtml;
-  let md = '# Еженедельный статус\n**Период:** ' + from + ' — ' + to + '\n\n';
-  md += '**Выполнено за период:** ' + doneInPeriod.length + '\n';
-  md += '**В работе на конец периода:** ' + openTasks.length + '\n\n';
-  zones.forEach(z => {
-    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
-    const zoneOpen = openTasks.filter(t => t.zone === z.key);
-    if (!zoneDone.length && !zoneOpen.length) return;
-    md += '## ' + z.label + '\n\n';
-    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + t.text + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
-    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + t.text + '\n'); md += '\n'; }
-  });
-  const rows = [];
-  doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
-  openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: t.text, status: 'В работе', created: t.created.slice(0, 10), done: ''}));
-  lastResults = {md: md, rows: rows};
-}
-function resultsCsv() {
-  const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  let csv = 'Зона;Задача;Статус;Создана;Выполнена\n';
-  lastResults.rows.forEach(r => { csv += [r.zone, r.text, r.status, r.created, r.done].map(esc).join(';') + '\n'; });
-  return csv;
-}
-function downloadBlob(content, name, mime) {
-  const blob = new Blob([content], {type: mime});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(a.href);
-}
-function copyResultsMd() {
-  navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!', true));
-}
-function downloadResultsMd() {
-  downloadBlob(lastResults.md, 'itogi-nedeli-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
-  notify('Файл Markdown сохранён.', true);
-}
-function downloadResultsCsv() {
-  downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
-  notify('Файл CSV сохранён.', true);
-}
-document.getElementById('resFrom').addEventListener('change', renderResults);
-document.getElementById('resTo').addEventListener('change', renderResults);
-function backupDownload() {
-  const data = JSON.stringify({tasks: tasks, zones: zones, personal: personal, daynotes: dayNotes}, null, 2);
-  downloadBlob(data, 'darya-board-backup-' + todayISO() + '.json', 'application/json;charset=utf-8');
-  notify('Резервная копия сохранена.', true);
-}
-function backupUploadClick() { document.getElementById('backupFile').click(); }
-document.getElementById('backupFile').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  file.text().then(raw => {
-    try {
-      const parsed = JSON.parse(raw);
-      if (!parsed || !Array.isArray(parsed.tasks)) { notify('Файл не похож на резервную копию доски.'); return; }
-      const count = parsed.tasks.length;
-      const zonesBackup = Array.isArray(parsed.zones) && parsed.zones.length ? parsed.zones : null;
-      const personalBackup = Array.isArray(parsed.personal) ? parsed.personal : null;
-      const daynotesBackup = Array.isArray(parsed.daynotes) ? parsed.daynotes : null;
-      askConfirm('Заменить текущие данные данными из файла (' + count + ' задач)?', () => {
-        tasks = parsed.tasks.map(migrateTask);
-        if (zonesBackup) { zones = zonesBackup.map(migrateZone); localStorage.setItem(ZONES_KEY, JSON.stringify(zones)); }
-        if (personalBackup) { personal = personalBackup.map(migratePersonalNote); localStorage.setItem(PERSONAL_KEY, JSON.stringify(personal)); }
-        if (daynotesBackup) { dayNotes = daynotesBackup.map(migrateDayNote).filter(Boolean); localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes)); }
-        saveTasks(); render();
-        notify('Копия загружена.', true);
-      }, 'Заменить');
-    } catch (err) {
-      notify('Не удалось прочитать файл: ' + err.message);
-    }
-    e.target.value = '';
-  });
-});
-// --- Голосовой ввод: непрерывная диктовка с авто-возобновлением ---
-const micBtn = document.getElementById('micBtn');
-let recog = null, listening = false, voiceBase = '', voiceTarget = null;
-let voiceActive = false, voiceFinal = '';
-function voiceJoin(base, add){
-  if (!add) return base;
-  return base + (base && !base.endsWith(' ') ? ' ' : '') + add;
-}
-function startRecog(){
-  try { recog.start(); } catch (err) {}
-  listening = true;
-  updateMicUI();
-}
-function startVoice(el) {
-  if (!SpeechRec || !el) return;
-  if (voiceActive) {
-    voiceActive = false; listening = false;
-    try { recog.stop(); } catch (err) {}
-    updateMicUI();
-    return;
-  }
-  voiceTarget = el;
-  voiceBase = el.value.trim();
-  voiceFinal = '';
-  voiceActive = true;
-  el.focus();
-  startRecog();
-}
-function updateMicUI() {
-  micBtn.classList.toggle('listening', voiceActive && voiceTarget === document.getElementById('quickAdd'));
-}
-if (!SpeechRec) { micBtn.classList.add('hidden'); } else {
-  recog = new SpeechRec();
-  recog.lang = 'ru-RU'; recog.interimResults = true; recog.continuous = true; recog.maxAlternatives = 1;
-  recog.onresult = e => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) voiceFinal += t + ' ';
-      else interim += t;
-    }
-    const el = voiceTarget || document.getElementById('quickAdd');
-    el.value = voiceJoin(voiceBase, (voiceFinal + interim).trim());
-    autoGrow(el);
-  };
-  recog.onend = () => {
-    listening = false;
-    if (voiceActive) { setTimeout(() => { if (voiceActive) startRecog(); }, 250); }
-    else { voiceTarget = null; updateMicUI(); }
-  };
-  recog.onerror = e => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      voiceActive = false; listening = false; updateMicUI();
-      notify('Браузер запретил доступ к микрофону. Разрешите его в настройках сайта.');
-      return;
-    }
-    if (e.error === 'network') {
-      voiceActive = false; listening = false; updateMicUI();
-      notify('Голосовой ввод недоступен: нет соединения с сервисом распознавания.');
-      return;
-    }
-    // no-speech / aborted: onend сам перезапустит сессию
-  };
-  micBtn.addEventListener('click', () => startVoice(document.getElementById('quickAdd')));
-}
-let dragState = null;
-let justDragged = false;
-function beginDrag() {
-  if (!dragState) return;
-  const note = dragState.note;
-  const r = note.getBoundingClientRect();
-  const ghost = note.cloneNode(true);
-  ghost.className = 'drag-ghost';
-  ghost.style.width = r.width + 'px';
-  ghost.style.left = r.left + 'px';
-  ghost.style.top = r.top + 'px';
-  document.body.appendChild(ghost);
-  dragState.ghost = ghost;
-  dragState.ox = dragState.x0 - r.left;
-  dragState.oy = dragState.y0 - r.top;
-  dragState.lastX = dragState.x0;
-  dragState.lastY = dragState.y0;
-  dragState.active = true;
-  note.classList.add('dragging-src');
-  positionGhost(dragState.x0, dragState.y0);
-}
-function positionGhost(x, y) {
-  if (!dragState || !dragState.ghost) return;
-  dragState.ghost.style.left = (x - dragState.ox) + 'px';
-  dragState.ghost.style.top = (y - dragState.oy) + 'px';
-  let found = null;
-  document.querySelectorAll('.zone').forEach(z => {
-    const r = z.getBoundingClientRect();
-    const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-    z.classList.toggle('drop-hover', inside);
-    if (inside) found = z;
-  });
-  dragState.zone = found;
-}
-function endDrag(commit) {
-  if (!dragState) return;
-  clearTimeout(dragState.timer);
-  if (dragState.active) {
-    if (dragState.ghost) dragState.ghost.remove();
-    document.querySelectorAll('.zone').forEach(z => z.classList.remove('drop-hover'));
-    dragState.note.classList.remove('dragging-src');
-    if (commit && dragState.zone) {
-      const draggedId = dragState.id;
-      const targetZone = dragState.zone.dataset.zone;
-      const dropY = dragState.lastY;
-      const t = tasks.find(x => x.id === draggedId);
-      if (t && !t.archived) {
-        const noteEls = Array.from(dragState.zone.querySelectorAll('.note'))
-          .filter(el => Number(el.dataset.id) !== draggedId);
-        let insertBeforeId = null;
-        for (const el of noteEls) {
-          const r = el.getBoundingClientRect();
-          if (dropY < r.top + r.height / 2) { insertBeforeId = Number(el.dataset.id); break; }
-        }
-        const draggedIdx = tasks.findIndex(x => x.id === draggedId);
-        if (draggedIdx !== -1) {
-          const draggedTask = tasks.splice(draggedIdx, 1)[0];
-          draggedTask.zone = targetZone;
-          if (insertBeforeId !== null) {
-            const refIdx = tasks.findIndex(x => x.id === insertBeforeId);
-            tasks.splice(refIdx === -1 ? tasks.length : refIdx, 0, draggedTask);
-          } else {
-            let lastIdx = -1;
-            for (let i = 0; i < tasks.length; i++) {
-              if (tasks[i].zone === targetZone && !tasks[i].archived) lastIdx = i;
-            }
-            tasks.splice(lastIdx + 1, 0, draggedTask);
-          }
-          saveTasks();
-        }
-      }
-    }
-    justDragged = true;
-    setTimeout(() => { justDragged = false; }, 0);
-    render();
-  }
-  dragState = null;
-}
-document.addEventListener('pointerdown', e => {
-  const note = e.target.closest ? e.target.closest('.note') : null;
-  if (!note) return;
-  if (e.target.closest && e.target.closest('input,button,textarea,.subtask,.sub-edit,.sub-edit-wrap')) return;
-  if (e.pointerType === 'mouse' && e.button !== 0) return;
-  dragState = {id: Number(note.dataset.id), x0: e.clientX, y0: e.clientY, active: false, type: e.pointerType, note: note, timer: null, ghost: null, zone: null, ox: 0, oy: 0, lastX: e.clientX, lastY: e.clientY};
-  if (e.pointerType !== 'mouse') {
-    dragState.timer = setTimeout(() => { if (dragState && !dragState.active) beginDrag(); }, 280);
-  }
-});
-document.addEventListener('pointermove', e => {
-  if (!dragState) return;
-  if (!dragState.active) {
-    const dx = e.clientX - dragState.x0, dy = e.clientY - dragState.y0;
-    if (Math.hypot(dx, dy) > 6) {
-      if (dragState.type === 'mouse') beginDrag();
-      else { clearTimeout(dragState.timer); dragState = null; return; }
-    } else return;
-  }
-  dragState.lastX = e.clientX;
-  dragState.lastY = e.clientY;
-  positionGhost(e.clientX, e.clientY);
-});
-document.addEventListener('pointerup', () => endDrag(true));
-document.addEventListener('pointercancel', () => endDrag(false));
-document.addEventListener('touchmove', e => { if (dragState && dragState.active) e.preventDefault(); }, {passive: false});
-document.addEventListener('contextmenu', e => { if (dragState) e.preventDefault(); });
-document.addEventListener('click', e => {
-  if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; }
-}, true);
-function openSettings(hint) {
-  if (hint) document.getElementById('settingsHint').textContent = hint;
-  else document.getElementById('settingsHint').textContent = 'Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.';
-  const wrap = document.getElementById('tokenInputWrap');
-  wrap.innerHTML = '';
-  const inp = document.createElement('input');
-  inp.type = 'password';
-  inp.id = 'tokenInput';
-  inp.name = 'darya_token';
-  inp.placeholder = 'github_pat_...';
-  inp.autocomplete = 'new-password';
-  inp.value = getToken();
-  wrap.appendChild(inp);
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
-  document.getElementById('settingsModal').classList.add('open');
-  setTimeout(() => inp.focus(), 0);
-  closeSbMobile();
-}
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
-  const wrap = document.getElementById('tokenInputWrap');
-  if (wrap) wrap.innerHTML = '';
-}
-function saveSettings() {
-  const inp = document.getElementById('tokenInput');
-  const v = inp ? inp.value.trim() : '';
-  if (v) localStorage.setItem(TOKEN_KEY, v); else localStorage.removeItem(TOKEN_KEY);
-  closeSettings();
-  schedulePush();
-}
-document.getElementById('logoBtn').addEventListener('click', () => openSettings());
-document.getElementById('cancelSettings').addEventListener('click', closeSettings);
-document.getElementById('saveSettings').addEventListener('click', saveSettings);
-document.getElementById('searchInput').addEventListener('input', render);
-document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
-function closeAddRequest(){
-  const ta = document.getElementById('addInput');
-  if (ta.value.trim() !== '') {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { ta.value = ''; ta.style.height = ''; document.getElementById('addModal').classList.remove('open'); }, 'Закрыть без сохранения');
-  } else {
-    document.getElementById('addModal').classList.remove('open');
-  }
-}
-document.getElementById('confirmAdd').addEventListener('click', () => {
-  const ta = document.getElementById('addInput');
-  const text = capFirst(ta.value.trim());
-  if (text) {
-    const p = parseMagic(text);
-    tasks.push(migrateTask({id: Date.now(), zone: currentAddZone || 'other', text: p.text || text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
-    clearLeakedSearch(text);
-    saveTasks(); render();
-    ta.value = ''; ta.style.height = '';
-    document.getElementById('addModal').classList.remove('open');
-    notify('Задача добавлена.', true);
-  }
-});
-document.getElementById('addInput').addEventListener('keydown', e => {
-  if (listKeydown(e)) return;
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
-  if (e.key === 'Escape') closeAddRequest();
-});
-document.querySelectorAll('.modal').forEach(modal => {
-  modal.addEventListener('click', e => {
-    if (e.target === modal) {
-      if (modal.id === 'confirmModal') { modal.classList.remove('open'); confirmCb = null; }
-      else if (modal.id === 'dayModal') closeDayRequest();
-      else if (modal.id === 'addModal') closeAddRequest();
-      else modal.classList.remove('open');
-    }
-  });
-});
-document.getElementById('quickZoneModal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeQuickZone();
-});
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
-clearTransientInputs();
-switchPage(currentPage);
-render();
-if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по логотипу.');
-cloudRead()
-  .then(data => {
-    if (data && Array.isArray(data.tasks)) {
-      const cloudTasks = data.tasks.map(migrateTask);
-      if (cloudTasks.length > 0) {
-        tasks = cloudTasks;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-        localStorage.setItem(INIT_KEY, '1');
-      }
-      // Пустое облако при живом кэше или отсутствие данных — не затираем локальные данные.
-    }
-  })
-  .catch(() => {})
-  .then(() => {
-    suppressPush = false;
-    sweepDoneToArchive();
-    render();
-  });
+:root{
+  --bg-top:#FDFCFA; --dot:rgba(150,145,125,.14);
+  --card:#FDFDFC; --topbar:rgba(253,253,252,.85); --border:rgba(80,76,60,.12); --dash:rgba(80,76,60,.30);
+  --text:#1A1A1A; --text-secondary:#44546A; --text-muted:#9AA0A6;
+  --black:#1F3655; --on-black:#ffffff; --accent:#3A5F8A; --accent-ring:rgba(58,95,138,.18);
+  --soft:#F0EDE6; --soft-hover:#E6E2D8; --scroll:rgba(68,84,106,.35);
+  --input-bg:rgba(255,255,255,.65); --note-btn-bg:rgba(255,255,255,.5);
+  --maxw:1560px;
+  --tint-c-0:#3A5F8A; --tint-bg-0:rgba(228,235,243,.50); --tint-bd-0:rgba(185,201,221,.55);
+  --tint-c-1:#B04A5E; --tint-bg-1:rgba(247,228,232,.50); --tint-bd-1:rgba(227,196,204,.55);
+  --tint-c-2:#A67C00; --tint-bg-2:rgba(245,238,216,.45); --tint-bd-2:rgba(224,213,174,.55);
+  --tint-c-3:#3E7A5E; --tint-bg-3:rgba(226,240,230,.45); --tint-bd-3:rgba(187,220,201,.55);
+  --tint-c-4:#6B4FA0; --tint-bg-4:rgba(236,230,245,.45); --tint-bd-4:rgba(211,198,230,.55);
+  --tint-c-5:#0E7490; --tint-bg-5:rgba(224,242,245,.45); --tint-bd-5:rgba(181,221,228,.55);
+  --personal-bg:#ECEEF0; --personal-bd:#D5D9DD;
+}
+*{box-sizing:border-box;margin:0}
+body{
+  min-height:100vh;
+  background-color:var(--bg-top);
+  background-image:radial-gradient(var(--dot) 1px, transparent 1.2px);
+  background-size:22px 22px;
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:'Onest',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+@media (min-width:721px){
+  body{margin-left:56px}
+  body.sb-pinned{margin-left:230px}
+}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:6px}
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:56px;z-index:200;
+  background:var(--card);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:4px;padding:12px 8px;overflow:hidden;
+  transition:width .18s ease;
+}
+.sidebar:hover{width:230px}
+.sidebar.pinned{width:230px}
+.sidebar.search-open{width:230px}
+.sb-item{
+  display:flex;align-items:center;gap:10px;height:40px;flex:none;padding:0 10px;border:none;border-radius:8px;
+  background:transparent;cursor:pointer;color:var(--text-secondary);font:inherit;font-size:13px;white-space:nowrap;text-align:left;
+}
+.sb-item:hover{background:var(--soft)}
+.sb-item.active{background:var(--soft);color:var(--text);font-weight:600}
+.sb-ico{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
+.sb-label{opacity:0;transition:opacity .15s}
+.sidebar:hover .sb-label,.sidebar.pinned .sb-label,.sidebar.search-open .sb-label,.sidebar.open .sb-label{opacity:1}
+.sb-search{padding:2px 4px 8px;display:flex;align-items:center;height:48px;flex:none}
+.sb-search input{
+  width:100%;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:8px;
+  background:var(--input-bg);color:var(--text);font:inherit;font-size:13px;
+}
+.sb-search input:focus{outline:none;border-color:var(--accent)}
+.sb-search-ico{
+  display:none;width:40px;height:40px;flex:none;border:1px solid var(--border);border-radius:10px;
+  background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);
+}
+.sb-search-ico:hover{background:var(--card)}
+.sidebar:not(:hover):not(.pinned):not(.search-open):not(.open) .sb-search input{display:none}
+.sidebar:not(:hover):not(.pinned):not(.search-open):not(.open) .sb-search-ico{display:flex}
+.sb-sep{height:1px;background:var(--border);margin:6px 4px}
+.sb-pin{margin-top:auto}
+.sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190}
+.sb-backdrop.show{display:block}
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbar);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.05)}
+.topbar-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sb-toggle{display:none;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);cursor:pointer;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);flex:none}
+.logo{width:40px;height:40px;border-radius:10px;flex:none;cursor:pointer;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.08);object-fit:cover}
+.logo:hover{transform:scale(1.06)}
+.title-block{min-width:120px}
+h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spacing:.2px}
+.subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
+.quick-wrap{display:flex;gap:8px;align-items:center;flex:1 1 320px;flex-wrap:wrap}
+.quick-add{flex:1;min-width:180px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:var(--input-bg);color:var(--text)}
+.quick-add:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:var(--card)}
+.mic-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;flex:none;background:var(--input-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mic-btn svg{width:18px;height:18px;color:var(--text-secondary)}
+.mic-btn:hover{background:var(--card)}
+.mic-btn.listening{background:#b93c32;border-color:#b93c32;animation:pulse 1.2s infinite}
+.mic-btn.listening svg{color:#fff}
+.mic-btn.hidden{display:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(185,60,50,.35)}70%{box-shadow:0 0 0 10px rgba(185,60,50,0)}100%{box-shadow:0 0 0 0 rgba(185,60,50,0)}}
+.quick-add::placeholder{color:var(--text-muted)}
+.mini-stats{display:flex;align-items:center;gap:6px;flex:none;flex-wrap:wrap}
+.mini-stat{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--text-secondary);white-space:nowrap}
+.mini-stat b{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;color:var(--text)}
+.mini-broom{border:1px solid var(--border);background:var(--card);border-radius:999px;width:30px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mini-broom:hover{background:var(--soft)}
+.zones{max-width:var(--maxw);margin:0 auto;padding:20px 28px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+@media (max-width:1100px){ .zones{grid-template-columns:repeat(2,1fr)} }
+.zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.zone.drop-hover{outline:2px dashed var(--black);outline-offset:4px}
+.zone-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.zone-emoji{width:38px;height:38px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,var(--z-bg),var(--z-bd))}
+.zone-head h2{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:600;letter-spacing:.3px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.count{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;color:var(--text-secondary);background:var(--soft);min-width:28px;height:28px;padding:0 8px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex:none}
+.add-btn{width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--black);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:400;line-height:1;transition:all .15s;flex:none}
+.add-btn:hover{transform:scale(1.1);background:var(--soft)}
+.zone-hide-btn{width:24px;height:24px;border:none;border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;transition:all .15s}
+.zone-hide-btn:hover{background:var(--soft);color:var(--text-secondary)}
+.zone-hide-btn svg{width:14px;height:14px}
+.notes{display:flex;flex-direction:column;gap:10px;min-height:40px;max-height:322px;overflow-y:auto;padding-right:2px}
+.note{position:relative;border-radius:12px;padding:12px 14px 12px 44px;font-size:14.5px;line-height:1.5;color:var(--text);font-weight:500;border:1px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .18s, box-shadow .18s, opacity .18s;display:flex;align-items:flex-start;cursor:grab;touch-action:pan-y}
+.zone .note{background:var(--z-bg);border-color:var(--z-bd)}
+.note.pinned{box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.note:active{cursor:grabbing}
+.note.dragging-src{opacity:.35}
+.note:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.10)}
+.drag-ghost{position:fixed;z-index:1200;pointer-events:none;opacity:.95;transform:rotate(2deg);box-shadow:0 18px 40px rgba(0,0,0,.28);border-radius:12px;margin:0;background:var(--card)}
+.note::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--zone-color)}
+.note-checkbox{position:absolute;left:12px;top:12px;width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--zone-color)}
+.note-body{flex:1;min-width:0;display:flex;flex-direction:column}
+.note-content{cursor:text}
+.note-content ul,.note-content ol{margin:4px 0 2px 18px;padding:0}
+.note-content li{margin:2px 0}
+.note-content .rich-line{min-height:1em}
+.note-text.clamped{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.sub-content{word-break:break-word}
+.sub-content.clamped-sub{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.sub-content ul,.sub-content ol{margin:2px 0 2px 16px;padding:0}
+.collapse-toggle{display:block;width:100%;border:none;background:transparent;color:var(--text-muted);font:inherit;font-size:11px;font-weight:600;cursor:pointer;padding:2px 2px 0 0;margin-top:2px;text-align:right;letter-spacing:.2px}
+.collapse-toggle:hover{color:var(--text-secondary);text-decoration:underline}
+.note.done{opacity:.5}
+.note.done .note-text{text-decoration:line-through}
+.pin-mark{font-size:12px;margin-right:6px;vertical-align:middle}
+.due-row{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.due-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;border:1px solid}
+.due-y{background:rgba(240,200,60,.18);border-color:rgba(200,160,20,.45);color:#8a6d1b}
+.due-o{background:rgba(240,150,50,.20);border-color:rgba(210,120,30,.5);color:#b45309}
+.due-r{background:rgba(220,60,50,.16);border-color:rgba(200,50,40,.5);color:#b93c32}
+.due-done{background:var(--soft);border-color:var(--border);color:var(--text-muted)}
+.emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
+.sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
+.subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.subtask{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
+.subtask.sub-hidden{display:none}
+.subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none;margin-top:2px}
+.subtask .sub-text{flex:1;min-width:0;cursor:text}
+.subtask.done .sub-content{text-decoration:line-through;opacity:.6}
+.sub-edit-wrap{display:flex;flex-direction:column;gap:4px;flex:1}
+textarea.sub-edit{width:100%;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font:inherit;font-size:13px;color:var(--text);background:var(--card);resize:vertical;min-height:30px;max-height:192px;line-height:1.4}
+textarea.sub-edit:focus{outline:none;border-color:var(--accent)}
+.fmt-bar{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.fmt-btn{min-width:24px;height:22px;padding:0 6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-secondary);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.fmt-btn:hover{background:var(--soft);color:var(--text)}
+.fmt-btn.i{font-style:italic}
+.fmt-btn.save{color:#047857}
+.fmt-btn.cancel{color:#b93c32}
+.sub-del{border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;line-height:1}
+.sub-del:hover{background:rgba(185,60,50,.1);color:#b93c32}
+.sub-edit-btn{border:none;background:transparent;color:var(--text-muted);cursor:pointer;padding:2px 4px;border-radius:4px;flex:none}
+.sub-edit-btn:hover{background:var(--soft);color:var(--text)}
+.sub-edit-btn svg{width:12px;height:12px}
+.sub-add-row{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:stretch}
+textarea.sub-add{width:100%;border:1px dashed var(--dash);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;color:var(--text);resize:vertical;min-height:32px;max-height:196px;line-height:1.4}
+textarea.sub-add:focus{outline:none;border-color:var(--accent);background:var(--card)}
+.sub-add-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sub-mic{flex:none;width:34px;border:1px dashed var(--dash);border-radius:8px;background:transparent;cursor:pointer;font-size:14px}
+/* Кнопка действий карточки — оверлей, не резервирует место */
+.note-actions{position:absolute;top:10px;right:10px;display:flex;gap:6px;opacity:0;transition:opacity .15s}
+.note:hover .note-actions{opacity:1}
+@media (hover:none){
+  .note{padding-right:44px}
+  .note-actions{opacity:1}
+}
+.note-action{width:28px;height:28px;border:none;border-radius:6px;background:var(--note-btn-bg);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text-secondary);font-weight:700;font-size:15px}
+.note-action:hover{background:var(--card);transform:scale(1.1)}
+.note-action svg{width:16px;height:16px}
+.empty{border:1px dashed var(--dash);border-radius:12px;padding:24px 12px;text-align:center;font-size:13px;color:var(--text-muted);font-weight:500}
+.personal-layout{max-width:var(--maxw);margin:0 auto;padding:24px 28px 40px;display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+.personal-main{min-width:0}
+.cal-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.cal-head{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.cal-head h3{font-family:'Unbounded',sans-serif;font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-nav{width:28px;height:28px;flex:none;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);cursor:pointer;color:var(--text-secondary);font-size:14px}
+.cal-nav:hover{background:var(--soft)}
+.cal-today-btn{border:1px solid var(--border);border-radius:8px;background:var(--input-bg);padding:4px 8px;font:inherit;font-size:11px;cursor:pointer;color:var(--text-secondary);flex:none}
+.cal-today-btn:hover{background:var(--soft)}
+.cal-month{margin-bottom:14px}
+.cal-month:last-of-type{margin-bottom:6px}
+.cal-month h4{font-family:'Unbounded',sans-serif;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;letter-spacing:.3px}
+.cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-week span{text-align:center;font-size:10px;color:var(--text-muted);font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{
+  position:relative;height:38px;border:1px solid transparent;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font:inherit;font-size:12px;
+  color:var(--text-secondary);cursor:pointer;background:transparent;padding:0;
+}
+.cal-day:hover{background:var(--soft)}
+.cal-day.other{opacity:.35;cursor:default}
+.cal-day.other:hover{background:transparent}
+.cal-day.today{border-color:var(--accent);color:var(--text);font-weight:700}
+.cal-day.has-note{background:var(--accent-ring);color:var(--text);font-weight:600}
+.cal-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.cal-legend{margin-top:8px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cal-legend i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+.cal-legend b{font-weight:600;color:var(--text-secondary)}
+.cal-pop{position:fixed;z-index:1250;max-width:260px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 12px;font-size:12px;color:var(--text-secondary);display:none;line-height:1.45}
+.cal-pop.show{display:block}
+.cal-pop-date{font-weight:700;color:var(--text);margin-bottom:6px;font-size:12px}
+.cal-pop-note ul,.cal-pop-note ol{margin:2px 0 2px 16px}
+.personal-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.personal-head h2{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600}
+.personal-count{color:var(--text-muted);font-size:13px}
+.personal-zone{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.personal-zone .note{background:var(--personal-bg);border-color:var(--personal-bd);--zone-color:var(--text-muted)}
+.personal-zone .note-checkbox{accent-color:var(--text-muted)}
+.personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
+.personal-notes{display:flex;flex-direction:column;gap:10px;min-height:420px;max-height:calc(100vh - 320px);overflow-y:auto;padding-right:2px}
+.popmenu{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;display:none;min-width:200px}
+.popmenu.open{display:block}
+.pop-item{display:flex;gap:8px;align-items:center;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font:inherit;font-size:14px;color:var(--text);text-align:left;white-space:nowrap}
+.pop-item:hover{background:var(--soft)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:10px 18px;font-size:14px;color:var(--text);opacity:0;pointer-events:none;transition:all .25s;z-index:1300;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:#E2F0E6;border-color:rgba(4,120,87,.35);color:#047857}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;overflow-y:auto}
+.modal h3{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:600;margin-bottom:16px}
+.modal input[type="text"],.modal input[type="password"],.modal input[type="date"]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:16px;background:var(--input-bg);color:var(--text)}
+.modal textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:8px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:84px;max-height:251px;line-height:1.5}
+.modal textarea:focus{outline:none;border-color:var(--accent)}
+.fmt-toolbar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.fmt-toolbar .fmt-btn{height:26px;font-size:12px}
+.fmt-hint{font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.4}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.modal-btn{padding:10px 20px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.modal-btn.primary{background:var(--black);color:var(--on-black)}
+.modal-btn.primary:hover{filter:brightness(.88)}
+.modal-btn.secondary{background:var(--soft);color:var(--text)}
+.modal-btn.secondary:hover{background:var(--soft-hover)}
+.move-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.move-btn{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--text)}
+.move-btn:hover{background:var(--soft)}
+.settings-hint{font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5}
+.settings-sep{border:none;border-top:1px solid var(--border);margin:16px 0}
+.zone-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.zone-row-emoji{font-size:18px;flex:none}
+.zone-row-label{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px}
+.zone-row .modal-btn{padding:6px 12px;font-size:13px}
+.zone-color-pick{width:34px;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--card);padding:2px;cursor:pointer;flex:none}
+.zone-add-row{display:flex;gap:8px;margin-top:14px;align-items:center}
+.zone-add-row input[type="text"]{margin-bottom:0}
+#newZoneEmoji{width:56px;flex:none;text-align:center}
+#newZoneLabel{flex:1}
+.zone-add-row .modal-btn{flex:none}
+.results-period{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.results-period input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font:inherit;font-size:13px;width:auto;margin-bottom:0}
+.results-stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.results-chip{background:var(--soft);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-secondary)}
+.results-block{margin-bottom:14px}
+.results-block h4{font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.results-item{font-size:14px;padding:4px 0;border-bottom:1px dashed var(--border)}
+.results-item.done-item{color:var(--text-secondary)}
+.results-item .item-date{color:var(--text-muted);font-size:12px;margin-left:6px}
+.list-note{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.zone-tag{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;flex:none;border:1px solid}
+.list-note .note-text{flex:1;font-size:14px;color:var(--text-secondary)}
+.list-actions{display:flex;gap:8px}
+.list-btn{padding:6px 14px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.list-btn.restore{background:rgba(4,120,87,.10);color:#047857}
+.list-btn.restore:hover{background:rgba(4,120,87,.18)}
+.list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
+.list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
+.page-hidden{display:none !important}
+@media (max-width:900px){
+  .personal-layout{grid-template-columns:1fr}
+  .personal-notes{min-height:40px;max-height:none;overflow:visible}
+}
+@media (max-width:720px){
+  .topbar-inner{padding:12px 16px;gap:10px}
+  h1{font-size:17px}
+  .subtitle{display:none}
+  .sb-toggle{display:flex}
+  .sidebar{width:260px;transform:translateX(-100%);transition:transform .2s}
+  .sidebar.open{transform:none}
+  .zones{padding:14px 16px 24px;gap:14px;grid-template-columns:1fr}
+  .zone{border-radius:16px;padding:14px}
+  .personal-layout{padding:14px 16px 32px}
+}
+/* ===== FOCUS FLIGHT (вкладка) ===== */
+#flightPage{max-width:var(--maxw);margin:0 auto;padding:20px 28px 40px}
+#flightPage header{margin-bottom:18px}
+#flightPage h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:22px;letter-spacing:.3px}
+#flightPage .sub{color:var(--text-muted);font-size:13px;margin-top:4px}
+#flightPage .sub b{color:var(--accent);font-weight:700}
+#flightPage .grid{display:grid;grid-template-columns:1fr;gap:20px}
+@media (min-width:900px){ #flightPage .grid{grid-template-columns:1fr 1fr;align-items:start} }
+#flightPage .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:0 8px 24px rgba(0,0,0,.05)}
+#flightPage label{display:block;font-size:13px;color:var(--text-secondary);font-weight:500;margin-bottom:8px}
+#flightPage select,#flightPage input[type=range]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;background:#fff;color:var(--text)}
+#flightPage select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+#flightPage input[type=range]{padding:0;accent-color:var(--accent);cursor:pointer}
+#flightPage button{padding:12px 20px;border:none;border-radius:10px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;background:var(--black);color:var(--on-black);transition:.15s}
+#flightPage button:hover{filter:brightness(.9)}
+#flightPage button.ghost{background:var(--soft);color:var(--text)}
+#flightPage button.ghost:hover{background:var(--soft-hover);filter:none}
+#flightPage .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+#flightPage .chip{padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-secondary);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+#flightPage .chip:hover{background:var(--soft)}
+#flightPage .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+#flightPage .dur{font-size:1.15rem;font-weight:700;text-align:center;padding:10px;color:var(--accent);margin-top:8px}
+#flightPage .list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding-right:4px;margin-top:4px}
+#flightPage .item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;transition:.15s}
+#flightPage .item:hover{background:var(--soft);border-color:var(--accent);transform:translateX(2px)}
+#flightPage .item .code{font-weight:800;font-size:14px;color:var(--accent);min-width:56px;font-family:ui-monospace,monospace}
+#flightPage .item .city{flex:1;font-size:14px;font-weight:500}
+#flightPage .item .country{font-size:12px;color:var(--text-muted);font-weight:500}
+#flightPage .item .info{font-size:12px;color:var(--text-muted);text-align:right;white-space:nowrap;line-height:1.5}
+#flightPage .item.visited{opacity:.55}
+#flightPage .item.visited .city{color:var(--text-muted);font-weight:400}
+#flightPage .item.visited .code{color:var(--text-muted)}
+#flightPage .timer{font-size:3rem;font-weight:800;text-align:center;letter-spacing:2px;font-variant-numeric:tabular-nums}
+#flightPage .route{text-align:center;color:var(--text-secondary);font-size:14px;margin-top:8px}
+#flightPage .route strong{color:var(--text);font-weight:700}
+#flightPage .progress{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin-top:18px;position:relative}
+#flightPage .progress-fill{height:100%;background:var(--accent);transition:width 1s linear;width:0}
+#flightPage .progress-pct{text-align:right;font-size:12px;color:var(--text-muted);margin-top:6px;font-weight:600;font-variant-numeric:tabular-nums}
+#flightPage .empty,#flightPage .loader{padding:36px 20px;text-align:center;color:var(--text-muted);font-size:14px}
+#flightPage .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+#flightPage .stat{background:var(--soft);border-radius:12px;padding:14px;text-align:center}
+#flightPage .stat b{display:block;font-size:1.2rem;font-weight:800;color:var(--accent)}
+#flightPage .stat span{font-size:11px;color:var(--text-muted);margin-top:4px;display:block}
+#flightPage .big{font-size:2.5rem;text-align:center;margin-bottom:8px}
+#flightPage .done-title{font-size:18px;font-weight:800;text-align:center}
+#flightPage .done-sub{color:var(--text-secondary);text-align:center;margin-top:6px}
+#flightPage .hidden{display:none!important}
+#flightPage .row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary);margin-top:12px}
+#flightPage .row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+#flightPage .recent{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+#flightPage .recent-item{font-size:12px;color:var(--text-secondary);padding:6px 10px;background:var(--soft);border-radius:8px;display:flex;justify-content:space-between;gap:8px}
+#flightPage .recent-item b{color:var(--text);font-weight:700}
+#flightPage .recent-item span{color:var(--text-muted);font-size:11px}
+#flightPage .ach{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#flightPage .ach-badge{font-size:11px;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--text-muted);font-weight:600;border:1px solid var(--border)}
+#flightPage .ach-badge.on{background:var(--accent-ring);color:var(--accent);border-color:var(--accent)}
+#flightPage .map-wrap{margin-top:12px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#EDF2F7;position:relative;aspect-ratio:2/1}
+#flightPage .map-bg{position:absolute;inset:0;background:url('world.svg') center/100% 100% no-repeat}
+#flightPage #worldMap{position:absolute;inset:0;display:block;width:100%;height:100%}
+#flightPage .legend{display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-top:8px;justify-content:center}
+#flightPage .legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+@media(max-width:520px){
+#flightPage{padding:14px 16px 32px}
+#flightPage .card{padding:16px;border-radius:14px}
+#flightPage .timer{font-size:2.2rem}
+}
+/* ===== FOCUS FLIGHT END ===== */
