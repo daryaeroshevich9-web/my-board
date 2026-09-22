@@ -1,4 +1,4 @@
-/* board v3.0 stage-0 */
+/* board v3.0 stage-1 */
 
 import { byId } from '../../core/dom.js';
 
@@ -42,21 +42,32 @@ export function openModal(id) {
 
 export function closeModal(id) {
   const index = stack.findIndex((item) => item.id === id);
-
-  if (index === -1) return;
-
-  const entry = stack[index];
   const modal = byId(id);
 
   if (modal) {
     modal.hidden = true;
   }
 
-  stack.splice(index, 1);
-  applyZIndexes();
+  let entry = null;
 
-  if (entry.opener && typeof entry.opener.focus === 'function') {
+  if (index !== -1) {
+    entry = stack[index];
+    stack.splice(index, 1);
+    applyZIndexes();
+  }
+
+  if (entry?.opener && typeof entry.opener.focus === 'function') {
     entry.opener.focus();
+  }
+
+  if (modal) {
+    modal.dispatchEvent(
+      new CustomEvent('modal:closed', {
+        detail: {
+          id,
+        },
+      })
+    );
   }
 }
 
