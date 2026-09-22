@@ -324,12 +324,6 @@ margin-bottom:16px;
 .res-rep{margin-bottom:14px;border-bottom:1px dashed var(--border);padding-bottom:10px}
 .res-rep:last-child{margin-bottom:0;border-bottom:none}
 .res-rep h5{font-family:'Unbounded',sans-serif;font-size:13px;color:var(--text);margin-bottom:6px;font-weight:600}
-.res-rep-note{border-top:1px solid var(--border);padding-top:8px;margin-top:8px}
-.res-rep-note-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.res-rep-note-body{font-size:13px;color:var(--text-secondary);line-height:1.45}
-.res-rep-note-body ul,.res-rep-note-body ol{margin:2px 0 2px 16px}
-.res-rep-edit{border:1px solid var(--border);background:var(--card);border-radius:8px;padding:3px 10px;font:inherit;font-size:11px;font-weight:600;color:var(--text-secondary);cursor:pointer;text-transform:none;letter-spacing:0}
-.res-rep-edit:hover{background:var(--soft);color:var(--text)}
 .res-rep-body{font-size:14px;color:var(--text-secondary);line-height:1.5}
 .res-rep-body ul,.res-rep-body ol{margin:2px 0 2px 16px}
 .res-rep-body table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
