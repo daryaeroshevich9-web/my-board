@@ -186,6 +186,21 @@
       "subOpen": false,
       "deleted": false,
       "pinned": false
+    },
+    {
+      "id": 1790096316418,
+      "zone": "aviabit",
+      "text": "Отчет Олегу",
+      "done": false,
+      "created": "2026-09-22T16:58:36.418Z",
+      "doneAt": null,
+      "archived": false,
+      "due": null,
+      "tags": [],
+      "subtasks": [],
+      "subOpen": false,
+      "deleted": false,
+      "pinned": false
     }
   ],
   "zones": [
