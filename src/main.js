@@ -1,10 +1,9 @@
-/* board v3.0 stage-0 */
+/* board v3.0 stage-1 */
 
 import { IDS } from './core/ids.js';
-import { byId, clear, el } from './core/dom.js';
+import { byId } from './core/dom.js';
 import * as store from './core/store.js';
-import { cloudRead, setSuppressPush } from './core/sync.js';
-import { renderContent } from './core/text.js';
+import { cloudRead, cloudWrite } from './core/sync.js';
 import { showToast } from './components/ui/toast.js';
 import {
   initModal,
@@ -17,17 +16,53 @@ import {
   saveSettings,
 } from './components/settings/settings.js';
 import { downloadBackup } from './components/settings/backup.js';
+import { handleConfirmAction } from './components/ui/confirm.js';
+import {
+  handleCollapseToggle,
+  applyCollapse,
+} from './components/ui/collapse.js';
+import { renderSummary, renderBoard } from './components/board/zones.js';
+import { handleCardAction, handleDueAction } from './components/board/card.js';
+import { initDnd } from './components/board/dnd.js';
+import {
+  initQuickAdd,
+  handleQuickAddAction,
+} from './components/board/quickadd.js';
+import {
+  initArchive,
+  handleArchiveAction,
+  autoArchiveOldDone,
+} from './components/board/archive.js';
+import {
+  initZonesManager,
+  handleZonesAction,
+} from './components/board/zones-manager.js';
+
+let applyingRemote = false;
+let booted = false;
+let pushTimer = null;
 
 function init() {
   initModal();
+
   initSettings({
-    onSaved: refreshCloud,
+    onSaved: () => {
+      void boot();
+    },
   });
+
+  initQuickAdd();
+  initZonesManager();
+  initArchive();
 
   bindActions();
 
   store.load();
   render(store.getState());
+
+  initDnd(byId(IDS.board), moveTask);
+
+  store.subscribe(onStateChange);
 
   void boot();
 }
@@ -61,7 +96,113 @@ function bindActions() {
       if (modal?.id) {
         closeModal(modal.id);
       }
+
+      return;
     }
+
+    if (action === 'collapse-toggle') {
+      handleCollapseToggle(trigger);
+      return;
+    }
+
+    if (
+      [
+        'toggle-task-done',
+        'toggle-subtask-done',
+        'toggle-pin',
+        'archive-task',
+        'open-due',
+      ].includes(action)
+    ) {
+      handleCardAction(action, trigger);
+      return;
+    }
+
+    if (['due-save', 'due-clear'].includes(action)) {
+      handleDueAction(action);
+      return;
+    }
+
+    if (['quick-add-submit', 'quick-zone-select'].includes(action)) {
+      handleQuickAddAction(action, trigger);
+      return;
+    }
+
+    if (['open-zones', 'create-zone', 'set-zone-tint'].includes(action)) {
+      handleZonesAction(action, trigger);
+      return;
+    }
+
+    if (
+      [
+        'open-archive',
+        'sweep-done',
+        'restore-archived',
+        'purge-archived',
+      ].includes(action)
+    ) {
+      handleArchiveAction(action, trigger);
+      return;
+    }
+
+    if (['confirm-ok', 'confirm-cancel'].includes(action)) {
+      handleConfirmAction(action);
+    }
+  });
+}
+
+function onStateChange(state) {
+  render(state);
+  schedulePush();
+}
+
+function render(state) {
+  renderSummary(state);
+  renderBoard(state);
+
+  requestAnimationFrame(() => {
+    applyCollapse(document);
+  });
+}
+
+function moveTask(taskId, zoneKey, index) {
+  if (!zoneKey) {
+    render(store.getState());
+    return;
+  }
+
+  store.mutate((state) => {
+    const fromIndex = state.tasks.findIndex((task) => task.id === taskId);
+
+    if (fromIndex === -1) return;
+
+    const task = state.tasks[fromIndex];
+
+    state.tasks.splice(fromIndex, 1);
+    task.zone = zoneKey;
+
+    const zoneTasks = state.tasks.filter((item) => item.zone === zoneKey);
+    const insertBeforeTask = zoneTasks[index];
+
+    if (!insertBeforeTask) {
+      let lastIndex = -1;
+
+      for (let i = state.tasks.length - 1; i >= 0; i -= 1) {
+        if (state.tasks[i].zone === zoneKey) {
+          lastIndex = i;
+          break;
+        }
+      }
+
+      state.tasks.splice(lastIndex + 1, 0, task);
+      return;
+    }
+
+    const globalIndex = state.tasks.findIndex(
+      (item) => item.id === insertBeforeTask.id
+    );
+
+    state.tasks.splice(globalIndex, 0, task);
   });
 }
 
@@ -73,129 +214,53 @@ async function boot() {
       openModal(IDS.settingsModal);
     }
 
-    return;
-  }
-
-  await refreshCloud(true);
-}
-
-async function refreshCloud(isBoot = false) {
-  const token = store.getToken();
-
-  if (!token) return;
-
-  setSuppressPush(true);
-  const result = await cloudRead();
-  setSuppressPush(false);
-
-  if (result.ok) {
-    if (result.empty) {
-      if (isBoot) {
-        showToast('Облако пустое, показаны локальные данные', 'info');
-      }
-
-      return;
-    }
-
-    store.replaceState(result.data || store.emptyBoard());
+    booted = true;
+    autoArchiveOldDone();
     render(store.getState());
 
-    if (isBoot) {
-      showToast('Облачные данные загружены', 'success');
+    return;
+  }
+
+  applyingRemote = true;
+  const result = await cloudRead();
+  applyingRemote = false;
+
+  if (result.ok) {
+    if (!result.empty) {
+      applyingRemote = true;
+      store.replaceState(result.data || store.emptyBoard());
+      applyingRemote = false;
     }
-
-    return;
-  }
-
-  if (result.status === 401) {
+  } else if (result.status === 401) {
     showToast('Токен не подходит. Проверь доступ.', 'error');
-    return;
-  }
-
-  if (result.reason !== 'no-token') {
+  } else if (result.reason !== 'no-token') {
     showToast('Не удалось загрузить облако.', 'error');
   }
+
+  booted = true;
+
+  const changed = autoArchiveOldDone();
+
+  if (changed) {
+    schedulePush();
+  }
+
+  render(store.getState());
 }
 
-function render(state) {
-  const board = byId(IDS.board);
+function schedulePush() {
+  if (!booted || applyingRemote) return;
+  if (!store.getToken()) return;
 
-  clear(board);
+  clearTimeout(pushTimer);
 
-  const zones = (state.zones || []).filter((zone) => !zone.hidden);
+  pushTimer = setTimeout(async () => {
+    const result = await cloudWrite(store.getState());
 
-  if (!zones.length) {
-    board.appendChild(el('p', 'empty', 'Разделы не найдены.'));
-    return;
-  }
-
-  zones.forEach((zone) => {
-    board.appendChild(renderZone(zone, state));
-  });
-}
-
-function renderZone(zone, state) {
-  const section = el('section', 'zone');
-
-  section.dataset.zone = zone.key;
-  section.dataset.tint = String(zone.tint ?? 0);
-
-  const header = el('header', 'zone-header');
-  const title = el('h2', 'zone-title');
-
-  const emoji = el('span', 'zone-emoji', zone.emoji || '🗂️');
-  const label = el('span', 'zone-label', zone.label || 'Раздел');
-
-  const tasks = (state.tasks || []).filter(
-    (task) => task.zone === zone.key && !task.archived && !task.deleted
-  );
-
-  const count = el('span', 'zone-count', String(tasks.length));
-
-  title.append(emoji, label, count);
-  header.appendChild(title);
-  section.appendChild(header);
-
-  const list = el('div', 'zone-tasks');
-
-  const sorted = [...tasks].sort(
-    (a, b) => Number(b.pinned) - Number(a.pinned)
-  );
-
-  if (!sorted.length) {
-    list.appendChild(el('p', 'empty', 'Задач пока нет.'));
-  }
-
-  sorted.forEach((task) => {
-    list.appendChild(renderTask(task));
-  });
-
-  section.appendChild(list);
-
-  return section;
-}
-
-function renderTask(task) {
-  const card = el('article', 'task');
-
-  if (task.done) {
-    card.classList.add('is-done');
-  }
-
-  if (task.pinned) {
-    card.classList.add('is-pinned');
-  }
-
-  const title = el('div', 'task-title', task.title || 'Без темы');
-  card.appendChild(title);
-
-  if (task.desc && String(task.desc).trim()) {
-    const desc = el('div', 'task-desc');
-    desc.innerHTML = renderContent(task.desc);
-    card.appendChild(desc);
-  }
-
-  return card;
+    if (!result.ok) {
+      showToast('Не удалось синхронизировать с облаком', 'error');
+    }
+  }, 800);
 }
 
 if (document.readyState === 'loading') {
