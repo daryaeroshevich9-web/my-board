@@ -162,6 +162,7 @@ function parseMagic(raw){
   text = text.replace(/\s{2,}/g,' ').trim();
   return {text: text, due: due};
 }
+// --- HTML: детекция, санитизация, рендер, конвертация в текст ---
 function isHtmlText(t){
   return /<\/?(p|ul|ol|li|table|thead|tbody|tr|td|th|div|br|b|strong|i|em|u|s|h[1-6]|blockquote|pre|hr|span|a)\b/i.test(String(t||''));
 }
@@ -265,17 +266,28 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-const SN_TOOLBAR = [
-  ['undo',['undo','redo']],
-  ['style',['style']],
-  ['font',['bold','italic','underline','strike','clear']],
-  ['color',['color']],
-  ['para',['ul','ol','indent','outdent']],
-  ['table',['table']],
-  ['insert',['link','hr']],
-  ['view',['codeview']]
+// --- Редактор: Quill 2 с кнопкой таблицы и аккуратным фолбэком ---
+const QUILL_TOOLBAR = [
+  [{ 'header': [1, 2, 3, false] }],
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'color': [] }, { 'background': [] }],
+  [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+  [{ 'indent': '-1' }, { 'indent': '+1' }],
+  ['blockquote', 'code-block'],
+  ['insertTable', 'link'],
+  ['clean']
 ];
-function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote); }
+const QUILL_HANDLERS = {
+  insertTable: function(){
+    const q = this.quill;
+    if (q && typeof q.insertTable === 'function') {
+      try { q.focus(); q.insertTable(2, 3); } catch(e){}
+    } else {
+      notify('Таблицы недоступны: проверь, что в head подключён Quill 2 (CDN).');
+    }
+  }
+};
+function quillAvailable(){ return typeof window.Quill !== 'undefined'; }
 function indentLines(ta, dir){
   const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
   const ls = v.lastIndexOf('\n', s - 1) + 1;
@@ -288,22 +300,33 @@ function indentLines(ta, dir){
 }
 function makeEditor(hostId){
   const host = document.getElementById(hostId);
-  let snEl = null, ta = null;
+  let quill = null;
+  let quillWrap = null;
+  let ta = null;
   return {
     init(content, asHtml){
       this.destroy();
       if (!host) return;
       const html = asHtml ? sanitizeHtml(content||'') : (content ? renderRich(content) : '');
-      if (snAvailable()) {
+      if (quillAvailable()) {
         try {
-          snEl = window.jQuery('<div></div>');
-          window.jQuery(host).append(snEl);
-          snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
-          snEl.summernote('code', html || '');
+          quillWrap = document.createElement('div');
+          quillWrap.className = 'quill-editor';
+          host.appendChild(quillWrap);
+          quill = new window.Quill(quillWrap, {
+            theme: 'snow',
+            placeholder: 'Текст…',
+            modules: { toolbar: { container: QUILL_TOOLBAR, handlers: QUILL_HANDLERS } }
+          });
+          if (html) {
+            try { quill.clipboard.dangerouslyPasteHTML(html); }
+            catch(e) { quill.root.innerHTML = html; }
+          }
           return;
         } catch(e) {
-          try { snEl.summernote('destroy'); } catch(e2){}
-          snEl = null;
+          quill = null;
+          if (quillWrap) { quillWrap.remove(); quillWrap = null; }
+          host.innerHTML = '';
         }
       }
       const tb = document.createElement('div');
@@ -330,25 +353,37 @@ function makeEditor(hostId){
       autoGrow(ta);
     },
     get(){
-      if (snEl) return sanitizeHtml(snEl.summernote('code'));
+      if (quill) {
+        let html;
+        try {
+          html = (typeof quill.getSemanticHTML === 'function') ? quill.getSemanticHTML() : quill.root.innerHTML;
+        } catch(e) {
+          html = quill.root.innerHTML;
+        }
+        return sanitizeHtml(html);
+      }
       return ta ? ta.value : '';
     },
     plain(){ return htmlToPlain(this.get()).trim(); },
     appendText(chunk){
       if (!chunk) return;
-      if (snEl) {
-        let c = snEl.summernote('code');
-        c = c.replace(/<p><br\s*\/?><\/p>\s*$/,'');
-        c += '<p>' + escapeHtml(chunk).replace(/\n/g,'<br>') + '</p>';
-        snEl.summernote('code', c);
+      if (quill) {
+        const existing = quill.getText().trim();
+        const toInsert = (existing ? '\n' : '') + chunk;
+        quill.insertText(quill.getLength(), toInsert, 'user');
+        try { quill.setSelection(quill.getLength(), 0); } catch(e){}
       } else if (ta) {
         ta.value += (ta.value && !/\n$/.test(ta.value) ? '\n' : '') + chunk;
         autoGrow(ta);
       }
     },
-    focus(){ if (snEl) { try{ snEl.summernote('focus'); }catch(e){} } else if (ta) ta.focus(); },
+    focus(){
+      if (quill) { try { quill.focus(); } catch(e){} }
+      else if (ta) ta.focus();
+    },
     destroy(){
-      if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
+      if (quill) { try { quill = null; } catch(e){} }
+      if (quillWrap) { quillWrap.remove(); quillWrap = null; }
       if (host) host.innerHTML = '';
       ta = null;
     }
@@ -590,24 +625,13 @@ function saveDay(){
   const ex = dayNoteFor(currentDayDate);
   if (ex) { ex.text = text; ex.updated = new Date().toISOString(); }
   else dayNotes.push({date: currentDayDate, text: text, updated: new Date().toISOString()});
-  saveDayNotes();
-  renderCalendar();
-  closeDay();
-  notify('Заметка сохранена.', true);
-  // ПРАВКА: обновить ленту итогов, если она открыта
-  const resModal = document.getElementById('resultsModal');
-  if (resModal && resModal.classList.contains('open')) { try { renderResults(); } catch(e){} }
+  saveDayNotes(); renderCalendar(); closeDay(); notify('Заметка сохранена.', true);
 }
 function deleteDayNote(){
   askConfirm('Удалить заметку за эту дату? Действие необратимо.', () => {
     dayNotes = dayNotes.filter(d => d.date !== currentDayDate);
-    saveDayNotes();
-    renderCalendar();
-    closeDay();
+    saveDayNotes(); renderCalendar(); closeDay();
     notify('Заметка удалена.');
-    // ПРАВКА: обновить ленту итогов, если она открыта
-    const resModal = document.getElementById('resultsModal');
-    if (resModal && resModal.classList.contains('open')) { try { renderResults(); } catch(e){} }
   }, 'Удалить');
 }
 document.getElementById('dayDelete').addEventListener('click', deleteDayNote);
@@ -616,6 +640,7 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
 });
+// --- Отчёт дня ---
 function openDayReport(){
   stopEdVoice();
   const date = todayISO();
@@ -681,6 +706,7 @@ function downloadDayReportMd(){
   notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('cancelDayReport').addEventListener('click', closeDayReportRequest);
+// --- Голос: textarea (quickAdd) и редактор отчёта ---
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 const micBtn = document.getElementById('micBtn');
 const repMicBtn = document.getElementById('repMic');
@@ -1109,6 +1135,7 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
+// --- Модалка редактирования ---
 function storeFor(mode){ return mode.type === 'personal' ? personal : tasks; }
 function openEditModal(mode){
   editMode = mode;
@@ -1171,6 +1198,7 @@ function saveEdit(){
 }
 document.getElementById('cancelEdit').addEventListener('click', closeEditRequest);
 document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+// --- Модалка подзадач ---
 function openSubsModal(tid, isPersonal){
   subsMode = {tid: tid, isPersonal: !!isPersonal};
   const t = storeFor({type: isPersonal ? 'personal' : 'task'}).find(x => x.id === tid);
@@ -1449,6 +1477,7 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
+// --- Отчёты по дням за период (одноколоночные итоги) ---
 let lastResults = {md: ''};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1485,8 +1514,6 @@ function closeResults() { document.getElementById('resultsModal').classList.remo
 function reportDatesInPeriod(from, to){
   const set = new Set();
   dayReports.forEach(r => { if (r.date >= from && r.date <= to && htmlToPlain(r.text).trim()) set.add(r.date); });
-  // ПРАВКА: учитывать дни, где есть только личная заметка (dayNote)
-  dayNotes.forEach(n => { if (n.date >= from && n.date <= to && String(n.text || '').trim()) set.add(n.date); });
   tasks.forEach(t => {
     if (t.done && t.doneAt) {
       const d = String(t.doneAt).slice(0,10);
@@ -1502,8 +1529,6 @@ function buildReportsMd(from, to){
   dates.forEach(d => {
     const p = parseLocal(d);
     md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n';
-    const note = dayNoteFor(d);
-    if (note && String(note.text || '').trim()) md += 'Личная заметка:\n' + String(note.text).trim() + '\n\n';
     const r = dayReportFor(d);
     if (r && htmlToPlain(r.text).trim()) md += htmlToPlain(r.text).trim() + '\n';
     const auto = autoLinesForDate(d);
@@ -1516,9 +1541,8 @@ function renderResults() {
   const from = document.getElementById('resFrom').value;
   const to = document.getElementById('resTo').value;
   if (!from || !to) return;
-  const box = document.getElementById('resReports');
-  if (!box) return;
   const dates = reportDatesInPeriod(from, to);
+  const box = document.getElementById('resReports');
   if (!dates.length) {
     box.innerHTML = '<div class="empty">За период отчётов нет</div>';
     lastResults = {md: ''};
@@ -1527,22 +1551,10 @@ function renderResults() {
   box.innerHTML = dates.map(d => {
     const p = parseLocal(d);
     const r = dayReportFor(d);
-    const note = dayNoteFor(d);
-    // ПРАВКА: блок личной заметки с кнопкой редактирования
-    let noteHtml = '';
-    if (note && String(note.text || '').trim()) {
-      noteHtml = '<div class="res-rep-note">' +
-        '<div class="res-rep-note-head">' +
-          '<span>📝 Личная заметка</span>' +
-          '<button class="res-rep-edit" onclick="openDay(\'' + d + '\')">✏️ Изменить</button>' +
-        '</div>' +
-        '<div class="res-rep-note-body">' + sanitizeHtml(renderRich(capFirst(note.text))) + '</div>' +
-      '</div>';
-    }
     const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
     const auto = autoLinesForDate(d);
     const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
-    return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' + noteHtml + manual + autoHtml + '</div>';
+    return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' + manual + autoHtml + '</div>';
   }).join('');
   lastResults = {md: buildReportsMd(from, to)};
 }
@@ -1768,6 +1780,7 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   addEditor.destroy();
   notify('Задача добавлена.', true);
 });
+// Закрытие модалок — ТОЛЬКО кнопками: ни клик вне окна, ни Esc не закрывают.
 document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
@@ -1776,7 +1789,6 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('editModal').classList.contains('open')) { e.preventDefault(); saveEdit(); }
     else if (document.getElementById('dayReportModal').classList.contains('open')) { e.preventDefault(); saveDayReport(); }
     else if (document.getElementById('addModal').classList.contains('open')) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
-    else if (document.getElementById('dayModal').classList.contains('open')) { e.preventDefault(); saveDay(); }
   }
 });
 if ('serviceWorker' in navigator) {
