@@ -151,7 +151,13 @@
       "archived": false,
       "due": null,
       "tags": [],
-      "subtasks": [],
+      "subtasks": [
+        {
+          "id": 1790063821370,
+          "text": "Мобильная версия",
+          "done": false
+        }
+      ],
       "subOpen": false,
       "deleted": false,
       "pinned": false
