@@ -265,6 +265,7 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
+// --- Редактор: Summernote из локальной папки vendor/ с фолбэком ---
 const SN_TOOLBAR = [
   ['undo',['undo','redo']],
   ['style',['style']],
@@ -304,6 +305,7 @@ function makeEditor(hostId){
         } catch(e) {
           try { snEl.summernote('destroy'); } catch(e2){}
           snEl = null;
+          host.innerHTML = '';
         }
       }
       const tb = document.createElement('div');
@@ -346,7 +348,7 @@ function makeEditor(hostId){
         autoGrow(ta);
       }
     },
-    focus(){ if (snEl) { try{ snEl.summernote('focus'); }catch(e){} } else if (ta) ta.focus(); },
+    focus(){ if (snEl) { try { snEl.summernote('focus'); } catch(e){} } else if (ta) ta.focus(); },
     destroy(){
       if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
       if (host) host.innerHTML = '';
@@ -869,8 +871,8 @@ function escapeHtml(text) { const d = document.createElement('div'); d.textConte
 function splitEmoji(text) {
   const re = /^\s*(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u;
   const m = String(text||'').match(re);
-  if (m) return {emoji: m[1], rest: String(text).slice(m[0].length)};
-  return {emoji: null, rest: String(text||'')};
+  if (m) return {emoji: m[1], rest: text.slice(m[0].length)};
+  return {emoji: null, rest: text};
 }
 function matchesQuery(t, q) {
   if (!q) return true;
@@ -1438,7 +1440,6 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-// --- Итоги: только отчёты по дням ---
 let lastResults = {md: '', rows: []};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1474,7 +1475,7 @@ function openResults() {
 function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
 function reportDatesInPeriod(from, to){
   const set = new Set();
-  dayReports.forEach(r => { if (r.date >= from && r.date <= to) set.add(r.date); });
+  dayReports.forEach(r => { if (r.date >= from && r.date <= to && htmlToPlain(r.text).trim()) set.add(r.date); });
   tasks.forEach(t => {
     if (t.done && t.doneAt) {
       const d = String(t.doneAt).slice(0,10);
@@ -1508,6 +1509,7 @@ function renderResults() {
   const openTasks = tasks.filter(t => !t.archived && !t.done && new Date(t.created) <= toDate);
   const dates = reportDatesInPeriod(from, to);
   const box = document.getElementById('resBody');
+  if (!box) return;
   if (!dates.length) {
     box.innerHTML = '<div class="empty">За период отчётов нет</div>';
   } else {
@@ -1516,28 +1518,38 @@ function renderResults() {
       const r = dayReportFor(d);
       const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="results-item">' + sanitizeHtml(r.text) + '</div>' : '';
       const auto = autoLinesForDate(d);
-      const autoHtml = auto.length ? '<div class="results-sub">Закрыто на доске</div>' + auto.map(l => '<div class="results-item done-item">✅ ' + escapeHtml(l.replace(/^- /,'')) + '</div>').join('') : '';
-      return '<div class="results-block"><h4>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h4>' + (manual || '<div class="results-item">Ручного отчёта нет</div>') + autoHtml + '</div>';
+      const autoHtml = auto.length ? '<div class="results-sub">Закрыто на доске</div>' + auto.map(l => '<div class="results-item done-item">' + escapeHtml(l.replace(/^- /,'')) + '</div>').join('') : '';
+      return '<div class="results-block"><h4>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + ' <button class="modal-btn secondary" style="padding:3px 10px;font-size:12px;margin-left:8px" onclick="openDayReportFor(\'' + d + '\')">✏️ Изменить</button></h4>' + (manual || '<div class="results-item">Ручного отчёта нет</div>') + autoHtml + '</div>';
     }).join('');
   }
   let md = '# Итоги\nПериод: ' + from + ' — ' + to + '\n\n';
   md += 'Выполнено за период: ' + doneInPeriod.length + '\n';
   md += 'В работе на конец периода: ' + openTasks.length + '\n\n';
-  zones.forEach(z => {
-    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
-    const zoneOpen = openTasks.filter(t => t.zone === z.key);
-    if (!zoneDone.length && !zoneOpen.length) return;
-    md += '## ' + z.label + '\n\n';
-    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + htmlToPlain(t.text) + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
-    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + htmlToPlain(t.text) + '\n'); md += '\n'; }
-  });
   const repMd = buildReportsMd(from, to);
-  if (repMd) md += '\n# Отчёты по дням\n\n' + repMd;
+  if (repMd) md += '# Отчёты по дням\n\n' + repMd;
   const rows = [];
   doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
   openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'В работе', created: t.created.slice(0, 10), done: ''}));
   lastResults = {md: md, rows: rows};
 }
+function openDayReportFor(date){
+  stopEdVoice();
+  currentReportDate = date;
+  const p = parseLocal(date);
+  document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
+  document.getElementById('dayReportModal').classList.add('open');
+  const r = dayReportFor(date);
+  try {
+    repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
+  } catch(e) {
+    try { repEditor.destroy(); } catch(e2){}
+    repEditor.init(r ? r.text : '', false);
+  }
+  dayReportInitialPlain = repEditor.plain();
+  renderDayReportAuto(date);
+  setTimeout(() => repEditor.focus(), 60);
+}
+let currentReportDate = null;
 function resultsCsv() {
   const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   let csv = 'Зона;Задача;Статус;Создана;Выполнена\n';
