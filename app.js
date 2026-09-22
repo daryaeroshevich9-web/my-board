@@ -162,7 +162,6 @@ function parseMagic(raw){
   text = text.replace(/\s{2,}/g,' ').trim();
   return {text: text, due: due};
 }
-// --- HTML: детекция, санитизация, рендер, конвертация в текст ---
 function isHtmlText(t){
   return /<\/?(p|ul|ol|li|table|thead|tbody|tr|td|th|div|br|b|strong|i|em|u|s|h[1-6]|blockquote|pre|hr|span|a)\b/i.test(String(t||''));
 }
@@ -266,28 +265,47 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Quill 2 с кнопкой таблицы и аккуратным фолбэком ---
-const QUILL_TOOLBAR = [
-  [{ 'header': [1, 2, 3, false] }],
-  ['bold', 'italic', 'underline', 'strike'],
-  [{ 'color': [] }, { 'background': [] }],
-  [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-  [{ 'indent': '-1' }, { 'indent': '+1' }],
-  ['blockquote', 'code-block'],
-  ['insertTable', 'link'],
-  ['clean']
+// --- Summernote: динамическая загрузка, чтобы фолбэк не «залипал» ---
+const SN_TOOLBAR = [
+  ['undo',['undo','redo']],
+  ['style',['style']],
+  ['font',['bold','italic','underline','strike','clear']],
+  ['color',['color']],
+  ['para',['ul','ol','indent','outdent']],
+  ['table',['table']],
+  ['insert',['link','hr']],
+  ['view',['codeview']]
 ];
-const QUILL_HANDLERS = {
-  insertTable: function(){
-    const q = this.quill;
-    if (q && typeof q.insertTable === 'function') {
-      try { q.focus(); q.insertTable(2, 3); } catch(e){}
-    } else {
-      notify('Таблицы недоступны: проверь, что в head подключён Quill 2 (CDN).');
-    }
-  }
-};
-function quillAvailable(){ return typeof window.Quill !== 'undefined'; }
+function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote); }
+let snLoadPromise = null;
+function loadSummernote(){
+  if (snAvailable()) return Promise.resolve(true);
+  if (snLoadPromise) return snLoadPromise;
+  snLoadPromise = new Promise(res => {
+    const jq = document.createElement('script');
+    jq.src = 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js';
+    jq.onload = () => {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.css';
+      document.head.appendChild(css);
+      const sn = document.createElement('script');
+      sn.src = 'https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.js';
+      sn.onload = () => {
+        const ru = document.createElement('script');
+        ru.src = 'https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/lang/summernote-ru-RU.min.js';
+        ru.onload = () => res(snAvailable());
+        ru.onerror = () => res(snAvailable());
+      };
+      sn.onerror = () => res(false);
+      document.head.appendChild(sn);
+    };
+    jq.onerror = () => res(false);
+    document.head.appendChild(jq);
+  });
+  return snLoadPromise;
+}
+loadSummernote();
 function indentLines(ta, dir){
   const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
   const ls = v.lastIndexOf('\n', s - 1) + 1;
@@ -300,93 +318,79 @@ function indentLines(ta, dir){
 }
 function makeEditor(hostId){
   const host = document.getElementById(hostId);
-  let quill = null;
-  let quillWrap = null;
-  let ta = null;
+  let snEl = null, ta = null, mode = null, pending = null;
+  function clearHost(){
+    if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
+    host.innerHTML = '';
+    ta = null;
+    mode = null;
+  }
+  function buildRich(html){
+    clearHost();
+    snEl = window.jQuery('<div></div>');
+    window.jQuery(host).append(snEl);
+    snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
+    snEl.summernote('code', html || '');
+    mode = 'rich';
+  }
+  function buildManual(text){
+    clearHost();
+    const tb = document.createElement('div');
+    tb.className = 'fmt-toolbar';
+    tb.innerHTML = '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
+      '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
+      '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
+      '<button class="fmt-btn" data-f="ind" title="Отступ">⇥</button>' +
+      '<button class="fmt-btn" data-f="outd" title="Убрать отступ">⇤</button>';
+    ta = document.createElement('textarea');
+    ta.className = 'ed-fallback';
+    ta.value = text;
+    host.appendChild(tb);
+    host.appendChild(ta);
+    tb.querySelectorAll('.fmt-btn').forEach(btn => {
+      btn.addEventListener('mousedown', ev => ev.preventDefault());
+      btn.addEventListener('click', () => {
+        const f = btn.dataset.f;
+        if (f === 'ind') indentLines(ta, 1);
+        else if (f === 'outd') indentLines(ta, -1);
+        else fmtApply(ta, f);
+      });
+    });
+    autoGrow(ta);
+    mode = 'manual';
+  }
   return {
     init(content, asHtml){
-      this.destroy();
-      if (!host) return;
       const html = asHtml ? sanitizeHtml(content||'') : (content ? renderRich(content) : '');
-      if (quillAvailable()) {
-        try {
-          quillWrap = document.createElement('div');
-          quillWrap.className = 'quill-editor';
-          host.appendChild(quillWrap);
-          quill = new window.Quill(quillWrap, {
-            theme: 'snow',
-            placeholder: 'Текст…',
-            modules: { toolbar: { container: QUILL_TOOLBAR, handlers: QUILL_HANDLERS } }
-          });
-          if (html) {
-            try { quill.clipboard.dangerouslyPasteHTML(html); }
-            catch(e) { quill.root.innerHTML = html; }
-          }
-          return;
-        } catch(e) {
-          quill = null;
-          if (quillWrap) { quillWrap.remove(); quillWrap = null; }
-          host.innerHTML = '';
+      const text = asHtml ? htmlToPlain(content||'') : (content||'');
+      pending = {html: html, text: text};
+      if (snAvailable()) { try { buildRich(html); return; } catch(e){} }
+      buildManual(text);
+      loadSummernote().then(ok => {
+        if (ok && mode === 'manual' && pending && ta && ta.value === pending.text) {
+          buildRich(pending.html);
         }
-      }
-      const tb = document.createElement('div');
-      tb.className = 'fmt-toolbar';
-      tb.innerHTML = '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
-        '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
-        '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
-        '<button class="fmt-btn" data-f="ind" title="Отступ">⇥</button>' +
-        '<button class="fmt-btn" data-f="outd" title="Убрать отступ">⇤</button>';
-      ta = document.createElement('textarea');
-      ta.className = 'ed-fallback';
-      ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
-      host.appendChild(tb);
-      host.appendChild(ta);
-      tb.querySelectorAll('.fmt-btn').forEach(btn => {
-        btn.addEventListener('mousedown', ev => ev.preventDefault());
-        btn.addEventListener('click', () => {
-          const f = btn.dataset.f;
-          if (f === 'ind') indentLines(ta, 1);
-          else if (f === 'outd') indentLines(ta, -1);
-          else fmtApply(ta, f);
-        });
       });
-      autoGrow(ta);
     },
     get(){
-      if (quill) {
-        let html;
-        try {
-          html = (typeof quill.getSemanticHTML === 'function') ? quill.getSemanticHTML() : quill.root.innerHTML;
-        } catch(e) {
-          html = quill.root.innerHTML;
-        }
-        return sanitizeHtml(html);
-      }
-      return ta ? ta.value : '';
+      if (snEl) return sanitizeHtml(snEl.summernote('code'));
+      return ta ? ta.value : (pending ? pending.text : '');
     },
     plain(){ return htmlToPlain(this.get()).trim(); },
     appendText(chunk){
       if (!chunk) return;
-      if (quill) {
-        const existing = quill.getText().trim();
-        const toInsert = (existing ? '\n' : '') + chunk;
-        quill.insertText(quill.getLength(), toInsert, 'user');
-        try { quill.setSelection(quill.getLength(), 0); } catch(e){}
+      if (snEl) {
+        let c = snEl.summernote('code');
+        c = c.replace(/<p><br\s*\/?><\/p>\s*$/,'');
+        c += '<p>' + escapeHtml(chunk).replace(/\n/g,'<br>') + '</p>';
+        snEl.summernote('code', c);
       } else if (ta) {
         ta.value += (ta.value && !/\n$/.test(ta.value) ? '\n' : '') + chunk;
         autoGrow(ta);
       }
     },
-    focus(){
-      if (quill) { try { quill.focus(); } catch(e){} }
-      else if (ta) ta.focus();
-    },
-    destroy(){
-      if (quill) { try { quill = null; } catch(e){} }
-      if (quillWrap) { quillWrap.remove(); quillWrap = null; }
-      if (host) host.innerHTML = '';
-      ta = null;
-    }
+    focus(){ if (snEl) { try { snEl.summernote('focus'); } catch(e){} } else if (ta) ta.focus(); },
+    destroy(){ clearHost(); pending = null; }
   };
 }
 const addEditor = makeEditor('addEditor');
@@ -625,12 +629,12 @@ function saveDay(){
   const ex = dayNoteFor(currentDayDate);
   if (ex) { ex.text = text; ex.updated = new Date().toISOString(); }
   else dayNotes.push({date: currentDayDate, text: text, updated: new Date().toISOString()});
-  saveDayNotes(); renderCalendar(); closeDay(); notify('Заметка сохранена.', true);
+  saveDayNotes(); renderCalendar(); renderResultsSafe(); closeDay(); notify('Заметка сохранена.', true);
 }
 function deleteDayNote(){
   askConfirm('Удалить заметку за эту дату? Действие необратимо.', () => {
     dayNotes = dayNotes.filter(d => d.date !== currentDayDate);
-    saveDayNotes(); renderCalendar(); closeDay();
+    saveDayNotes(); renderCalendar(); renderResultsSafe(); closeDay();
     notify('Заметка удалена.');
   }, 'Удалить');
 }
@@ -640,7 +644,6 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
 });
-// --- Отчёт дня ---
 function openDayReport(){
   stopEdVoice();
   const date = todayISO();
@@ -648,12 +651,7 @@ function openDayReport(){
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
   document.getElementById('dayReportModal').classList.add('open');
   const r = dayReportFor(date);
-  try {
-    repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
-  } catch(e) {
-    try { repEditor.destroy(); } catch(e2){}
-    repEditor.init(r ? r.text : '', false);
-  }
+  repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
   dayReportInitialPlain = repEditor.plain();
   renderDayReportAuto(date);
   setTimeout(() => repEditor.focus(), 60);
@@ -680,7 +678,7 @@ function saveDayReport(){
   const ex = dayReportFor(date);
   if (ex) { ex.text = val; ex.updated = new Date().toISOString(); }
   else dayReports.push({date: date, text: val, updated: new Date().toISOString()});
-  saveDayReports(); closeDayReport();
+  saveDayReports(); closeDayReport(); renderResultsSafe();
   notify('Отчёт дня сохранён.', true);
 }
 function dayReportFullText(date){
@@ -706,7 +704,6 @@ function downloadDayReportMd(){
   notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('cancelDayReport').addEventListener('click', closeDayReportRequest);
-// --- Голос: textarea (quickAdd) и редактор отчёта ---
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 const micBtn = document.getElementById('micBtn');
 const repMicBtn = document.getElementById('repMic');
@@ -1135,7 +1132,6 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
-// --- Модалка редактирования ---
 function storeFor(mode){ return mode.type === 'personal' ? personal : tasks; }
 function openEditModal(mode){
   editMode = mode;
@@ -1156,12 +1152,7 @@ function openEditModal(mode){
   }
   document.getElementById('editTitle').textContent = title;
   document.getElementById('editModal').classList.add('open');
-  try {
-    editEditor.init(content, asHtml);
-  } catch(e) {
-    try { editEditor.destroy(); } catch(e2){}
-    editEditor.init(content, false);
-  }
+  editEditor.init(content, asHtml);
   editInitialPlain = editEditor.plain();
   setTimeout(() => editEditor.focus(), 60);
 }
@@ -1198,7 +1189,6 @@ function saveEdit(){
 }
 document.getElementById('cancelEdit').addEventListener('click', closeEditRequest);
 document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
-// --- Модалка подзадач ---
 function openSubsModal(tid, isPersonal){
   subsMode = {tid: tid, isPersonal: !!isPersonal};
   const t = storeFor({type: isPersonal ? 'personal' : 'task'}).find(x => x.id === tid);
@@ -1477,8 +1467,8 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-// --- Отчёты по дням за период (одноколоночные итоги) ---
-let lastResults = {md: ''};
+// --- Итоги: одна колонка + правка заметок по дням ---
+let lastResults = {md: '', rows: []};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
   const day = (x.getDay() + 6) % 7;
@@ -1511,8 +1501,12 @@ function openResults() {
   closeSbMobile();
 }
 function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
+function renderResultsSafe(){
+  if (document.getElementById('resultsModal').classList.contains('open')) renderResults();
+}
 function reportDatesInPeriod(from, to){
   const set = new Set();
+  dayNotes.forEach(n => { if (n.date >= from && n.date <= to && String(n.text||'').trim()) set.add(n.date); });
   dayReports.forEach(r => { if (r.date >= from && r.date <= to && htmlToPlain(r.text).trim()) set.add(r.date); });
   tasks.forEach(t => {
     if (t.done && t.doneAt) {
@@ -1525,10 +1519,12 @@ function reportDatesInPeriod(from, to){
 function buildReportsMd(from, to){
   const dates = reportDatesInPeriod(from, to);
   if (!dates.length) return '';
-  let md = '# Отчёты за период ' + from + ' — ' + to + '\n\n';
+  let md = '';
   dates.forEach(d => {
     const p = parseLocal(d);
     md += '## ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '\n';
+    const n = dayNoteFor(d);
+    if (n && String(n.text||'').trim()) md += String(n.text).trim() + '\n';
     const r = dayReportFor(d);
     if (r && htmlToPlain(r.text).trim()) md += htmlToPlain(r.text).trim() + '\n';
     const auto = autoLinesForDate(d);
@@ -1538,25 +1534,69 @@ function buildReportsMd(from, to){
   return md.trim() + '\n';
 }
 function renderResults() {
+  const box = document.getElementById('resBody');
+  if (!box) return;
   const from = document.getElementById('resFrom').value;
   const to = document.getElementById('resTo').value;
-  if (!from || !to) return;
+  if (!from || !to) { box.innerHTML = ''; return; }
+  const fromDate = parseLocal(from);
+  const toDate = parseLocal(to); toDate.setHours(23, 59, 59, 999);
+  const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
+  const openTasks = tasks.filter(t => !t.archived && !t.done && new Date(t.created) <= toDate);
+  let html = '<div class="results-stats">' +
+    '<span class="results-chip">✅ Выполнено: ' + doneInPeriod.length + '</span>' +
+    '<span class="results-chip">⚡ В работе: ' + openTasks.length + '</span></div>';
+  zones.forEach(z => {
+    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
+    const zoneOpen = openTasks.filter(t => t.zone === z.key);
+    if (!zoneDone.length && !zoneOpen.length) return;
+    html += '<div class="results-block"><h4>' + escapeHtml(z.label) + '</h4>';
+    zoneDone.forEach(t => { html += '<div class="results-item done-item">✅ ' + escapeHtml(shortText(t.text, 120)) + '<span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
+    zoneOpen.forEach(t => { html += '<div class="results-item">▫️ ' + escapeHtml(shortText(t.text, 120)) + '</div>'; });
+    html += '</div>';
+  });
   const dates = reportDatesInPeriod(from, to);
-  const box = document.getElementById('resReports');
+  html += '<div class="results-sub">Отчёты по дням</div>';
   if (!dates.length) {
-    box.innerHTML = '<div class="empty">За период отчётов нет</div>';
-    lastResults = {md: ''};
-    return;
+    html += '<div class="results-item">За период отчётов нет</div>';
+  } else {
+    dates.forEach(d => {
+      const p = parseLocal(d);
+      const n = dayNoteFor(d);
+      const r = dayReportFor(d);
+      const manual = (n && String(n.text||'').trim()) ? '<div class="results-item">' + renderRich(capFirst(n.text)) + '</div>' : '';
+      const rep = (r && htmlToPlain(r.text).trim()) ? '<div class="results-item">' + sanitizeHtml(r.text) + '</div>' : '';
+      const auto = autoLinesForDate(d);
+      const autoHtml = auto.length ? '<div class="results-item">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
+      html += '<div class="results-block"><h4>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] +
+        ' <button class="modal-btn secondary" style="padding:3px 10px;font-size:12px;margin-left:8px" onclick="openDay(\'' + d + '\')">✏️ Изменить</button></h4>' +
+        (manual + rep + autoHtml || '<div class="results-item">Пусто</div>') + '</div>';
+    });
   }
-  box.innerHTML = dates.map(d => {
-    const p = parseLocal(d);
-    const r = dayReportFor(d);
-    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
-    const auto = autoLinesForDate(d);
-    const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
-    return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' + manual + autoHtml + '</div>';
-  }).join('');
-  lastResults = {md: buildReportsMd(from, to)};
+  box.innerHTML = html;
+  let md = '# Итоги\nПериод: ' + from + ' — ' + to + '\n\n';
+  md += 'Выполнено за период: ' + doneInPeriod.length + '\n';
+  md += 'В работе на конец периода: ' + openTasks.length + '\n\n';
+  zones.forEach(z => {
+    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
+    const zoneOpen = openTasks.filter(t => t.zone === z.key);
+    if (!zoneDone.length && !zoneOpen.length) return;
+    md += '## ' + z.label + '\n\n';
+    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + htmlToPlain(t.text) + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
+    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + htmlToPlain(t.text) + '\n'); md += '\n'; }
+  });
+  const repMd = buildReportsMd(from, to);
+  if (repMd) md += '\n# Отчёты по дням\n\n' + repMd;
+  const rows = [];
+  doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
+  openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'В работе', created: t.created.slice(0, 10), done: ''}));
+  lastResults = {md: md, rows: rows};
+}
+function resultsCsv() {
+  const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  let csv = 'Зона;Задача;Статус;Создана;Выполнена\n';
+  lastResults.rows.forEach(r => { csv += [r.zone, r.text, r.status, r.created, r.done].map(esc).join(';') + '\n'; });
+  return csv;
 }
 function downloadBlob(content, name, mime) {
   const blob = new Blob([content], {type: mime});
@@ -1569,15 +1609,20 @@ function downloadBlob(content, name, mime) {
   URL.revokeObjectURL(a.href);
 }
 function copyResultsMd() {
-  if (!lastResults.md) { notify('За период отчётов нет — копировать нечего.'); return; }
-  navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёты скопированы в буфер обмена!', true));
+  if (!lastResults.md) { notify('Пусто — нечего копировать.'); return; }
+  navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!', true));
 }
 function downloadResultsMd() {
   const from = document.getElementById('resFrom').value;
   const to = document.getElementById('resTo').value;
-  if (!lastResults.md) { notify('За период отчётов нет.'); return; }
-  downloadBlob(lastResults.md, 'otchety-' + from + '-' + to + '.md', 'text/markdown;charset=utf-8');
+  downloadBlob(lastResults.md || '', 'itogi-' + from + '-' + to + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
+}
+function downloadResultsCsv() {
+  const from = document.getElementById('resFrom').value;
+  const to = document.getElementById('resTo').value;
+  downloadBlob('\ufeff' + resultsCsv(), 'itogi-' + from + '-' + to + '.csv', 'text/csv;charset=utf-8');
+  notify('Файл CSV сохранён.', true);
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
@@ -1780,7 +1825,6 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   addEditor.destroy();
   notify('Задача добавлена.', true);
 });
-// Закрытие модалок — ТОЛЬКО кнопками: ни клик вне окна, ни Esc не закрывают.
 document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
