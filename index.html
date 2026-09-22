@@ -1,0 +1,104 @@
+<!doctype html>
+<!-- board v3.0 stage-0 -->
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Доска Дарьи</title>
+  <link rel="stylesheet" href="./styles/base.css" />
+  <link rel="stylesheet" href="./styles/layout.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <aside id="sidebar" class="sidebar" aria-label="Боковая панель">
+      <div class="sidebar-brand" title="Доска Дарьи">Д</div>
+      <nav class="sidebar-actions">
+        <button
+          id="settingsOpen"
+          class="sidebar-btn"
+          data-action="open-settings"
+          title="Настройки"
+          type="button"
+        >
+          ⚙️
+        </button>
+        <button
+          id="backupDownload"
+          class="sidebar-btn"
+          data-action="download-backup"
+          title="Скачать резервную копию"
+          type="button"
+        >
+          💾
+        </button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h1>Доска Дарьи</h1>
+        <div class="topbar-actions">
+          <button class="btn" data-action="download-backup" type="button">
+            Резервная копия
+          </button>
+          <button class="btn btn-primary" data-action="open-settings" type="button">
+            Настройки
+          </button>
+        </div>
+      </header>
+
+      <section id="board" class="board" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast-stack" aria-live="polite"></div>
+
+  <div id="settingsModal" class="modal" hidden>
+    <div class="modal-backdrop" data-action="modal-close"></div>
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settingsTitle"
+    >
+      <div class="modal-header">
+        <h2 id="settingsTitle">Настройки</h2>
+        <button
+          id="settingsClose"
+          class="icon-btn"
+          data-action="modal-close"
+          aria-label="Закрыть"
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p id="onboardingNote" class="notice">
+          Укажи токен доступа к GitHub для синхронизации с облаком. Токен хранится
+          только в этом браузере.
+        </p>
+
+        <label class="field" for="settingsToken">Токен</label>
+        <input
+          id="settingsToken"
+          class="input"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          data-autofocus
+        />
+      </div>
+
+      <div class="modal-footer">
+        <button id="settingsSave" class="btn btn-primary" data-action="save-settings" type="button">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
