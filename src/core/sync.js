@@ -1,4 +1,4 @@
-/* board v3.0 stage-0 */
+/* board v3.0 stage-1 */
 
 import {
   getToken,
@@ -11,9 +11,14 @@ const FILE = 'board.json';
 const API_URL = `https://api.github.com/repos/${REPO}/contents/${FILE}`;
 
 let suppressPush = false;
+let currentSha = null;
 
 export function setSuppressPush(value) {
   suppressPush = !!value;
+}
+
+export function getSha() {
+  return currentSha;
 }
 
 function authHeaders() {
@@ -66,6 +71,8 @@ export async function cloudRead() {
     });
 
     if (response.status === 404) {
+      currentSha = null;
+
       return {
         ok: true,
         empty: true,
@@ -82,13 +89,14 @@ export async function cloudRead() {
     }
 
     const payload = await response.json();
+    currentSha = payload.sha || null;
 
     if (!payload.content) {
       return {
         ok: true,
         empty: true,
         data: emptyBoard(),
-        sha: payload.sha || null,
+        sha: currentSha,
       };
     }
 
@@ -99,7 +107,7 @@ export async function cloudRead() {
       ok: true,
       empty: isBoardEmpty(data),
       data,
-      sha: payload.sha || null,
+      sha: currentSha,
     };
   } catch {
     return {
@@ -136,12 +144,13 @@ export async function cloudWrite(data, sha = null) {
   }
 
   try {
-    let currentSha = sha;
+    let requestedSha = sha ?? currentSha;
 
-    if (!currentSha) {
+    if (!requestedSha) {
       const readResult = await cloudRead();
+
       if (readResult.ok && readResult.sha) {
-        currentSha = readResult.sha;
+        requestedSha = readResult.sha;
       }
     }
 
@@ -150,8 +159,8 @@ export async function cloudWrite(data, sha = null) {
       content: encodeUtf8Base64(JSON.stringify(data)),
     };
 
-    if (currentSha) {
-      body.sha = currentSha;
+    if (requestedSha) {
+      body.sha = requestedSha;
     }
 
     let response = await putFile(body);
@@ -160,8 +169,10 @@ export async function cloudWrite(data, sha = null) {
       const fresh = await cloudRead();
 
       if (fresh.ok) {
-        if (fresh.sha) {
-          body.sha = fresh.sha;
+        requestedSha = fresh.sha;
+
+        if (requestedSha) {
+          body.sha = requestedSha;
         } else {
           delete body.sha;
         }
@@ -177,8 +188,15 @@ export async function cloudWrite(data, sha = null) {
       };
     }
 
+    const payload = await response.json();
+
+    if (payload?.content?.sha) {
+      currentSha = payload.content.sha;
+    }
+
     return {
       ok: true,
+      sha: currentSha,
     };
   } catch {
     return {
