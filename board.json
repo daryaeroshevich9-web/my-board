@@ -10,7 +10,7 @@
       "deleted": false,
       "subtasks": [],
       "subOpen": false,
-      "archived": false,
+      "archived": true,
       "due": null,
       "repeat": null,
       "tags": [],
