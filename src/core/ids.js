@@ -1,4 +1,4 @@
-/* board v3.0 stage-1 */
+/* board v3.0 stage-1-fix */
 
 export const IDS = {
   app: 'app',
@@ -6,11 +6,14 @@ export const IDS = {
   board: 'board',
   toast: 'toast',
 
+  sidebarPin: 'sidebarPin',
   settingsOpen: 'settingsOpen',
   backupDownload: 'backupDownload',
+  backupFileInput: 'backupFileInput',
 
   quickAddInput: 'quickAddInput',
   quickAddSubmit: 'quickAddSubmit',
+  boardSearch: 'boardSearch',
   boardSummary: 'boardSummary',
 
   settingsModal: 'settingsModal',
