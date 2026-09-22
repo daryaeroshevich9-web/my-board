@@ -1,4 +1,4 @@
-/* board v3.0 stage-1 */
+/* board v3.0 stage-1-fix */
 
 .quickadd {
   display: flex;
@@ -19,9 +19,27 @@
   color: var(--dark);
 }
 
+.board-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.board-search {
+  flex: 1;
+}
+
 .board-summary {
   color: var(--muted);
   margin-bottom: 12px;
+}
+
+.sidebar-pinned {
+  width: 220px;
+}
+
+.sidebar-pinned .sidebar-btn {
+  width: 100%;
 }
 
 .task {
@@ -288,6 +306,36 @@ body.is-dragging {
   background: #E9F4F4;
 }
 
+.zone[data-tint="0"] {
+  background: #F8FBFF;
+  border-color: #D8E2EE;
+}
+
+.zone[data-tint="1"] {
+  background: #F7FCF7;
+  border-color: #D4E7D7;
+}
+
+.zone[data-tint="2"] {
+  background: #FFFBF4;
+  border-color: #F0DFC4;
+}
+
+.zone[data-tint="3"] {
+  background: #FDF8FB;
+  border-color: #EBD8E4;
+}
+
+.zone[data-tint="4"] {
+  background: #FAF8FD;
+  border-color: #E0D9ED;
+}
+
+.zone[data-tint="5"] {
+  background: #F6FCFC;
+  border-color: #D4E8E8;
+}
+
 .zone-create {
   display: flex;
   gap: 8px;
@@ -326,4 +374,14 @@ body.is-dragging {
 
 .modal-sm {
   width: min(420px, calc(100vw - 32px));
+}
+
+@media (max-width: 720px) {
+  .sidebar-pinned {
+    width: 56px;
+  }
+
+  .sidebar-pinned:hover {
+    width: 220px;
+  }
 }
