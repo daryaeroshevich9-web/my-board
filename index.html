@@ -11,10 +11,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="vendor/summernote-lite.min.css">
-<script src="vendor/jquery.min.js"></script>
-<script src="vendor/summernote-lite.min.js"></script>
-<script src="vendor/summernote-ru-RU.min.js"></script>
+<!-- Редактор Summernote: основной источник CDN, запасной — локальная папка vendor/ -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.css" onerror="this.onerror=null;this.href='vendor/summernote-lite.min.css';">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script>window.jQuery||document.write('<script src="vendor/jquery.min.js"><\/script>');</script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.js"></script>
+<script>(window.jQuery&&window.jQuery.fn&&window.jQuery.fn.summernote)||document.write('<script src="vendor/summernote-lite.min.js"><\/script>');</script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/lang/summernote-ru-RU.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -207,7 +210,7 @@
 </div>
 <div class="modal" id="resultsModal">
   <div class="modal-content">
-    <h3>📊 Итоги: отчёты по дням</h3>
+    <h3>📊 Итоги</h3>
     <div class="results-period">
       <div class="results-period-dates">
         <input type="date" id="resFrom">
