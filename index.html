@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- board v3.0 stage-0 -->
+<!-- board v3.0 stage-1 -->
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
@@ -7,6 +7,7 @@
   <title>Доска Дарьи</title>
   <link rel="stylesheet" href="./styles/base.css" />
   <link rel="stylesheet" href="./styles/layout.css" />
+  <link rel="stylesheet" href="./styles/components.css" />
 </head>
 <body>
   <div id="app" class="app">
@@ -41,12 +42,39 @@
           <button class="btn" data-action="download-backup" type="button">
             Резервная копия
           </button>
+          <button class="btn" data-action="open-archive" type="button">
+            Архив
+          </button>
+          <button class="btn" data-action="sweep-done" type="button">
+            Метла
+          </button>
+          <button class="btn" data-action="open-zones" type="button">
+            Разделы
+          </button>
           <button class="btn btn-primary" data-action="open-settings" type="button">
             Настройки
           </button>
         </div>
       </header>
 
+      <section class="quickadd">
+        <textarea
+          id="quickAddInput"
+          class="quickadd-input"
+          rows="1"
+          placeholder="Новая задача. Вставь несколько строк, чтобы создать список. Магия дат: сегодня, завтра, 12.05"
+        ></textarea>
+        <button
+          id="quickAddSubmit"
+          class="btn btn-primary"
+          data-action="quick-add-submit"
+          type="button"
+        >
+          Добавить
+        </button>
+      </section>
+
+      <div id="boardSummary" class="board-summary" aria-live="polite"></div>
       <section id="board" class="board" aria-live="polite"></section>
     </main>
   </div>
@@ -92,7 +120,187 @@
       </div>
 
       <div class="modal-footer">
-        <button id="settingsSave" class="btn btn-primary" data-action="save-settings" type="button">
+        <button
+          id="settingsSave"
+          class="btn btn-primary"
+          data-action="save-settings"
+          type="button"
+        >
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal" hidden>
+    <div class="modal-backdrop" data-action="modal-close"></div>
+    <div
+      class="modal-dialog modal-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmTitle"
+    >
+      <div class="modal-header">
+        <h2 id="confirmTitle">Подтверждение</h2>
+        <button
+          class="icon-btn"
+          data-action="modal-close"
+          aria-label="Закрыть"
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p id="confirmMessage"></p>
+      </div>
+
+      <div class="modal-footer">
+        <button id="confirmCancel" class="btn" data-action="confirm-cancel" type="button">
+          Отмена
+        </button>
+        <button id="confirmOk" class="btn btn-primary" data-action="confirm-ok" type="button">
+          Подтвердить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="zonesModal" class="modal" hidden>
+    <div class="modal-backdrop" data-action="modal-close"></div>
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="zonesTitle"
+    >
+      <div class="modal-header">
+        <h2 id="zonesTitle">Разделы</h2>
+        <button
+          id="zonesClose"
+          class="icon-btn"
+          data-action="modal-close"
+          aria-label="Закрыть"
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div id="zonesList" class="list-stack"></div>
+
+        <div class="zone-create">
+          <input
+            id="zoneNewLabel"
+            class="input"
+            placeholder="Новый раздел"
+            autocomplete="off"
+          />
+          <button
+            id="zoneCreateBtn"
+            class="btn btn-primary"
+            data-action="create-zone"
+            type="button"
+          >
+            Создать раздел
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="archiveModal" class="modal" hidden>
+    <div class="modal-backdrop" data-action="modal-close"></div>
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="archiveTitle"
+    >
+      <div class="modal-header">
+        <h2 id="archiveTitle">Архив</h2>
+        <button
+          id="archiveClose"
+          class="icon-btn"
+          data-action="modal-close"
+          aria-label="Закрыть"
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <input
+          id="archiveSearch"
+          class="input"
+          placeholder="Поиск по архиву"
+          autocomplete="off"
+        />
+        <div id="archiveList" class="list-stack"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quickZoneModal" class="modal" hidden>
+    <div class="modal-backdrop" data-action="modal-close"></div>
+    <div
+      class="modal-dialog modal-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quickZoneTitle"
+    >
+      <div class="modal-header">
+        <h2 id="quickZoneTitle">Выбор раздела</h2>
+        <button
+          id="quickZoneClose"
+          class="icon-btn"
+          data-action="modal-close"
+          aria-label="Закрыть"
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div id="quickZoneList" class="list-stack"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dueModal" class="modal" hidden>
+    <div class="modal-backdrop" data-action="modal-close"></div>
+    <div
+      class="modal-dialog modal-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dueTitle"
+    >
+      <div class="modal-header">
+        <h2 id="dueTitle">Срок задачи</h2>
+        <button
+          id="dueClose"
+          class="icon-btn"
+          data-action="modal-close"
+          aria-label="Закрыть"
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <input id="dueDateInput" class="input" type="date" data-autofocus />
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" data-action="due-clear" type="button">
+          Очистить
+        </button>
+        <button class="btn btn-primary" data-action="due-save" type="button">
           Сохранить
         </button>
       </div>
@@ -102,4 +310,3 @@
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
-<!-- republish stage-0 -->
