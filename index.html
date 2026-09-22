@@ -11,8 +11,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+<link rel="stylesheet" href="vendor/summernote-lite.min.css">
+<script src="vendor/jquery.min.js"></script>
+<script src="vendor/summernote-lite.min.js"></script>
+<script src="vendor/summernote-ru-RU.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -136,7 +138,7 @@
     <h3 id="dayReportTitle">📄 Отчёт дня</h3>
     <div class="note-editor" id="dayReportEditor"></div>
     <div class="dayreport-auto" id="dayReportAuto"></div>
-    <div class="fmt-hint">Отчёт сохраняется за выбранную дату. Закрытые на доске задачи попадают в отчёт и в выгрузки автоматически. Микрофон дописывает распознанные фразы в конец текста.</div>
+    <div class="fmt-hint">Отчёт сохраняется за сегодняшнее число. Закрытые на доске задачи попадают в отчёт и в выгрузки автоматически. Микрофон дописывает распознанные фразы в конец текста.</div>
     <div class="modal-actions">
       <button class="mic-btn" id="repMic" title="Голосовой ввод в отчёт">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
