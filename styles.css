@@ -106,6 +106,8 @@ h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spac
 .note-content ul,.note-content ol{margin:4px 0 2px 18px;padding:0}
 .note-content li{margin:2px 0}
 .note-content .rich-line{min-height:1em}
+.note-content table,.sub-content table,.res-rep-body table,.subs-row .sub-text table,.dayreport-auto table{border-collapse:collapse;width:100%;font-size:12px;margin:4px 0}
+.note-content td,.note-content th,.sub-content td,.sub-content th,.res-rep-body td,.res-rep-body th,.subs-row .sub-text td,.subs-row .sub-text th,.dayreport-auto td,.dayreport-auto th{border:1px solid var(--border);padding:4px 6px;text-align:left}
 .note-text.clamped{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
 .sub-content{word-break:break-word}
 .sub-content.clamped-sub{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
@@ -190,11 +192,12 @@ textarea.sub-edit:focus{outline:none;border-color:var(--accent)}
 .personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
 .personal-notes{display:flex;flex-direction:column;gap:10px;min-height:420px;max-height:calc(100vh - 320px);overflow-y:auto;padding-right:2px}
 .note-editor{margin-bottom:10px}
-.note-editor .note-toolbar{flex-wrap:wrap}
-.note-editor .note-editable{min-height:170px;max-height:340px;overflow-y:auto;font-family:inherit;font-size:14px;line-height:1.5;color:var(--text)}
-.note-editor .note-editable ul,.note-editor .note-editable ol{margin:4px 0 4px 18px}
-.note-editor .note-editable table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
-.note-editor .note-editable td,.note-editor .note-editable th{border:1px solid var(--border);padding:4px 6px}
+.note-editor .ql-toolbar.ql-snow{border:1px solid var(--border);border-bottom:none;border-radius:10px 10px 0 0;background:var(--soft);flex-wrap:wrap}
+.note-editor .ql-container.ql-snow{border:1px solid var(--border);border-radius:0 0 10px 10px;background:var(--card);font-family:inherit;font-size:14px}
+.note-editor .ql-editor{min-height:170px;max-height:340px;overflow-y:auto;line-height:1.5;color:var(--text)}
+.note-editor .ql-editor ul,.note-editor .ql-editor ol{margin:4px 0 4px 18px}
+.note-editor .ql-editor table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+.note-editor .ql-editor td,.note-editor .ql-editor th{border:1px solid var(--border);padding:4px 6px}
 textarea.ed-fallback{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:170px;max-height:340px;line-height:1.5}
 textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
 #editModal .modal-content,#addModal .modal-content,#dayReportModal .modal-content{max-width:780px}
@@ -257,7 +260,7 @@ textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
 .list-btn.delete{background:var(--soft-hover);color:var(--text-secondary)}
 .list-btn.delete:hover{background:rgba(185,60,50,.12);color:#b93c32}
 .page-hidden{display:none !important}
-/* ---------- Итоги: только отчёты по дням ---------- */
+/* ---------- Итоги: одна колонка, отчёты по дням ---------- */
 #resultsModal{padding:16px}
 #resultsModal .modal-content{max-width:min(1900px,96vw) !important;width:100% !important;max-height:94vh;padding:24px 32px;display:flex;flex-direction:column}
 .results-period{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
@@ -275,8 +278,6 @@ textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
 .res-rep-edit:hover{background:var(--soft);color:var(--text)}
 .res-rep-body{font-size:14px;color:var(--text-secondary);line-height:1.45}
 .res-rep-body ul,.res-rep-body ol{margin:2px 0 2px 16px}
-.res-rep-body table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
-.res-rep-body td,.res-rep-body th{border:1px solid var(--border);padding:4px 6px}
 .res-rep-auto{font-size:12px;color:var(--text-secondary);margin-top:6px;line-height:1.6}
 @media (max-width:860px){
 .results-period-quick{margin-left:0}
