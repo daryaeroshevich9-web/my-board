@@ -1,4 +1,4 @@
-/* board v3.0 stage-1 */
+/* board v3.0 stage-1-fix */
 
 import { IDS } from './core/ids.js';
 import { byId } from './core/dom.js';
@@ -15,7 +15,11 @@ import {
   openSettings,
   saveSettings,
 } from './components/settings/settings.js';
-import { downloadBackup } from './components/settings/backup.js';
+import {
+  initBackup,
+  downloadBackup,
+  triggerBackupUpload,
+} from './components/settings/backup.js';
 import { handleConfirmAction } from './components/ui/confirm.js';
 import {
   handleCollapseToggle,
@@ -41,6 +45,7 @@ import {
 let applyingRemote = false;
 let booted = false;
 let pushTimer = null;
+let boardQuery = '';
 
 function init() {
   initModal();
@@ -51,10 +56,12 @@ function init() {
     },
   });
 
+  initBackup();
   initQuickAdd();
   initZonesManager();
   initArchive();
-
+  initSidebarPin();
+  bindSearch();
   bindActions();
 
   store.load();
@@ -65,6 +72,17 @@ function init() {
   store.subscribe(onStateChange);
 
   void boot();
+}
+
+function bindSearch() {
+  const search = byId(IDS.boardSearch);
+
+  if (!search) return;
+
+  search.addEventListener('input', () => {
+    boardQuery = search.value.trim().toLowerCase();
+    render(store.getState());
+  });
 }
 
 function bindActions() {
@@ -87,6 +105,16 @@ function bindActions() {
 
     if (action === 'download-backup') {
       downloadBackup();
+      return;
+    }
+
+    if (action === 'upload-backup') {
+      triggerBackupUpload();
+      return;
+    }
+
+    if (action === 'toggle-sidebar-pin') {
+      toggleSidebarPin();
       return;
     }
 
@@ -151,6 +179,38 @@ function bindActions() {
   });
 }
 
+function initSidebarPin() {
+  const sidebar = byId(IDS.sidebar);
+  const button = byId(IDS.sidebarPin);
+
+  if (!sidebar) return;
+
+  const pinned = localStorage.getItem('darya_board_sbpinned') === '1';
+
+  sidebar.classList.toggle('sidebar-pinned', pinned);
+
+  if (button) {
+    button.classList.toggle('is-active', pinned);
+  }
+}
+
+function toggleSidebarPin() {
+  const sidebar = byId(IDS.sidebar);
+  const button = byId(IDS.sidebarPin);
+
+  if (!sidebar) return;
+
+  const pinned = !sidebar.classList.contains('sidebar-pinned');
+
+  sidebar.classList.toggle('sidebar-pinned', pinned);
+
+  if (button) {
+    button.classList.toggle('is-active', pinned);
+  }
+
+  localStorage.setItem('darya_board_sbpinned', pinned ? '1' : '0');
+}
+
 function onStateChange(state) {
   render(state);
   schedulePush();
@@ -158,7 +218,7 @@ function onStateChange(state) {
 
 function render(state) {
   renderSummary(state);
-  renderBoard(state);
+  renderBoard(state, boardQuery);
 
   requestAnimationFrame(() => {
     applyCollapse(document);
