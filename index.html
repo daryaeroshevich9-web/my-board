@@ -11,8 +11,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/lang/summernote-ru-RU.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,7 +26,7 @@
     <button class="sb-search-ico" id="sbSearchIco" title="Поиск">🔍</button>
     <input type="text" id="searchInput" placeholder="🔍 Поиск" autocomplete="off" readonly onpointerdown="this.removeAttribute('readonly')" onfocus="this.removeAttribute('readonly')">
   </div>
-  <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги недели</span></button>
+  <button class="sb-item sb-board-only" onclick="openResults()"><span class="sb-ico">📊</span><span class="sb-label">Итоги</span></button>
   <button class="sb-item sb-board-only" onclick="openZones()"><span class="sb-ico">🗂️</span><span class="sb-label">Разделы</span></button>
   <button class="sb-item sb-board-only" onclick="openArchive()"><span class="sb-ico">📦</span><span class="sb-label">Архив</span></button>
   <button class="sb-item sb-pin" onclick="togglePin()"><span class="sb-ico">📌</span><span class="sb-label">Закрепить меню</span></button>
@@ -204,7 +206,7 @@
   </div>
 </div>
 <div class="modal" id="resultsModal">
-  <div class="modal-content">
+  <div class="modal-content modal-wide">
     <h3>📊 Отчёты по дням</h3>
     <div class="results-period">
       <div class="results-period-dates">
@@ -220,7 +222,7 @@
     </div>
     <div id="resReports"></div>
     <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать</button>
+      <button class="modal-btn secondary" onclick="copyResultsMd()">📋 Копировать всё</button>
       <button class="modal-btn secondary" onclick="downloadResultsMd()">⬇ Markdown</button>
       <button class="modal-btn primary" onclick="closeResults()">Закрыть</button>
     </div>
