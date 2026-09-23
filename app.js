@@ -945,7 +945,7 @@ function noteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openSubsModal(' + t.id + ',false)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="openEditModal({type:\'subnew\',tid:' + t.id + ',isPersonal:false})" title="Добавить подзадачу">' + ARROW_DOWN + '</button>' +
       '<button class="note-action" onclick="openEditModal({type:\'task\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action" onclick="openNoteMenu(' + t.id + ', event)" title="Действия">' + ELLIPSIS + '</button>' +
     '</div>' +
@@ -972,7 +972,7 @@ function personalNoteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openSubsModal(' + t.id + ',true)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="openEditModal({type:\'subnew\',tid:' + t.id + ',isPersonal:true})" title="Добавить подзадачу">' + ARROW_DOWN + '</button>' +
       '<button class="note-action" onclick="openEditModal({type:\'personal\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда">' + TRASH + '</button>' +
     '</div>' +
@@ -1118,6 +1118,24 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
+// --- Менеджер модальных окон (стек) ---
+const modalStack = [];
+function openModal(modalId){
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  const depth = modalStack.length;
+  modal.style.zIndex = String(1000 + depth * 10);
+  modal.classList.add('open');
+  modalStack.push(modalId);
+}
+function closeModal(modalId){
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.style.zIndex = '';
+  const idx = modalStack.lastIndexOf(modalId);
+  if (idx !== -1) modalStack.splice(idx, 1);
+}
 function storeFor(mode){ return mode.type === 'personal' ? personal : tasks; }
 function openEditModal(mode){
   editMode = mode;
@@ -1137,7 +1155,7 @@ function openEditModal(mode){
     title = '＋ Новая подзадача';
   }
   document.getElementById('editTitle').textContent = title;
-  document.getElementById('editModal').classList.add('open');
+  openModal('editModal');
   try {
     editEditor.init(content, asHtml);
   } catch(e) {
@@ -1147,7 +1165,7 @@ function openEditModal(mode){
   editInitialPlain = editEditor.plain();
   setTimeout(() => editEditor.focus(), 60);
 }
-function closeEdit(){ document.getElementById('editModal').classList.remove('open'); editEditor.destroy(); editMode = null; }
+function closeEdit(){ closeModal('editModal'); editEditor.destroy(); editMode = null; }
 function closeEditRequest(){
   if (editEditor.plain() !== editInitialPlain) {
     askConfirm('Закрыть без сохранения? Изменения будут потеряны.', () => { closeEdit(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
@@ -1186,9 +1204,9 @@ function openSubsModal(tid, isPersonal){
   if (!t) return;
   document.getElementById('subsTitle').textContent = '📝 Подзадачи: ' + shortText(t.text, 40);
   renderSubsList();
-  document.getElementById('subsModal').classList.add('open');
+  openModal('subsModal');
 }
-function closeSubs(){ document.getElementById('subsModal').classList.remove('open'); subsMode = null; }
+function closeSubs(){ closeModal('subsModal'); subsMode = null; }
 function renderSubsList(){
   const list = document.getElementById('subsList');
   if (!subsMode) return;
@@ -1208,7 +1226,7 @@ function renderSubsList(){
   ).join('');
 }
 function toggleSubFromModal(tid, sid){
-  const t = tasks.find(x => x.id === tid) || personal.find(x => x.id === tid);
+  const t = tasks.find(x => x.id === tid)|| personal.find(x => x.id === tid);
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
   if (!s) return;
@@ -1217,7 +1235,7 @@ function toggleSubFromModal(tid, sid){
   renderSubsList();
 }
 function delSubFromModal(tid, sid){
-  const t = tasks.find(x => x.id === tid) || personal.find(x => x.id === tid);
+  const t = tasks.find(x => x.id === tid)|| personal.find(x => x.id === tid);
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
   if (!s) return;
@@ -1298,9 +1316,9 @@ function openDue(id) {
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
   document.getElementById('dueInput').value = t && t.due ? t.due : '';
-  document.getElementById('dueModal').classList.add('open');
+  openModal('dueModal');
 }
-function closeDue() { document.getElementById('dueModal').classList.remove('open'); }
+function closeDue() { closeModal('dueModal'); }
 function saveDue() {
   const t = tasks.find(x => x.id === currentNoteId);
   if (t) { t.due = document.getElementById('dueInput').value || null; saveTasks(); render(); }
@@ -1315,9 +1333,9 @@ document.getElementById('clearDoneBtn').addEventListener('click', () => {
   const n = tasks.filter(t => t.done && !t.archived).length;
   if (!n) { notify('Нет выполненных задач для отправки в архив.'); return; }
   document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
-  document.getElementById('broomModal').classList.add('open');
-});
-function closeBroom() { document.getElementById('broomModal').classList.remove('open'); }
+  openModal('broomModal');
+}
+function closeBroom() { closeModal('broomModal'); }
 function confirmBroom() {
   tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
   saveTasks(); render(); closeBroom();
@@ -1325,10 +1343,10 @@ function confirmBroom() {
 function openArchive() {
   document.getElementById('archSearch').value = '';
   renderArchList();
-  document.getElementById('archiveModal').classList.add('open');
+  openModal('archiveModal');
   closeSbMobile();
 }
-function closeArchive() { document.getElementById('archiveModal').classList.remove('open'); }
+function closeArchive() { closeModal('archiveModal'); }
 function renderArchList() {
   const q = (document.getElementById('archSearch').value || '').trim().toLowerCase();
   const list = document.getElementById('archList');
@@ -1351,7 +1369,7 @@ function renderArchList() {
 document.getElementById('archSearch').addEventListener('input', renderArchList);
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
-  document.getElementById('addModal').classList.add('open');
+  openModal('addModal');
   addEditor.init('', false);
   setTimeout(() => addEditor.focus(), 60);
 }
@@ -1377,14 +1395,14 @@ function renderZonesList() {
     '<div class="zone-row">' +
       '<span class="zone-row-emoji">' + (z.emoji || '🗂️') + '</span>' +
       '<span class="zone-row-label">' + escapeHtml(z.label) + '</span>' +
-      '<input type="color" class="zone-color-pick" value="' + (z.color || TINT_HEX[tintIndex(z)]) + '" onchange="setZoneColor(\'' + z.key + '\', this.value)" title="Цвет раздела">' +
+      '<input type="color" class="zone-color-pick" value="' + (z.color|| TINT_HEX[tintIndex(z)]) + '" onchange="setZoneColor(\'' + z.key + '\', this.value)" title="Цвет раздела">' +
       (z.color ? '<button class="modal-btn secondary" onclick="resetZoneColor(\'' + z.key + '\')">Авто</button>' : '') +
       '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button>' +
     '</div>'
   ).join('');
 }
-function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); closeSbMobile(); }
-function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
+function openZones() { renderZonesList(); openModal('zonesModal'); closeSbMobile(); }
+function closeZones() { closeModal('zonesModal'); }
 document.getElementById('addZoneBtn').addEventListener('click', () => {
   const label = capFirst(document.getElementById('newZoneLabel').value.trim());
   if (!label) { notify('Введите название раздела.'); return; }
@@ -1425,7 +1443,7 @@ function quickAddMany(lines) {
     '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
     (z.hidden ? ' (скрыт — появится при выборе)' : '') + '</button>'
   ).join('');
-  document.getElementById('quickZoneModal').classList.add('open');
+  openModal('quickZoneModal');
 }
 function chooseQuickZone(zoneKey) {
   const z = zoneByKey(zoneKey);
@@ -1433,10 +1451,10 @@ function chooseQuickZone(zoneKey) {
   if (z.hidden) { z.hidden = false; saveZones(); }
   pendingQuickLines.forEach(l => createParsed(l, zoneKey));
   pendingQuickLines = [];
-  document.getElementById('quickZoneModal').classList.remove('open');
+  closeModal('quickZoneModal');
 }
 function closeQuickZone() {
-  document.getElementById('quickZoneModal').classList.remove('open');
+  closeModal('quickZoneModal');
   if (pendingQuickLines.length) {
     document.getElementById('quickAdd').value = pendingQuickLines.join('\n');
     pendingQuickLines = [];
@@ -1487,10 +1505,10 @@ function setResultsPeriod(kind) {
 }
 function openResults() {
   setResultsPeriod('week');
-  document.getElementById('resultsModal').classList.add('open');
+  openModal('resultsModal');
   closeSbMobile();
 }
-function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
+function closeResults() { closeModal('resultsModal'); }
 function reportDatesInPeriod(from, to){
   const set = new Set();
   dayReports.forEach(r => { if (r.date >= from && r.date <= to && htmlToPlain(r.text).trim()) set.add(r.date); });
@@ -1768,12 +1786,12 @@ function openSettings(hint) {
   inp.value = getToken();
   wrap.appendChild(inp);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
-  document.getElementById('settingsModal').classList.add('open');
+  openModal('settingsModal');
   setTimeout(() => inp.focus(), 0);
   closeSbMobile();
 }
 function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
+  closeModal('settingsModal');
   const wrap = document.getElementById('tokenInputWrap');
   if (wrap) wrap.innerHTML = '';
 }
@@ -1791,9 +1809,9 @@ document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
 function closeAddRequest(){
   if (addEditor.plain() !== '') {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { document.getElementById('addModal').classList.remove('open'); addEditor.destroy(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { closeModal('addModal'); addEditor.destroy(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
   } else {
-    document.getElementById('addModal').classList.remove('open');
+    closeModal('addModal');
     addEditor.destroy();
   }
 }
@@ -1801,14 +1819,14 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   const val = addEditor.get();
   const plain = htmlToPlain(val).trim();
   if (!plain) return;
-  const zoneKey = currentAddZone || 'other';
+  const zoneKey = currentAddZone|| 'other';
   const p = parseMagic(plain);
   let text = val;
-  if (p.due) text = capFirst(p.text || plain);
+  if (p.due) text = capFirst(p.text|| plain);
   tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
   clearLeakedSearch(plain);
   saveTasks(); render();
-  document.getElementById('addModal').classList.remove('open');
+  closeModal('addModal');
   addEditor.destroy();
   notify('Задача добавлена.', true);
 });
@@ -1816,7 +1834,7 @@ document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+  if (e.key === 'Enter' && (e.ctrlKey|| e.metaKey)) {
     if (document.getElementById('editModal').classList.contains('open')) { e.preventDefault(); saveEdit(); }
     else if (document.getElementById('dayReportModal').classList.contains('open')) { e.preventDefault(); saveDayReport(); }
     else if (document.getElementById('addModal').classList.contains('open')) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
