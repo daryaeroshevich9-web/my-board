@@ -7,6 +7,7 @@ const TOKEN_KEY = 'darya_board_token';
 const INIT_KEY = 'darya_board_init';
 const PIN_KEY = 'darya_board_sbpinned';
 const PAGE_KEY = 'darya_board_page';
+const COMPACT_KEY = 'darya_board_compact';
 const API_URL = 'https://api.github.com/repos/daryaeroshevich9-web/my-board/contents/board.json';
 const TINT_COUNT = 6;
 const TINT_HEX = ['#3A5F8A', '#B04A5E', '#A67C00', '#3E7A5E', '#6B4FA0', '#0E7490'];
@@ -277,7 +278,6 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Quill с фолбэком; курсор в конец. Внешний вид модалки и тулбара НЕ меняем ---
 const QUILL_TOOLBAR = [
   [{ 'header': [1, 2, 3, false] }],
   ['bold', 'italic', 'underline', 'strike'],
@@ -463,13 +463,30 @@ function fmtApply(ta, type){
 }
 function fmtDay(type){ fmtApply(document.getElementById('dayInput'), type); }
 let toastTimer = null;
-function notify(text, ok){
+let toastUndoCb = null;
+function hideToast(){
   const t = document.getElementById('toast');
-  t.textContent = text;
+  t.classList.remove('show');
+  toastUndoCb = null;
+}
+function notify(text, ok, actionLabel, actionFn){
+  const t = document.getElementById('toast');
+  t.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = text;
+  t.appendChild(span);
+  toastUndoCb = null;
+  if (actionLabel && actionFn) {
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.textContent = actionLabel;
+    btn.addEventListener('click', () => { const fn = actionFn; toastUndoCb = null; hideToast(); if (fn) fn(); });
+    t.appendChild(btn);
+  }
   t.classList.toggle('success', !!ok);
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+  toastTimer = setTimeout(hideToast, actionLabel ? 5000 : 3500);
 }
 let confirmCb = null;
 function askConfirm(text, cb, yesLabel){
@@ -512,6 +529,16 @@ sbSearchIco.addEventListener('click', () => {
 });
 sbSearchInput.addEventListener('blur', () => {
   sidebarEl.classList.remove('search-open');
+});
+function applyCompact(){
+  const on = localStorage.getItem(COMPACT_KEY) === '1';
+  document.body.classList.toggle('compact', on);
+  const cb = document.getElementById('compactToggle');
+  if (cb) cb.checked = on;
+}
+document.getElementById('compactToggle').addEventListener('change', e => {
+  localStorage.setItem(COMPACT_KEY, e.target.checked ? '1' : '0');
+  applyCompact();
 });
 function saveDayNotes(){
   localStorage.setItem(DAYNOTES_KEY, JSON.stringify(dayNotes));
@@ -904,11 +931,17 @@ function cloudWrite() {
 const DONE_ARCHIVE_DELAY = 3 * 24 * 60 * 60 * 1000;
 function sweepDoneToArchive() {
   const cutoff = Date.now() - DONE_ARCHIVE_DELAY;
-  let changed = false;
+  const ids = [];
   tasks.forEach(t => {
-    if (t.done && t.doneAt && !t.archived && new Date(t.doneAt).getTime() <= cutoff) { t.archived = true; changed = true; }
+    if (t.done && t.doneAt && !t.archived && new Date(t.doneAt).getTime() <= cutoff) { t.archived = true; ids.push(t.id); }
   });
-  if (changed) saveTasks();
+  if (ids.length) {
+    saveTasks(); render();
+    notify('Выполненные отправлены в архив (' + ids.length + ').', true, 'Отменить', () => {
+      ids.forEach(id => { const t = tasks.find(x => x.id === id); if (t) t.archived = false; });
+      saveTasks(); render();
+    });
+  }
 }
 function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 function splitEmoji(text) {
@@ -1264,15 +1297,24 @@ function toggleSub(tid, sid) {
 }
 function deletePersonal(id) {
   const t = personal.find(x => x.id === id);
-  const label = t ? shortText(t.text) : '';
+  if (!t) return;
+  const label = shortText(t.text);
+  const idx = personal.indexOf(t);
   askConfirm('Удалить личную заметку «' + label + '» навсегда? Это действие необратимо.', () => {
-    personal = personal.filter(x => x.id !== id);
+    personal.splice(idx, 1);
     savePersonal(); renderPersonal();
+    notify('Личная заметка удалена.', true, 'Отменить', () => {
+      personal.splice(Math.min(idx, personal.length), 0, t);
+      savePersonal(); renderPersonal();
+    });
   }, 'Удалить');
 }
 function archiveTask(id) {
   const t = tasks.find(x => x.id === id);
-  if (t) { t.archived = true; saveTasks(); render(); }
+  if (!t) return;
+  t.archived = true;
+  saveTasks(); render();
+  notify('Задача в архиве.', true, 'Отменить', () => { t.archived = false; saveTasks(); render(); });
 }
 function unarchiveTask(id) {
   const t = tasks.find(x => x.id === id);
@@ -1280,10 +1322,16 @@ function unarchiveTask(id) {
 }
 function permanentDelete(id) {
   const t = tasks.find(x => x.id === id);
-  const label = t ? shortText(t.text) : '';
+  if (!t) return;
+  const label = shortText(t.text);
+  const idx = tasks.indexOf(t);
   askConfirm('Удалить задачу «' + label + '» навсегда? Это действие необратимо.', () => {
-    tasks = tasks.filter(x => x.id !== id);
+    tasks.splice(idx, 1);
     saveTasks(); render(); renderArchList();
+    notify('Задача удалена.', true, 'Отменить', () => {
+      tasks.splice(Math.min(idx, tasks.length), 0, t);
+      saveTasks(); render(); renderArchList();
+    });
   }, 'Удалить');
 }
 const popEl = document.getElementById('notePop');
@@ -1338,8 +1386,13 @@ document.getElementById('clearDoneBtn').addEventListener('click', () => {
 });
 function closeBroom() { hideModal(document.getElementById('broomModal')); }
 function confirmBroom() {
-  tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
+  const ids = tasks.filter(t => t.done && !t.archived).map(t => t.id);
+  ids.forEach(id => { const t = tasks.find(x => x.id === id); if (t) t.archived = true; });
   saveTasks(); render(); closeBroom();
+  notify('Выполненные отправлены в архив (' + ids.length + ').', true, 'Отменить', () => {
+    ids.forEach(id => { const t = tasks.find(x => x.id === id); if (t) t.archived = false; });
+    saveTasks(); render();
+  });
 }
 function openArchive() {
   document.getElementById('archSearch').value = '';
@@ -1746,7 +1799,7 @@ function openSettings(hint) {
   wrap.appendChild(inp);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
   showModal(document.getElementById('settingsModal'));
-  setTimeout(() => inp.focus(), 0);
+  setTimeout(() => { inp.focus(); applyCompact(); }, 0);
   closeSbMobile();
 }
 function closeSettings() {
@@ -1827,6 +1880,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 clearTransientInputs();
+applyCompact();
 switchPage(currentPage);
 render();
 if (!getToken()) openSettings('Это окно появляется один раз на каждом устройстве. Вставь токен доступа, чтобы доска синхронизировалась через облако. Позже его можно открыть кликом по логотипу.');
