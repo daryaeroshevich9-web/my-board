@@ -277,6 +277,7 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
+// --- Редактор: Quill с фолбэком; курсор в конец. Внешний вид модалки и тулбара НЕ меняем ---
 const QUILL_TOOLBAR = [
   [{ 'header': [1, 2, 3, false] }],
   ['bold', 'italic', 'underline', 'strike'],
@@ -969,7 +970,7 @@ function noteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openSubsModal(' + t.id + ',false)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="openEditModal({type:\'subnew\',tid:' + t.id + ',isPersonal:false})" title="Добавить подзадачу">' + ARROW_DOWN + '</button>' +
       '<button class="note-action" onclick="openEditModal({type:\'task\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action" onclick="openNoteMenu(' + t.id + ', event)" title="Действия">' + ELLIPSIS + '</button>' +
     '</div>' +
@@ -996,7 +997,7 @@ function personalNoteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openSubsModal(' + t.id + ',true)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="openEditModal({type:\'subnew\',tid:' + t.id + ',isPersonal:true})" title="Добавить подзадачу">' + ARROW_DOWN + '</button>' +
       '<button class="note-action" onclick="openEditModal({type:\'personal\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда">' + TRASH + '</button>' +
     '</div>' +
@@ -1556,7 +1557,7 @@ function renderResults() {
   box.innerHTML = dates.map(d => {
     const p = parseLocal(d);
     const r = dayReportFor(d);
-    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
+    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + renderContent(r.text) + '</div>' : '';
     const auto = autoLinesForDate(d);
     const autoHtml = auto.length ? '<div class="res-rep-auto">' + auto.map(it => '✅ [' + escapeHtml(it.zone) + '] ' + (it.sub ? '↳ ' : '') + it.html).join('<br>') + '</div>' : '';
     return '<div class="res-rep">' +
