@@ -129,7 +129,7 @@
     {
       "id": 1790013835728,
       "zone": "aviabit",
-      "text": "<p>Индивидуальный&nbsp;ГС</p>",
+      "text": "<p>Индивидуальный&nbsp;ГС</p><p><em>дополнительная&nbsp;итерация&nbsp;согласования</em></p>",
       "done": false,
       "created": "2026-09-21T18:03:55.728Z",
       "doneAt": null,
@@ -155,47 +155,56 @@
         {
           "id": 1790063821370,
           "text": "Мобильная версия",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1790063845835,
           "text": "Кол-во пассажиров Услуги не равно 0",
-          "done": true
+          "done": true,
+          "doneAt": null
         },
         {
           "id": 1790065922090,
           "text": "Задача на уведомления",
-          "done": true
+          "done": true,
+          "doneAt": null
         },
         {
           "id": 1790066993878,
           "text": "Текст для операций вне ТГО по SVO ",
-          "done": true
+          "done": true,
+          "doneAt": null
         },
         {
           "id": 1790067005849,
           "text": "Оренбург",
-          "done": true
+          "done": true,
+          "doneAt": null
         },
         {
           "id": 1790096146752,
           "text": "доступ ГПХ",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1790151182435,
           "text": "<p>Исторические&nbsp;данные</p><p></p>",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1790151191777,
           "text": "<p>Заявки&nbsp;HDE</p>",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1790153540347,
           "text": "<p>Подумать&nbsp;сколько&nbsp;хранить&nbsp;данные</p><p></p>",
-          "done": false
+          "done": false,
+          "doneAt": null
         }
       ],
       "subOpen": false,
@@ -264,12 +273,14 @@
         {
           "id": 1789890189805,
           "text": "Мальдивы\nhttps://www.onlinetours.ru/oteli/maldives/dhiffushi-city/stone-hotels-dhiffushi?adults=2&cheapest_date=2027-02-15&depart_city_id=20001&duration_from=5&duration_to=5&excluded_providers[]=sletatru&kids=0&kids_ages[]=&meal_type[]=3&start_from=2027-02-15&start_to=2027-02-15&ticket_strategy[]=exclude",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1789890197199,
           "text": "Тайлайнд\n- https://www.onlinetours.ru/oteli/thailand/nai-harn/wyndham-grand-nai-harn-beach-phuket-sha-plus?adults=2&cheapest_date=2027-02-15&depart_city_id=20001&duration_from=5&duration_to=5&excluded_providers[]=sletatru&free_cancel=true&kids=0&kids_ages[]=&meal_type[]=739&meal_type[]=3&start_from=2027-02-15&start_to=2027-02-15&ticket_strategy[]=exclude\n \n- https://www.onlinetours.ru/oteli/thailand/bang-tao-beach/kora-beach-resort-phuket?adults=2&cheapest_date=2027-02-15&depart_city_id=20001&duration_from=5&duration_to=5&excluded_providers[]=sletatru&kids=0&kids_ages[]=&meal_type[]=739&meal_type[]=3&start_from=2027-02-15&start_to=2027-02-15&ticket_strategy[]=exclude",
-          "done": false
+          "done": false,
+          "doneAt": null
         }
       ],
       "subOpen": false
@@ -284,27 +295,32 @@
         {
           "id": 1789903834932,
           "text": "Час тишины 2024",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1789903854993,
           "text": "Сенсация (2024)",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1789903877383,
           "text": "Опасная игра",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1789903888358,
           "text": "Падение империи 2024",
-          "done": false
+          "done": false,
+          "doneAt": null
         },
         {
           "id": 1789903892853,
           "text": "Манифест сериал 2018–2023",
-          "done": false
+          "done": false,
+          "doneAt": null
         }
       ],
       "subOpen": false
