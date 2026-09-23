@@ -254,7 +254,7 @@
       "key": "aviabit",
       "label": "Авиабит",
       "emoji": "🛩️",
-      "hidden": false,
+      "hidden": true,
       "tint": 2,
       "color": "#a3c3e6"
     }
