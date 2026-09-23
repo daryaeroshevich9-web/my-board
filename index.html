@@ -5,14 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Доска Дарьи</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FDFCFA">
+<meta name="theme-color" content="#1F3655">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Quill локально (2.1). ROLLBACK: удали эти 2 строки и раскомментируй CDN-блок ниже -->
+<link rel="stylesheet" href="vendor/quill.snow.css">
+<script src="vendor/quill.js"></script>
+<!-- ROLLBACK-блок (раскомментировать, если vendor не работает):
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+-->
+<script>
+if (!window.Quill) {
+  document.write('<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">');
+  document.write('<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"><\/script>');
+}
+</script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -239,6 +250,7 @@
 <div class="modal" id="settingsModal">
   <div class="modal-content">
     <h3>☁️ Облако и копии</h3>
+    <label class="settings-row"><input type="checkbox" id="compactToggle"> Компактные карточки (без превью подзадач)</label>
     <p class="settings-hint" id="settingsHint">Токен хранится только в этом браузере и нужен для записи изменений в board.json на GitHub.</p>
     <div id="tokenInputWrap"></div>
     <hr class="settings-sep">
