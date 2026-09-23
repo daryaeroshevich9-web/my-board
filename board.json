@@ -1,6 +1,21 @@
 {
   "tasks": [
     {
+      "id": 1790172235031,
+      "zone": "portal",
+      "text": "<p>Доставка&nbsp;в&nbsp;LED</p>",
+      "done": false,
+      "created": "2026-09-23T14:03:55.031Z",
+      "doneAt": null,
+      "archived": false,
+      "due": null,
+      "tags": [],
+      "subtasks": [],
+      "subOpen": false,
+      "deleted": false,
+      "pinned": false
+    },
+    {
       "id": 1750000000002,
       "zone": "portal",
       "text": "Текст для операций вне ТГО по SVO + Оренбург",
