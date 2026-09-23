@@ -11,16 +11,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
-<style>
-.quill-editor .ql-toolbar{border:1px solid var(--border);border-bottom:none;border-radius:10px 10px 0 0;background:var(--soft);flex-wrap:wrap}
-.quill-editor .ql-container{border:1px solid var(--border);border-radius:0 0 10px 10px;background:var(--card);font-family:inherit;font-size:14px}
-.quill-editor .ql-editor{min-height:170px;max-height:340px;overflow-y:auto}
-.quill-editor .ql-editor ul,.quill-editor .ql-editor ol{margin:4px 0 4px 18px}
-.quill-editor table{border-collapse:collapse;width:100%}
-.quill-editor td,.quill-editor th{border:1px solid var(--border);padding:4px 6px}
-</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.1/dist/lang/summernote-ru-RU.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -215,16 +209,9 @@
   <div class="modal-content modal-wide">
     <h3>📊 Итоги и отчёты</h3>
     <div class="results-period">
-      <div class="results-period-dates">
-        <input type="date" id="resFrom">
-        <span class="results-period-sep">—</span>
-        <input type="date" id="resTo">
-      </div>
-      <div class="results-period-quick">
-        <button class="modal-btn secondary" onclick="setResultsPeriod('week')">Текущая неделя</button>
-        <button class="modal-btn secondary" onclick="setResultsPeriod('lastweek')">Прошлая неделя</button>
-        <button class="modal-btn secondary" onclick="setResultsPeriod('month')">Текущий месяц</button>
-      </div>
+      <input type="date" id="resFrom">
+      <span>—</span>
+      <input type="date" id="resTo">
     </div>
     <div class="results-split">
       <div class="results-half">
