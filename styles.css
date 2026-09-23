@@ -210,31 +210,35 @@ color:var(--text-secondary);cursor:pointer;background:transparent;padding:0;
 .personal-zone .subtask input[type="checkbox"]{accent-color:var(--text-muted)}
 .personal-notes{display:flex;flex-direction:column;gap:10px;min-height:420px;max-height:calc(100vh - 320px);overflow-y:auto;padding-right:2px}
 .note-editor{margin-bottom:10px}
-textarea.ed-fallback{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:170px;max-height:340px;line-height:1.5}
-textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
+.note-editor .note-toolbar{flex-wrap:wrap}
+.note-editor .note-editable{min-height:170px;max-height:340px;overflow-y:auto;font-family:inherit;font-size:14px;line-height:1.5;color:var(--text)}
+.note-editor .note-editable ul,.note-editor .note-editable ol{margin:4px 0 4px 18px}
+.note-editor .note-editable table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+.note-editor .note-editable td,.note-editor .note-editable th{border:1px solid var(--border);padding:4px 6px}
 /* Фирменный стиль редактора Quill */
-.quill-editor .ql-toolbar{
+.quill-editor .ql-toolbar.ql-snow{
 border:1px solid var(--border);border-bottom:none;
 border-radius:10px 10px 0 0;background:var(--soft);
 flex-wrap:wrap;padding:6px 8px;
 }
-.quill-editor .ql-toolbar button{
-width:28px;height:26px;border-radius:6px;color:var(--text-secondary);
+.quill-editor .ql-toolbar.ql-snow button{
+width:28px;height:26px;border-radius:6px;
 }
-.quill-editor .ql-toolbar button:hover,
-.quill-editor .ql-toolbar button.ql-active{background:var(--card);color:var(--accent)}
-.quill-editor .ql-toolbar .ql-picker-label{
-border:1px solid var(--border);border-radius:6px;background:var(--card);
-padding:2px 8px;color:var(--text-secondary);
-}
-.quill-editor .ql-container{
+.quill-editor .ql-toolbar.ql-snow button:hover,
+.quill-editor .ql-toolbar.ql-snow button.ql-active{background:var(--card)}
+.quill-editor .ql-toolbar.ql-snow .ql-stroke{stroke:var(--text-secondary)}
+.quill-editor .ql-toolbar.ql-snow .ql-fill{fill:var(--text-secondary)}
+.quill-editor .ql-toolbar.ql-snow .ql-picker-label{color:var(--text-secondary)}
+.quill-editor .ql-container.ql-snow{
 border:1px solid var(--border);border-radius:0 0 10px 10px;
 background:var(--card);font-family:inherit;font-size:14px;
 }
 .quill-editor .ql-editor{min-height:170px;max-height:340px;overflow-y:auto;line-height:1.5;color:var(--text)}
 .quill-editor .ql-editor ul,.quill-editor .ql-editor ol{margin:4px 0 4px 18px}
-.quill-editor table{border-collapse:collapse;width:100%}
-.quill-editor td,.quill-editor th{border:1px solid var(--border);padding:4px 6px}
+.quill-editor .ql-editor table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+.quill-editor .ql-editor td,.quill-editor .ql-editor th{border:1px solid var(--border);padding:4px 6px}
+textarea.ed-fallback{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px;background:var(--input-bg);color:var(--text);resize:vertical;min-height:170px;max-height:340px;line-height:1.5}
+textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
 #editModal .modal-content,#addModal .modal-content,#dayReportModal .modal-content{max-width:780px}
 .modal-wide{max-width:1400px;width:min(1400px,96vw)}
 .dayreport-auto{border-top:1px dashed var(--border);margin:4px 0 10px;padding-top:8px}
