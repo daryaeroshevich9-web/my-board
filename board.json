@@ -205,6 +205,12 @@
           "text": "<p>Подумать&nbsp;сколько&nbsp;хранить&nbsp;данные</p><p></p>",
           "done": false,
           "doneAt": null
+        },
+        {
+          "id": 1790170537716,
+          "text": "<p>Данные&nbsp;для&nbsp;базы</p>",
+          "done": false,
+          "doneAt": null
         }
       ],
       "subOpen": false,
