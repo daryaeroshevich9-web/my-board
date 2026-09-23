@@ -158,7 +158,14 @@
       "archived": false,
       "due": null,
       "tags": [],
-      "subtasks": [],
+      "subtasks": [
+        {
+          "id": 1790172353821,
+          "text": "<p>дополнительная&nbsp;итерация&nbsp;согласования</p>",
+          "done": false,
+          "doneAt": null
+        }
+      ],
       "subOpen": false,
       "deleted": false,
       "pinned": false
