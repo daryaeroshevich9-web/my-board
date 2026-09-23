@@ -27,6 +27,9 @@ let expandedText = new Set();
 let expandedSubs = new Set();
 let expandedSubText = new Set();
 let currentReportDate = null;
+let modalZ = 1000;
+function showModal(el){ if(!el) return; modalZ++; el.style.zIndex = String(modalZ); el.classList.add('open'); }
+function hideModal(el){ if(!el) return; el.classList.remove('open'); el.style.zIndex=''; if(modalZ>1000) modalZ--; }
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -274,7 +277,6 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Quill с фолбэком; курсор в конец ---
 const QUILL_TOOLBAR = [
   [{ 'header': [1, 2, 3, false] }],
   ['bold', 'italic', 'underline', 'strike'],
@@ -473,15 +475,15 @@ function askConfirm(text, cb, yesLabel){
   document.getElementById('confirmText').textContent = text;
   document.getElementById('confirmYes').textContent = yesLabel || 'Подтвердить';
   confirmCb = cb;
-  document.getElementById('confirmModal').classList.add('open');
+  showModal(document.getElementById('confirmModal'));
 }
 document.getElementById('confirmYes').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('open');
+  hideModal(document.getElementById('confirmModal'));
   const cb = confirmCb; confirmCb = null;
   if (cb) cb();
 });
 document.getElementById('confirmNo').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('open');
+  hideModal(document.getElementById('confirmModal'));
   confirmCb = null;
 });
 const sidebarEl = document.getElementById('sidebar');
@@ -523,7 +525,9 @@ function dayReportFor(date){ return dayReports.find(r => r.date === date); }
 function doneTasksForDate(dateISO){
   return tasks.filter(t => t.done && t.doneAt && String(t.doneAt).slice(0,10) === dateISO);
 }
-// Авто-строки дня: задачи И подзадачи, с форматированием
+function sortedSubs(list){
+  return (list||[]).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+}
 function autoLinesForDate(dateISO){
   const out = [];
   tasks.forEach(t => {
@@ -611,10 +615,10 @@ function openDay(date){
   const dayTa = document.getElementById('dayInput');
   dayTa.value = v;
   document.getElementById('dayDelete').style.display = note ? '' : 'none';
-  document.getElementById('dayModal').classList.add('open');
+  showModal(document.getElementById('dayModal'));
   setTimeout(() => { dayTa.focus(); dayTa.selectionStart = dayTa.selectionEnd = dayTa.value.length; autoGrow(dayTa); }, 0);
 }
-function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
+function closeDay(){ hideModal(document.getElementById('dayModal')); }
 function closeDayRequest(){
   const ta = document.getElementById('dayInput');
   if (ta.value.trim() !== dayInitial.trim()) {
@@ -642,13 +646,12 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
 });
-// --- Отчёт дня (за произвольную дату) ---
 function openDayReport(date){
   stopEdVoice();
   currentReportDate = date || todayISO();
   const p = parseLocal(currentReportDate);
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
-  document.getElementById('dayReportModal').classList.add('open');
+  showModal(document.getElementById('dayReportModal'));
   const r = dayReportFor(currentReportDate);
   try {
     repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
@@ -660,7 +663,7 @@ function openDayReport(date){
   renderDayReportAuto(currentReportDate);
   setTimeout(() => { repEditor.focus(); repEditor.cursorEnd(); }, 60);
 }
-function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); stopEdVoice(); repEditor.destroy(); }
+function closeDayReport(){ hideModal(document.getElementById('dayReportModal')); stopEdVoice(); repEditor.destroy(); }
 function closeDayReportRequest(){
   if (repEditor.plain() !== dayReportInitialPlain) {
     askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { closeDayReport(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
@@ -711,7 +714,6 @@ function downloadDayReportMd(){
   notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('cancelDayReport').addEventListener('click', closeDayReportRequest);
-// --- Голос ---
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 const micBtn = document.getElementById('micBtn');
 const repMicBtn = document.getElementById('repMic');
@@ -954,7 +956,7 @@ function noteHtml(t) {
   let subBlock = '';
   if (t.subtasks.length) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx)).join('') +
+      sortedSubs(t.subtasks).map((s, idx) => subtaskHtml(t, s, idx)).join('') +
       '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
       '</div>';
   }
@@ -982,7 +984,7 @@ function personalNoteHtml(t) {
   let subBlock = '';
   if (t.subtasks.length) {
     subBlock = '<div class="subtasks">' +
-      t.subtasks.map((s, idx) => subtaskHtml(t, s, idx)).join('') +
+      sortedSubs(t.subtasks).map((s, idx) => subtaskHtml(t, s, idx)).join('') +
       '<button type="button" class="collapse-toggle" data-cs="' + t.id + '" style="display:none"></button>' +
       '</div>';
   }
@@ -1160,7 +1162,7 @@ function openEditModal(mode){
     title = '＋ Новая подзадача';
   }
   document.getElementById('editTitle').textContent = title;
-  document.getElementById('editModal').classList.add('open');
+  showModal(document.getElementById('editModal'));
   try {
     editEditor.init(content, asHtml);
   } catch(e) {
@@ -1170,7 +1172,7 @@ function openEditModal(mode){
   editInitialPlain = editEditor.plain();
   setTimeout(() => { editEditor.focus(); editEditor.cursorEnd(); }, 60);
 }
-function closeEdit(){ document.getElementById('editModal').classList.remove('open'); editEditor.destroy(); editMode = null; }
+function closeEdit(){ hideModal(document.getElementById('editModal')); editEditor.destroy(); editMode = null; }
 function closeEditRequest(){
   if (editEditor.plain() !== editInitialPlain) {
     askConfirm('Закрыть без сохранения? Изменения будут потеряны.', () => { closeEdit(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
@@ -1209,9 +1211,9 @@ function openSubsModal(tid, isPersonal){
   if (!t) return;
   document.getElementById('subsTitle').textContent = '📝 Подзадачи: ' + shortText(t.text, 40);
   renderSubsList();
-  document.getElementById('subsModal').classList.add('open');
+  showModal(document.getElementById('subsModal'));
 }
-function closeSubs(){ document.getElementById('subsModal').classList.remove('open'); subsMode = null; }
+function closeSubs(){ hideModal(document.getElementById('subsModal')); subsMode = null; }
 function renderSubsList(){
   const list = document.getElementById('subsList');
   if (!subsMode) return;
@@ -1221,7 +1223,7 @@ function renderSubsList(){
     list.innerHTML = '<div class="empty">Подзадач пока нет</div>';
     return;
   }
-  list.innerHTML = t.subtasks.map(s =>
+  list.innerHTML = sortedSubs(t.subtasks).map(s =>
     '<div class="subs-row ' + (s.done ? 'done' : '') + '">' +
       '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' onchange="toggleSubFromModal(' + t.id + ',' + s.id + ')">' +
       '<div class="sub-text">' + renderContent(s.text) + '</div>' +
@@ -1314,9 +1316,9 @@ function openDue(id) {
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
   document.getElementById('dueInput').value = t && t.due ? t.due : '';
-  document.getElementById('dueModal').classList.add('open');
+  showModal(document.getElementById('dueModal'));
 }
-function closeDue() { document.getElementById('dueModal').classList.remove('open'); }
+function closeDue() { hideModal(document.getElementById('dueModal')); }
 function saveDue() {
   const t = tasks.find(x => x.id === currentNoteId);
   if (t) { t.due = document.getElementById('dueInput').value || null; saveTasks(); render(); }
@@ -1331,9 +1333,9 @@ document.getElementById('clearDoneBtn').addEventListener('click', () => {
   const n = tasks.filter(t => t.done && !t.archived).length;
   if (!n) { notify('Нет выполненных задач для отправки в архив.'); return; }
   document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
-  document.getElementById('broomModal').classList.add('open');
+  showModal(document.getElementById('broomModal'));
 });
-function closeBroom() { document.getElementById('broomModal').classList.remove('open'); }
+function closeBroom() { hideModal(document.getElementById('broomModal')); }
 function confirmBroom() {
   tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
   saveTasks(); render(); closeBroom();
@@ -1341,10 +1343,10 @@ function confirmBroom() {
 function openArchive() {
   document.getElementById('archSearch').value = '';
   renderArchList();
-  document.getElementById('archiveModal').classList.add('open');
+  showModal(document.getElementById('archiveModal'));
   closeSbMobile();
 }
-function closeArchive() { document.getElementById('archiveModal').classList.remove('open'); }
+function closeArchive() { hideModal(document.getElementById('archiveModal')); }
 function renderArchList() {
   const q = (document.getElementById('archSearch').value || '').trim().toLowerCase();
   const list = document.getElementById('archList');
@@ -1367,7 +1369,7 @@ function renderArchList() {
 document.getElementById('archSearch').addEventListener('input', renderArchList);
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
-  document.getElementById('addModal').classList.add('open');
+  showModal(document.getElementById('addModal'));
   addEditor.init('', false);
   setTimeout(() => addEditor.focus(), 60);
 }
@@ -1399,8 +1401,8 @@ function renderZonesList() {
     '</div>'
   ).join('');
 }
-function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); closeSbMobile(); }
-function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
+function openZones() { renderZonesList(); showModal(document.getElementById('zonesModal')); closeSbMobile(); }
+function closeZones() { hideModal(document.getElementById('zonesModal')); }
 document.getElementById('addZoneBtn').addEventListener('click', () => {
   const label = capFirst(document.getElementById('newZoneLabel').value.trim());
   if (!label) { notify('Введите название раздела.'); return; }
@@ -1441,7 +1443,7 @@ function quickAddMany(lines) {
     '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
     (z.hidden ? ' (скрыт — появится при выборе)' : '') + '</button>'
   ).join('');
-  document.getElementById('quickZoneModal').classList.add('open');
+  showModal(document.getElementById('quickZoneModal'));
 }
 function chooseQuickZone(zoneKey) {
   const z = zoneByKey(zoneKey);
@@ -1449,10 +1451,10 @@ function chooseQuickZone(zoneKey) {
   if (z.hidden) { z.hidden = false; saveZones(); }
   pendingQuickLines.forEach(l => createParsed(l, zoneKey));
   pendingQuickLines = [];
-  document.getElementById('quickZoneModal').classList.remove('open');
+  hideModal(document.getElementById('quickZoneModal'));
 }
 function closeQuickZone() {
-  document.getElementById('quickZoneModal').classList.remove('open');
+  hideModal(document.getElementById('quickZoneModal'));
   if (pendingQuickLines.length) {
     document.getElementById('quickAdd').value = pendingQuickLines.join('\n');
     pendingQuickLines = [];
@@ -1474,7 +1476,6 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-// --- Итоги: отчёты по дням (задачи + подзадачи, с форматированием) ---
 let lastResults = {md: ''};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1504,10 +1505,10 @@ function setResultsPeriod(kind) {
 }
 function openResults() {
   setResultsPeriod('week');
-  document.getElementById('resultsModal').classList.add('open');
+  showModal(document.getElementById('resultsModal'));
   closeSbMobile();
 }
-function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
+function closeResults() { hideModal(document.getElementById('resultsModal')); }
 function reportDatesInPeriod(from, to){
   const set = new Set();
   dayReports.forEach(r => { if (r.date >= from && r.date <= to) set.add(r.date); });
@@ -1743,12 +1744,12 @@ function openSettings(hint) {
   inp.value = getToken();
   wrap.appendChild(inp);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
-  document.getElementById('settingsModal').classList.add('open');
+  showModal(document.getElementById('settingsModal'));
   setTimeout(() => inp.focus(), 0);
   closeSbMobile();
 }
 function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
+  hideModal(document.getElementById('settingsModal'));
   const wrap = document.getElementById('tokenInputWrap');
   if (wrap) wrap.innerHTML = '';
 }
@@ -1766,9 +1767,9 @@ document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
 function closeAddRequest(){
   if (addEditor.plain() !== '') {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { document.getElementById('addModal').classList.remove('open'); addEditor.destroy(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { hideModal(document.getElementById('addModal')); addEditor.destroy(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
   } else {
-    document.getElementById('addModal').classList.remove('open');
+    hideModal(document.getElementById('addModal'));
     addEditor.destroy();
   }
 }
@@ -1783,7 +1784,7 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   tasks.unshift(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
   clearLeakedSearch(plain);
   saveTasks(); render();
-  document.getElementById('addModal').classList.remove('open');
+  hideModal(document.getElementById('addModal'));
   addEditor.destroy();
   notify('Задача добавлена.', true);
 });
@@ -1795,6 +1796,28 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('editModal').classList.contains('open')) { e.preventDefault(); saveEdit(); }
     else if (document.getElementById('dayReportModal').classList.contains('open')) { e.preventDefault(); saveDayReport(); }
     else if (document.getElementById('addModal').classList.contains('open')) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
+  }
+  if (e.key === 'Escape') {
+    const open = Array.from(document.querySelectorAll('.modal.open'));
+    if (!open.length) return;
+    open.sort((a,b) => (parseInt(b.style.zIndex||'1000',10) - parseInt(a.style.zIndex||'1000',10)));
+    const top = open[0];
+    e.preventDefault();
+    switch(top.id){
+      case 'addModal': document.getElementById('cancelAdd').click(); break;
+      case 'editModal': document.getElementById('cancelEdit').click(); break;
+      case 'subsModal': closeSubs(); break;
+      case 'dayModal': document.getElementById('dayCancel').click(); break;
+      case 'dayReportModal': document.getElementById('cancelDayReport').click(); break;
+      case 'dueModal': closeDue(); break;
+      case 'broomModal': closeBroom(); break;
+      case 'confirmModal': document.getElementById('confirmNo').click(); break;
+      case 'archiveModal': closeArchive(); break;
+      case 'zonesModal': closeZones(); break;
+      case 'resultsModal': closeResults(); break;
+      case 'quickZoneModal': closeQuickZone(); break;
+      case 'settingsModal': closeSettings(); break;
+    }
   }
 });
 if ('serviceWorker' in navigator) {
