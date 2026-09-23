@@ -3,7 +3,7 @@
     {
       "id": 1790172235031,
       "zone": "portal",
-      "text": "<p>Доставка&nbsp;в&nbsp;LED</p>",
+      "text": "<p>Доставка&nbsp;в&nbsp;LED</p><ul><li><span style=\"background-color: rgba(247, 228, 232, 0.5); color: rgb(68, 84, 106);\">не&nbsp;пришло&nbsp;письмо&nbsp;(каждые&nbsp;2&nbsp;часа)</span></li><li><span style=\"background-color: rgba(247, 228, 232, 0.5); color: rgb(68, 84, 106);\">не&nbsp;редактируются&nbsp;часы&nbsp;без&nbsp;клика&nbsp;на&nbsp;минуты</span></li><li><span style=\"background-color: rgba(247, 228, 232, 0.5); color: rgb(68, 84, 106);\">форматирование&nbsp;записи&nbsp;с&nbsp;изменениями&nbsp;в&nbsp;рамках&nbsp;2х&nbsp;часов</span></li><li></li></ul>",
       "done": false,
       "created": "2026-09-23T14:03:55.031Z",
       "doneAt": null,
