@@ -68,6 +68,7 @@ let dayReportInitialPlain = '';
 let editMode = null;
 let editInitialPlain = '';
 let subsMode = null;
+let modalDepth = 0;
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
@@ -265,7 +266,7 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Quill 2 (snow) с таблицей и фолбэком ---
+// --- Редактор: Quill 2 с фолбэком ---
 const QUILL_TOOLBAR = [
   [{ 'header': [1, 2, 3, false] }],
   ['bold', 'italic', 'underline', 'strike'],
@@ -273,7 +274,6 @@ const QUILL_TOOLBAR = [
   [{ 'list': 'ordered' }, { 'list': 'bullet' }],
   [{ 'indent': '-1' }, { 'indent': '+1' }],
   ['blockquote', 'code-block'],
-  ['table'],
   ['link'],
   ['clean']
 ];
@@ -302,15 +302,6 @@ function makeEditor(hostId){
           quillWrap.className = 'quill-editor';
           host.appendChild(quillWrap);
           quill = new window.Quill(quillWrap, { theme: 'snow', placeholder: 'Текст…', modules: { toolbar: QUILL_TOOLBAR } });
-          try {
-            const tbMod = quill.getModule('toolbar');
-            if (typeof quill.insertTable === 'function') {
-              tbMod.addHandler('table', function(){ this.quill.insertTable(2, 3); });
-            } else {
-              const btn = host.querySelector('.ql-table');
-              if (btn) btn.style.display = 'none';
-            }
-          } catch(e){}
           if (html) {
             try { quill.clipboard.dangerouslyPasteHTML(html); }
             catch(e) { quill.root.innerHTML = html; }
@@ -358,8 +349,10 @@ function makeEditor(hostId){
     appendText(chunk){
       if (!chunk) return;
       if (quill) {
-        try { quill.insertText(quill.getLength() - 1, chunk, 'user'); }
-        catch(e) { quill.root.innerHTML += '<p>' + escapeHtml(chunk) + '</p>'; }
+        const existing = quill.getText().trim();
+        const toInsert = (existing ? '\n' : '') + chunk;
+        quill.insertText(quill.getLength(), toInsert, 'user');
+        try { quill.setSelection(quill.getLength(), 0); } catch(e){}
       } else if (ta) {
         ta.value += (ta.value && !/\n$/.test(ta.value) ? '\n' : '') + chunk;
         autoGrow(ta);
@@ -468,17 +461,32 @@ function askConfirm(text, cb, yesLabel){
   document.getElementById('confirmText').textContent = text;
   document.getElementById('confirmYes').textContent = yesLabel || 'Подтвердить';
   confirmCb = cb;
-  document.getElementById('confirmModal').classList.add('open');
+  openModal('confirmModal');
 }
 document.getElementById('confirmYes').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('open');
+  closeModal('confirmModal');
   const cb = confirmCb; confirmCb = null;
   if (cb) cb();
 });
 document.getElementById('confirmNo').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('open');
+  closeModal('confirmModal');
   confirmCb = null;
 });
+// --- Стек модалок: каждая новая поверх предыдущей ---
+function openModal(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  modalDepth += 1;
+  el.style.zIndex = String(1000 + modalDepth * 10);
+  el.classList.add('open');
+}
+function closeModal(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('open');
+  el.style.zIndex = '';
+  modalDepth = Math.max(0, modalDepth - 1);
+}
 const sidebarEl = document.getElementById('sidebar');
 const backdropEl = document.getElementById('sbBackdrop');
 function togglePin(){
@@ -594,10 +602,10 @@ function openDay(date){
   const dayTa = document.getElementById('dayInput');
   dayTa.value = v;
   document.getElementById('dayDelete').style.display = note ? '' : 'none';
-  document.getElementById('dayModal').classList.add('open');
+  openModal('dayModal');
   setTimeout(() => { dayTa.focus(); autoGrow(dayTa); }, 0);
 }
-function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
+function closeDay(){ closeModal('dayModal'); }
 function closeDayRequest(){
   const ta = document.getElementById('dayInput');
   if (ta.value.trim() !== dayInitial.trim()) {
@@ -625,13 +633,15 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (listKeydown(e)) return;
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
 });
-function openDayReport(){
+// --- Отчёт дня (за произвольную дату) ---
+let currentReportDate = null;
+function openDayReport(date){
   stopEdVoice();
-  const date = todayISO();
-  const p = parseLocal(date);
+  currentReportDate = date || todayISO();
+  const p = parseLocal(currentReportDate);
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
-  document.getElementById('dayReportModal').classList.add('open');
-  const r = dayReportFor(date);
+  openModal('dayReportModal');
+  const r = dayReportFor(currentReportDate);
   try {
     repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
   } catch(e) {
@@ -639,10 +649,10 @@ function openDayReport(){
     repEditor.init(r ? r.text : '', false);
   }
   dayReportInitialPlain = repEditor.plain();
-  renderDayReportAuto(date);
+  renderDayReportAuto(currentReportDate);
   setTimeout(() => repEditor.focus(), 60);
 }
-function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); stopEdVoice(); repEditor.destroy(); }
+function closeDayReport(){ closeModal('dayReportModal'); stopEdVoice(); repEditor.destroy(); }
 function closeDayReportRequest(){
   if (repEditor.plain() !== dayReportInitialPlain) {
     askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { closeDayReport(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
@@ -651,12 +661,12 @@ function closeDayReportRequest(){
 function saveDayReport(){
   const val = repEditor.get();
   const plain = htmlToPlain(val).trim();
-  const date = todayISO();
+  const date = currentReportDate || todayISO();
   if (!plain) {
     if (!dayReportFor(date)) { closeDayReport(); return; }
-    askConfirm('Удалить отчёт за сегодня? Действие необратимо.', () => {
+    askConfirm('Удалить отчёт за эту дату? Действие необратимо.', () => {
       dayReports = dayReports.filter(r => r.date !== date);
-      saveDayReports(); closeDayReport();
+      saveDayReports(); closeDayReport(); renderResultsSafe();
       notify('Отчёт удалён.');
     }, 'Удалить');
     return;
@@ -664,8 +674,11 @@ function saveDayReport(){
   const ex = dayReportFor(date);
   if (ex) { ex.text = val; ex.updated = new Date().toISOString(); }
   else dayReports.push({date: date, text: val, updated: new Date().toISOString()});
-  saveDayReports(); closeDayReport();
-  notify('Отчёт дня сохранён.', true);
+  saveDayReports(); closeDayReport(); renderResultsSafe();
+  notify('Отчёт сохранён.', true);
+}
+function renderResultsSafe(){
+  if (document.getElementById('resultsModal').classList.contains('open')) renderResults();
 }
 function dayReportFullText(date){
   const r = dayReportFor(date);
@@ -679,17 +692,18 @@ function dayReportFullText(date){
   return out.trim();
 }
 function copyDayReport(){
-  const t = dayReportFullText(todayISO());
-  if (!t) { notify('Отчёта за сегодня нет.'); return; }
+  const t = dayReportFullText(currentReportDate || todayISO());
+  if (!t) { notify('Отчёта за эту дату нет.'); return; }
   navigator.clipboard.writeText(t).then(() => notify('Отчёт скопирован.', true));
 }
 function downloadDayReportMd(){
-  const t = dayReportFullText(todayISO());
-  if (!t) { notify('Отчёта за сегодня нет.'); return; }
-  downloadBlob('# ' + t.split('\n')[0] + '\n\n' + t.split('\n').slice(1).join('\n') + '\n', 'otchet-' + todayISO() + '.md', 'text/markdown;charset=utf-8');
+  const t = dayReportFullText(currentReportDate || todayISO());
+  if (!t) { notify('Отчёта за эту дату нет.'); return; }
+  downloadBlob('# ' + t.split('\n')[0] + '\n\n' + t.split('\n').slice(1).join('\n') + '\n', 'otchet-' + (currentReportDate || todayISO()) + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('cancelDayReport').addEventListener('click', closeDayReportRequest);
+// --- Голос ---
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 const micBtn = document.getElementById('micBtn');
 const repMicBtn = document.getElementById('repMic');
@@ -1118,24 +1132,7 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
-// --- Менеджер модальных окон (стек) ---
-const modalStack = [];
-function openModal(modalId){
-  const modal = document.getElementById(modalId);
-  if (!modal) return;
-  const depth = modalStack.length;
-  modal.style.zIndex = String(1000 + depth * 10);
-  modal.classList.add('open');
-  modalStack.push(modalId);
-}
-function closeModal(modalId){
-  const modal = document.getElementById(modalId);
-  if (!modal) return;
-  modal.classList.remove('open');
-  modal.style.zIndex = '';
-  const idx = modalStack.lastIndexOf(modalId);
-  if (idx !== -1) modalStack.splice(idx, 1);
-}
+// --- Модалка редактирования ---
 function storeFor(mode){ return mode.type === 'personal' ? personal : tasks; }
 function openEditModal(mode){
   editMode = mode;
@@ -1198,6 +1195,7 @@ function saveEdit(){
 }
 document.getElementById('cancelEdit').addEventListener('click', closeEditRequest);
 document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+// --- Модалка подзадач (просмотр) ---
 function openSubsModal(tid, isPersonal){
   subsMode = {tid: tid, isPersonal: !!isPersonal};
   const t = storeFor({type: isPersonal ? 'personal' : 'task'}).find(x => x.id === tid);
@@ -1226,7 +1224,7 @@ function renderSubsList(){
   ).join('');
 }
 function toggleSubFromModal(tid, sid){
-  const t = tasks.find(x => x.id === tid)|| personal.find(x => x.id === tid);
+  const t = tasks.find(x => x.id === tid) || personal.find(x => x.id === tid);
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
   if (!s) return;
@@ -1235,7 +1233,7 @@ function toggleSubFromModal(tid, sid){
   renderSubsList();
 }
 function delSubFromModal(tid, sid){
-  const t = tasks.find(x => x.id === tid)|| personal.find(x => x.id === tid);
+  const t = tasks.find(x => x.id === tid) || personal.find(x => x.id === tid);
   if (!t) return;
   const s = t.subtasks.find(y => y.id === sid);
   if (!s) return;
@@ -1252,10 +1250,6 @@ document.getElementById('subsAddBtn').addEventListener('click', () => {
 function toggleSub(tid, sid) {
   const t = tasks.find(x => x.id === tid);
   if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
-}
-function toggleSubP(tid, sid) {
-  const t = personal.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; savePersonal(); renderPersonal(); } }
 }
 function deletePersonal(id) {
   const t = personal.find(x => x.id === id);
@@ -1280,10 +1274,6 @@ function permanentDelete(id) {
     tasks = tasks.filter(x => x.id !== id);
     saveTasks(); render(); renderArchList();
   }, 'Удалить');
-}
-function togglePinTask(id) {
-  const t = tasks.find(x => x.id === id);
-  if (t) { t.pinned = !t.pinned; saveTasks(); render(); }
 }
 const popEl = document.getElementById('notePop');
 function closeNoteMenu() { popEl.classList.remove('open'); }
@@ -1334,7 +1324,7 @@ document.getElementById('clearDoneBtn').addEventListener('click', () => {
   if (!n) { notify('Нет выполненных задач для отправки в архив.'); return; }
   document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
   openModal('broomModal');
-}
+});
 function closeBroom() { closeModal('broomModal'); }
 function confirmBroom() {
   tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
@@ -1395,7 +1385,7 @@ function renderZonesList() {
     '<div class="zone-row">' +
       '<span class="zone-row-emoji">' + (z.emoji || '🗂️') + '</span>' +
       '<span class="zone-row-label">' + escapeHtml(z.label) + '</span>' +
-      '<input type="color" class="zone-color-pick" value="' + (z.color|| TINT_HEX[tintIndex(z)]) + '" onchange="setZoneColor(\'' + z.key + '\', this.value)" title="Цвет раздела">' +
+      '<input type="color" class="zone-color-pick" value="' + (z.color || TINT_HEX[tintIndex(z)]) + '" onchange="setZoneColor(\'' + z.key + '\', this.value)" title="Цвет раздела">' +
       (z.color ? '<button class="modal-btn secondary" onclick="resetZoneColor(\'' + z.key + '\')">Авто</button>' : '') +
       '<button class="modal-btn secondary" onclick="toggleZone(\'' + z.key + '\')">' + (z.hidden ? 'Показать' : 'Скрыть') + '</button>' +
     '</div>'
@@ -1476,7 +1466,8 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-let lastResults = {md: '', rows: []};
+// --- Итоги: одна колонка, только отчёты по дням ---
+let lastResults = {md: ''};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
   const day = (x.getDay() + 6) % 7;
@@ -1511,7 +1502,7 @@ function openResults() {
 function closeResults() { closeModal('resultsModal'); }
 function reportDatesInPeriod(from, to){
   const set = new Set();
-  dayReports.forEach(r => { if (r.date >= from && r.date <= to && htmlToPlain(r.text).trim()) set.add(r.date); });
+  dayReports.forEach(r => { if (r.date >= from && r.date <= to) set.add(r.date); });
   tasks.forEach(t => {
     if (t.done && t.doneAt) {
       const d = String(t.doneAt).slice(0,10);
@@ -1539,62 +1530,27 @@ function renderResults() {
   const from = document.getElementById('resFrom').value;
   const to = document.getElementById('resTo').value;
   if (!from || !to) return;
-  const fromDate = parseLocal(from);
-  const toDate = parseLocal(to); toDate.setHours(23, 59, 59, 999);
-  const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
-  const openTasks = tasks.filter(t => !t.archived && !t.done && new Date(t.created) <= toDate);
-  const statsEl = document.getElementById('resStats');
-  if (statsEl) statsEl.innerHTML =
-    '<span class="results-chip">✅ Выполнено: ' + doneInPeriod.length + '</span>' +
-    '<span class="results-chip">⚡ В работе: ' + openTasks.length + '</span>';
-  let bodyHtml = '';
-  zones.forEach(z => {
-    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
-    const zoneOpen = openTasks.filter(t => t.zone === z.key);
-    if (!zoneDone.length && !zoneOpen.length) return;
-    bodyHtml += '<div class="results-block"><h4>' + escapeHtml(z.label) + '</h4>';
-    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(shortText(t.text, 120)) + ' <span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
-    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(shortText(t.text, 120)) + '</div>'; });
-    bodyHtml += '</div>';
-  });
-  if (!bodyHtml) bodyHtml = '<div class="results-sub">Задач за период нет</div>';
-  const bodyEl = document.getElementById('resBody');
-  if (bodyEl) bodyEl.innerHTML = bodyHtml;
   const dates = reportDatesInPeriod(from, to);
-  const repEl = document.getElementById('resReports');
-  if (repEl) repEl.innerHTML = dates.length
-    ? dates.map(d => {
-        const p = parseLocal(d);
-        const r = dayReportFor(d);
-        const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
-        const auto = autoLinesForDate(d);
-        const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
-        return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h5>' + manual + autoHtml + '</div>';
-      }).join('')
-    : '<div class="empty">За период отчётов нет</div>';
-  let md = '# Итоги\nПериод: ' + from + ' — ' + to + '\n\n';
-  md += 'Выполнено за период: ' + doneInPeriod.length + '\n';
-  md += 'В работе на конец периода: ' + openTasks.length + '\n\n';
-  zones.forEach(z => {
-    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
-    const zoneOpen = openTasks.filter(t => t.zone === z.key);
-    if (!zoneDone.length && !zoneOpen.length) return;
-    md += '## ' + z.label + '\n\n';
-    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + htmlToPlain(t.text) + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
-    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + htmlToPlain(t.text) + '\n'); md += '\n'; }
-  });
-  const repMd = buildReportsMd(from, to);
-  if (repMd) md += '\n# Отчёты по дням\n\n' + repMd;
-  const rows = [];
-  doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
-  openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'В работе', created: t.created.slice(0, 10), done: ''}));
-  lastResults = {md: md, rows: rows};
-}
-function resultsCsv() {
-  const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  let csv = 'Зона;Задача;Статус;Создана;Выполнена\n';
-  lastResults.rows.forEach(r => { csv += [r.zone, r.text, r.status, r.created, r.done].map(esc).join(';') + '\n'; });
-  return csv;
+  const box = document.getElementById('resBody');
+  if (!box) return;
+  if (!dates.length) {
+    box.innerHTML = '<div class="empty">За период отчётов нет</div>';
+    lastResults = {md: ''};
+    return;
+  }
+  box.innerHTML = dates.map(d => {
+    const p = parseLocal(d);
+    const r = dayReportFor(d);
+    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '<div class="res-rep-body" style="color:var(--text-muted)">Ручного отчёта нет</div>';
+    const auto = autoLinesForDate(d);
+    const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
+    return '<div class="res-rep">' +
+      '<div class="res-rep-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">' +
+        '<h5 style="font-size:12px;color:var(--text-muted);font-weight:700">' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' +
+        '<button class="res-rep-edit" onclick="openDayReport(\'' + d + '\')">✏️ Изменить</button>' +
+      '</div>' + manual + autoHtml + '</div>';
+  }).join('');
+  lastResults = {md: buildReportsMd(from, to)};
 }
 function downloadBlob(content, name, mime) {
   const blob = new Blob([content], {type: mime});
@@ -1611,22 +1567,10 @@ function copyResultsMd() {
   navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!', true));
 }
 function downloadResultsMd() {
-  downloadBlob(lastResults.md, 'itogi-nedeli-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
-  notify('Файл Markdown сохранён.', true);
-}
-function downloadResultsCsv() {
-  downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
-  notify('Файл CSV сохранён.', true);
-}
-function copyReportsOnly() {
-  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
-  if (!md) { notify('За период отчётов нет.'); return; }
-  navigator.clipboard.writeText(md).then(() => notify('Отчёты скопированы.', true));
-}
-function downloadReportsOnly() {
-  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
-  if (!md) { notify('За период отчётов нет.'); return; }
-  downloadBlob(md, 'otchety-' + document.getElementById('resFrom').value + '-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
+  const from = document.getElementById('resFrom').value;
+  const to = document.getElementById('resTo').value;
+  if (!lastResults.md) { notify('За период отчётов нет.'); return; }
+  downloadBlob(lastResults.md, 'otchety-' + from + '-' + to + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
@@ -1819,10 +1763,10 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   const val = addEditor.get();
   const plain = htmlToPlain(val).trim();
   if (!plain) return;
-  const zoneKey = currentAddZone|| 'other';
+  const zoneKey = currentAddZone || 'other';
   const p = parseMagic(plain);
   let text = val;
-  if (p.due) text = capFirst(p.text|| plain);
+  if (p.due) text = capFirst(p.text || plain);
   tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
   clearLeakedSearch(plain);
   saveTasks(); render();
@@ -1834,7 +1778,7 @@ document.getElementById('quickZoneModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeQuickZone();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.ctrlKey|| e.metaKey)) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     if (document.getElementById('editModal').classList.contains('open')) { e.preventDefault(); saveEdit(); }
     else if (document.getElementById('dayReportModal').classList.contains('open')) { e.preventDefault(); saveDayReport(); }
     else if (document.getElementById('addModal').classList.contains('open')) { e.preventDefault(); document.getElementById('confirmAdd').click(); }
