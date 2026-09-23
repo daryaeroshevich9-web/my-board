@@ -265,7 +265,7 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Summernote из локальной папки vendor/ с фолбэком ---
+// --- Редактор: Summernote из vendor/ с самоподгрузкой и фолбэком с баннером ---
 const SN_TOOLBAR = [
   ['undo',['undo','redo']],
   ['style',['style']],
@@ -277,6 +277,36 @@ const SN_TOOLBAR = [
   ['view',['codeview']]
 ];
 function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote); }
+let editorLibPromise = null;
+function ensureEditorLib(){
+  if (snAvailable()) return Promise.resolve(true);
+  if (editorLibPromise) return editorLibPromise;
+  const loadCss = (href) => {
+    if (!document.querySelector('link[href="' + href + '"]')) {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = href;
+      document.head.appendChild(l);
+    }
+  };
+  const loadJs = (src) => new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+  editorLibPromise = (async () => {
+    try {
+      loadCss('vendor/summernote-lite.min.css');
+      if (!window.jQuery) await loadJs('vendor/jquery.min.js');
+      if (!snAvailable()) await loadJs('vendor/summernote-lite.min.js');
+      if (!snAvailable()) return false;
+      try { await loadJs('vendor/summernote-ru-RU.min.js'); } catch(e){}
+      return snAvailable();
+    } catch(e) { return false; }
+  })();
+  return editorLibPromise;
+}
+ensureEditorLib();
 function indentLines(ta, dir){
   const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
   const ls = v.lastIndexOf('\n', s - 1) + 1;
@@ -308,6 +338,9 @@ function makeEditor(hostId){
           host.innerHTML = '';
         }
       }
+      const banner = document.createElement('div');
+      banner.textContent = '⚠️ Расширенный редактор недоступен — работает простой режим (жирный/курсив/список/отступы). Проверь папку vendor/.';
+      banner.style.cssText = 'font-size:11px;color:#8a6d1b;background:rgba(240,200,60,.18);border:1px solid rgba(200,160,20,.45);border-radius:8px;padding:6px 10px;margin-bottom:6px';
       const tb = document.createElement('div');
       tb.className = 'fmt-toolbar';
       tb.innerHTML = '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
@@ -318,6 +351,7 @@ function makeEditor(hostId){
       ta = document.createElement('textarea');
       ta.className = 'ed-fallback';
       ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
+      host.appendChild(banner);
       host.appendChild(tb);
       host.appendChild(ta);
       tb.querySelectorAll('.fmt-btn').forEach(btn => {
@@ -348,7 +382,7 @@ function makeEditor(hostId){
         autoGrow(ta);
       }
     },
-    focus(){ if (snEl) { try { snEl.summernote('focus'); } catch(e){} } else if (ta) ta.focus(); },
+    focus(){ if (snEl) { try{ snEl.summernote('focus'); }catch(e){} } else if (ta) ta.focus(); },
     destroy(){
       if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
       if (host) host.innerHTML = '';
@@ -871,8 +905,8 @@ function escapeHtml(text) { const d = document.createElement('div'); d.textConte
 function splitEmoji(text) {
   const re = /^\s*(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u;
   const m = String(text||'').match(re);
-  if (m) return {emoji: m[1], rest: text.slice(m[0].length)};
-  return {emoji: null, rest: text};
+  if (m) return {emoji: m[1], rest: String(text).slice(m[0].length)};
+  return {emoji: null, rest: String(text||'')};
 }
 function matchesQuery(t, q) {
   if (!q) return true;
@@ -1447,28 +1481,11 @@ function mondayOf(dateStr) {
   x.setDate(x.getDate() - day);
   return isoOf(x);
 }
-function setResultsPeriod(kind) {
-  const today = todayISO();
-  const d = parseLocal(today);
-  if (kind === 'week') {
-    const mon = mondayOf(today);
-    const sun = isoOf(addDays(parseLocal(mon), 6));
-    document.getElementById('resFrom').value = mon;
-    document.getElementById('resTo').value = sun;
-  } else if (kind === 'lastweek') {
-    const mon = isoOf(addDays(parseLocal(mondayOf(today)), -7));
-    const sun = isoOf(addDays(parseLocal(mon), 6));
-    document.getElementById('resFrom').value = mon;
-    document.getElementById('resTo').value = sun;
-  } else if (kind === 'month') {
-    const y = d.getFullYear(), m = d.getMonth();
-    document.getElementById('resFrom').value = isoOf(new Date(y, m, 1));
-    document.getElementById('resTo').value = isoOf(new Date(y, m + 1, 0));
-  }
-  renderResults();
-}
 function openResults() {
-  setResultsPeriod('week');
+  const today = todayISO();
+  document.getElementById('resFrom').value = mondayOf(today);
+  document.getElementById('resTo').value = today;
+  renderResults();
   document.getElementById('resultsModal').classList.add('open');
   closeSbMobile();
 }
@@ -1507,49 +1524,53 @@ function renderResults() {
   const toDate = parseLocal(to); toDate.setHours(23, 59, 59, 999);
   const doneInPeriod = tasks.filter(t => t.done && t.doneAt && (() => { const d = new Date(t.doneAt); return d >= fromDate && d <= toDate; })());
   const openTasks = tasks.filter(t => !t.archived && !t.done && new Date(t.created) <= toDate);
+  const statsEl = document.getElementById('resStats');
+  if (statsEl) statsEl.innerHTML =
+    '<span class="results-chip">✅ Выполнено: ' + doneInPeriod.length + '</span>' +
+    '<span class="results-chip">⚡ В работе: ' + openTasks.length + '</span>';
+  let bodyHtml = '';
+  zones.forEach(z => {
+    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
+    const zoneOpen = openTasks.filter(t => t.zone === z.key);
+    if (!zoneDone.length && !zoneOpen.length) return;
+    bodyHtml += '<div class="results-block"><h4>' + escapeHtml(z.label) + '</h4>';
+    zoneDone.forEach(t => { bodyHtml += '<div class="results-item done-item">✅ ' + escapeHtml(shortText(t.text, 90)) + ' <span class="item-date">' + t.doneAt.slice(0, 10) + '</span></div>'; });
+    zoneOpen.forEach(t => { bodyHtml += '<div class="results-item">▫️ ' + escapeHtml(shortText(t.text, 90)) + '</div>'; });
+    bodyHtml += '</div>';
+  });
+  if (!bodyHtml) bodyHtml = '<div class="empty">За период задач нет</div>';
+  const bodyEl = document.getElementById('resBody');
+  if (bodyEl) bodyEl.innerHTML = bodyHtml;
   const dates = reportDatesInPeriod(from, to);
-  const box = document.getElementById('resBody');
-  if (!box) return;
-  if (!dates.length) {
-    box.innerHTML = '<div class="empty">За период отчётов нет</div>';
-  } else {
-    box.innerHTML = dates.map(d => {
-      const p = parseLocal(d);
-      const r = dayReportFor(d);
-      const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="results-item">' + sanitizeHtml(r.text) + '</div>' : '';
-      const auto = autoLinesForDate(d);
-      const autoHtml = auto.length ? '<div class="results-sub">Закрыто на доске</div>' + auto.map(l => '<div class="results-item done-item">' + escapeHtml(l.replace(/^- /,'')) + '</div>').join('') : '';
-      return '<div class="results-block"><h4>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + ' <button class="modal-btn secondary" style="padding:3px 10px;font-size:12px;margin-left:8px" onclick="openDayReportFor(\'' + d + '\')">✏️ Изменить</button></h4>' + (manual || '<div class="results-item">Ручного отчёта нет</div>') + autoHtml + '</div>';
-    }).join('');
-  }
-  let md = '# Итоги\nПериод: ' + from + ' — ' + to + '\n\n';
+  const repEl = document.getElementById('resReports');
+  if (repEl) repEl.innerHTML = dates.length
+    ? dates.map(d => {
+        const p = parseLocal(d);
+        const r = dayReportFor(d);
+        const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
+        const auto = autoLinesForDate(d);
+        const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
+        return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h5>' + manual + autoHtml + '</div>';
+      }).join('')
+    : '<div class="empty">За период отчётов нет</div>';
+  let md = '# Еженедельный статус\nПериод: ' + from + ' — ' + to + '\n\n';
   md += 'Выполнено за период: ' + doneInPeriod.length + '\n';
   md += 'В работе на конец периода: ' + openTasks.length + '\n\n';
+  zones.forEach(z => {
+    const zoneDone = doneInPeriod.filter(t => t.zone === z.key);
+    const zoneOpen = openTasks.filter(t => t.zone === z.key);
+    if (!zoneDone.length && !zoneOpen.length) return;
+    md += '## ' + z.label + '\n\n';
+    if (zoneDone.length) { md += '### Выполнено за период\n'; zoneDone.forEach(t => md += '- ✅ ' + htmlToPlain(t.text) + ' (' + t.doneAt.slice(0, 10) + ')\n'); md += '\n'; }
+    if (zoneOpen.length) { md += '### В работе\n'; zoneOpen.forEach(t => md += '- ' + htmlToPlain(t.text) + '\n'); md += '\n'; }
+  });
   const repMd = buildReportsMd(from, to);
-  if (repMd) md += '# Отчёты по дням\n\n' + repMd;
+  if (repMd) md += '\n# Отчёты по дням\n\n' + repMd;
   const rows = [];
   doneInPeriod.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'Выполнено', created: t.created.slice(0, 10), done: t.doneAt ? t.doneAt.slice(0, 10) : ''}));
   openTasks.forEach(t => rows.push({zone: labelFor(t.zone), text: htmlToPlain(t.text), status: 'В работе', created: t.created.slice(0, 10), done: ''}));
   lastResults = {md: md, rows: rows};
 }
-function openDayReportFor(date){
-  stopEdVoice();
-  currentReportDate = date;
-  const p = parseLocal(date);
-  document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
-  document.getElementById('dayReportModal').classList.add('open');
-  const r = dayReportFor(date);
-  try {
-    repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
-  } catch(e) {
-    try { repEditor.destroy(); } catch(e2){}
-    repEditor.init(r ? r.text : '', false);
-  }
-  dayReportInitialPlain = repEditor.plain();
-  renderDayReportAuto(date);
-  setTimeout(() => repEditor.focus(), 60);
-}
-let currentReportDate = null;
 function resultsCsv() {
   const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   let csv = 'Зона;Задача;Статус;Создана;Выполнена\n';
@@ -1567,20 +1588,26 @@ function downloadBlob(content, name, mime) {
   URL.revokeObjectURL(a.href);
 }
 function copyResultsMd() {
-  if (!lastResults.md) { notify('Пусто — нечего копировать.'); return; }
   navigator.clipboard.writeText(lastResults.md).then(() => notify('Отчёт скопирован в буфер обмена!', true));
 }
 function downloadResultsMd() {
-  const from = document.getElementById('resFrom').value;
-  const to = document.getElementById('resTo').value;
-  downloadBlob(lastResults.md || '', 'itogi-' + from + '-' + to + '.md', 'text/markdown;charset=utf-8');
+  downloadBlob(lastResults.md, 'itogi-nedeli-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
   notify('Файл Markdown сохранён.', true);
 }
 function downloadResultsCsv() {
-  const from = document.getElementById('resFrom').value;
-  const to = document.getElementById('resTo').value;
-  downloadBlob('\ufeff' + resultsCsv(), 'itogi-' + from + '-' + to + '.csv', 'text/csv;charset=utf-8');
+  downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
   notify('Файл CSV сохранён.', true);
+}
+function copyReportsOnly() {
+  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
+  if (!md) { notify('За период отчётов нет.'); return; }
+  navigator.clipboard.writeText(md).then(() => notify('Отчёты скопированы.', true));
+}
+function downloadReportsOnly() {
+  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
+  if (!md) { notify('За период отчётов нет.'); return; }
+  downloadBlob(md, 'otchety-' + document.getElementById('resFrom').value + '-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
+  notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
