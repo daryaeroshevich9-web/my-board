@@ -144,7 +144,7 @@
     {
       "id": 1790062684294,
       "zone": "portal",
-      "text": "Supervision\n",
+      "text": "<p>Supervision</p>",
       "done": false,
       "created": "2026-09-22T07:38:04.294Z",
       "doneAt": null,
