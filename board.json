@@ -191,6 +191,11 @@
           "id": 1790151191777,
           "text": "<p>Заявки&nbsp;HDE</p>",
           "done": false
+        },
+        {
+          "id": 1790153540347,
+          "text": "<p>Подумать&nbsp;сколько&nbsp;хранить&nbsp;данные</p><p></p>",
+          "done": false
         }
       ],
       "subOpen": false,
