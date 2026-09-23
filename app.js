@@ -26,6 +26,7 @@ const ELLIPSIS = '⋯';
 let expandedText = new Set();
 let expandedSubs = new Set();
 let expandedSubText = new Set();
+let currentReportDate = null;
 function migrateZone(z){ return {key:z.key, label:z.label||z.key, emoji:z.emoji||'🗂️', hidden:!!z.hidden, tint:(typeof z.tint==='number'?z.tint:0), color:z.color||null}; }
 function loadZones(){
   try{
@@ -34,12 +35,19 @@ function loadZones(){
   }catch(e){}
   return DEFAULT_ZONES.map(z=>Object.assign({},z));
 }
+function migrateSub(s){
+  if (!s.id) s.id = Date.now() + Math.floor(Math.random()*10000);
+  if (s.done === undefined) s.done = false;
+  if (s.doneAt === undefined) s.doneAt = s.done ? null : null;
+  return s;
+}
 function migratePersonalNote(t){
   if (!t.id) t.id = Date.now() + Math.floor(Math.random()*10000);
   if (!t.created) t.created = new Date().toISOString();
   if (t.done === undefined) t.done = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
+  t.subtasks.forEach(migrateSub);
   return t;
 }
 function migrateDayNote(d){
@@ -68,11 +76,11 @@ let dayReportInitialPlain = '';
 let editMode = null;
 let editInitialPlain = '';
 let subsMode = null;
-let modalDepth = 0;
 function migrateTask(t) {
   if (t.deleted) t.archived = true;
   t.deleted = false;
   if (!Array.isArray(t.subtasks)) t.subtasks = [];
+  t.subtasks.forEach(migrateSub);
   if (!Array.isArray(t.tags)) t.tags = [];
   t.subOpen = false;
   if (t.doneAt === undefined) t.doneAt = t.done ? new Date().toISOString() : null;
@@ -266,7 +274,7 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Quill 2 с фолбэком ---
+// --- Редактор: Quill с фолбэком; курсор в конец ---
 const QUILL_TOOLBAR = [
   [{ 'header': [1, 2, 3, false] }],
   ['bold', 'italic', 'underline', 'strike'],
@@ -346,6 +354,10 @@ function makeEditor(hostId){
       return ta ? ta.value : '';
     },
     plain(){ return htmlToPlain(this.get()).trim(); },
+    cursorEnd(){
+      if (quill) { try { const len = quill.getLength(); quill.setSelection(Math.max(0, len - 1), 0); } catch(e){} }
+      else if (ta) { ta.selectionStart = ta.selectionEnd = ta.value.length; }
+    },
     appendText(chunk){
       if (!chunk) return;
       if (quill) {
@@ -360,7 +372,7 @@ function makeEditor(hostId){
     },
     focus(){ if (quill) { try { quill.focus(); } catch(e){} } else if (ta) ta.focus(); },
     destroy(){
-      if (quill) { quill = null; }
+      if (quill) { try { quill = null; } catch(e){} }
       if (quillWrap) { quillWrap.remove(); quillWrap = null; }
       if (host) host.innerHTML = '';
       ta = null;
@@ -461,32 +473,17 @@ function askConfirm(text, cb, yesLabel){
   document.getElementById('confirmText').textContent = text;
   document.getElementById('confirmYes').textContent = yesLabel || 'Подтвердить';
   confirmCb = cb;
-  openModal('confirmModal');
+  document.getElementById('confirmModal').classList.add('open');
 }
 document.getElementById('confirmYes').addEventListener('click', () => {
-  closeModal('confirmModal');
+  document.getElementById('confirmModal').classList.remove('open');
   const cb = confirmCb; confirmCb = null;
   if (cb) cb();
 });
 document.getElementById('confirmNo').addEventListener('click', () => {
-  closeModal('confirmModal');
+  document.getElementById('confirmModal').classList.remove('open');
   confirmCb = null;
 });
-// --- Стек модалок: каждая новая поверх предыдущей ---
-function openModal(id){
-  const el = document.getElementById(id);
-  if (!el) return;
-  modalDepth += 1;
-  el.style.zIndex = String(1000 + modalDepth * 10);
-  el.classList.add('open');
-}
-function closeModal(id){
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.remove('open');
-  el.style.zIndex = '';
-  modalDepth = Math.max(0, modalDepth - 1);
-}
 const sidebarEl = document.getElementById('sidebar');
 const backdropEl = document.getElementById('sbBackdrop');
 function togglePin(){
@@ -526,16 +523,28 @@ function dayReportFor(date){ return dayReports.find(r => r.date === date); }
 function doneTasksForDate(dateISO){
   return tasks.filter(t => t.done && t.doneAt && String(t.doneAt).slice(0,10) === dateISO);
 }
+// Авто-строки дня: задачи И подзадачи, с форматированием
 function autoLinesForDate(dateISO){
-  return doneTasksForDate(dateISO).map(t => '- [' + labelFor(t.zone) + '] ' + htmlToPlain(t.text));
+  const out = [];
+  tasks.forEach(t => {
+    if (t.done && t.doneAt && String(t.doneAt).slice(0,10) === dateISO) {
+      out.push({zone: labelFor(t.zone), html: renderContent(t.text), plain: htmlToPlain(t.text), sub: false});
+    }
+    (t.subtasks || []).forEach(s => {
+      if (s.done && s.doneAt && String(s.doneAt).slice(0,10) === dateISO) {
+        out.push({zone: labelFor(t.zone), html: renderContent(s.text), plain: htmlToPlain(t.text) + ' → ' + htmlToPlain(s.text), sub: true});
+      }
+    });
+  });
+  return out;
 }
 function renderDayReportAuto(dateISO){
   const box = document.getElementById('dayReportAuto');
   if (!box) return;
-  const items = doneTasksForDate(dateISO);
+  const items = autoLinesForDate(dateISO);
   box.innerHTML = items.length
     ? '<h5>✅ Закрыто на доске за этот день (попадает в выгрузки автоматически):</h5><ul>' +
-      items.map(t => '<li>[' + escapeHtml(labelFor(t.zone)) + '] ' + escapeHtml(htmlToPlain(t.text)) + '</li>').join('') + '</ul>'
+      items.map(it => '<li>[' + escapeHtml(it.zone) + '] ' + (it.sub ? '↳ ' : '') + it.html + '</li>').join('') + '</ul>'
     : '<h5>✅ Закрыто на доске за этот день: пока ничего</h5>';
 }
 function calPrev(){ calMonth--; if (calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
@@ -602,10 +611,10 @@ function openDay(date){
   const dayTa = document.getElementById('dayInput');
   dayTa.value = v;
   document.getElementById('dayDelete').style.display = note ? '' : 'none';
-  openModal('dayModal');
-  setTimeout(() => { dayTa.focus(); autoGrow(dayTa); }, 0);
+  document.getElementById('dayModal').classList.add('open');
+  setTimeout(() => { dayTa.focus(); dayTa.selectionStart = dayTa.selectionEnd = dayTa.value.length; autoGrow(dayTa); }, 0);
 }
-function closeDay(){ closeModal('dayModal'); }
+function closeDay(){ document.getElementById('dayModal').classList.remove('open'); }
 function closeDayRequest(){
   const ta = document.getElementById('dayInput');
   if (ta.value.trim() !== dayInitial.trim()) {
@@ -634,13 +643,12 @@ document.getElementById('dayInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDay(); }
 });
 // --- Отчёт дня (за произвольную дату) ---
-let currentReportDate = null;
 function openDayReport(date){
   stopEdVoice();
   currentReportDate = date || todayISO();
   const p = parseLocal(currentReportDate);
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
-  openModal('dayReportModal');
+  document.getElementById('dayReportModal').classList.add('open');
   const r = dayReportFor(currentReportDate);
   try {
     repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
@@ -650,9 +658,9 @@ function openDayReport(date){
   }
   dayReportInitialPlain = repEditor.plain();
   renderDayReportAuto(currentReportDate);
-  setTimeout(() => repEditor.focus(), 60);
+  setTimeout(() => { repEditor.focus(); repEditor.cursorEnd(); }, 60);
 }
-function closeDayReport(){ closeModal('dayReportModal'); stopEdVoice(); repEditor.destroy(); }
+function closeDayReport(){ document.getElementById('dayReportModal').classList.remove('open'); stopEdVoice(); repEditor.destroy(); }
 function closeDayReportRequest(){
   if (repEditor.plain() !== dayReportInitialPlain) {
     askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { closeDayReport(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
@@ -688,7 +696,7 @@ function dayReportFullText(date){
   const head = 'Отчёт за ' + p.getDate() + '.' + String(p.getMonth()+1).padStart(2,'0') + '.' + p.getFullYear();
   let out = '';
   if (manual) out += head + '\n' + manual;
-  if (auto.length) out += (out ? '\n\n' : head + '\n') + 'Закрыто на доске:\n' + auto.join('\n');
+  if (auto.length) out += (out ? '\n\n' : head + '\n') + 'Закрыто на доске:\n' + auto.map(it => '- [' + it.zone + '] ' + (it.sub ? '↳ ' : '') + it.plain).join('\n');
   return out.trim();
 }
 function copyDayReport(){
@@ -959,7 +967,7 @@ function noteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openEditModal({type:\'subnew\',tid:' + t.id + ',isPersonal:false})" title="Добавить подзадачу">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="openSubsModal(' + t.id + ',false)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
       '<button class="note-action" onclick="openEditModal({type:\'task\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action" onclick="openNoteMenu(' + t.id + ', event)" title="Действия">' + ELLIPSIS + '</button>' +
     '</div>' +
@@ -986,7 +994,7 @@ function personalNoteHtml(t) {
       subBlock +
     '</div>' +
     '<div class="note-actions">' +
-      '<button class="note-action" onclick="openEditModal({type:\'subnew\',tid:' + t.id + ',isPersonal:true})" title="Добавить подзадачу">' + ARROW_DOWN + '</button>' +
+      '<button class="note-action" onclick="openSubsModal(' + t.id + ',true)" title="Подзадачи">' + ARROW_DOWN + '</button>' +
       '<button class="note-action" onclick="openEditModal({type:\'personal\',id:' + t.id + '})" title="Редактировать">' + PENCIL + '</button>' +
       '<button class="note-action danger" onclick="deletePersonal(' + t.id + ')" title="Удалить навсегда">' + TRASH + '</button>' +
     '</div>' +
@@ -1073,7 +1081,8 @@ function render() {
   const visible = zones.filter(z => !z.hidden);
   wrap.innerHTML = visible.map(z => {
     const zoneActive = active.filter(x => x.zone === z.key);
-    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q)).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    const zoneTasks = zoneActive.filter(x => matchesQuery(x, q))
+      .sort((a, b) => ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || ((a.done ? 1 : 0) - (b.done ? 1 : 0)));
     let notesHtml;
     if (zoneTasks.length === 0) notesHtml = '<div class="empty">' + (zoneActive.length ? 'Ничего не найдено' : 'Пока пусто') + '</div>';
     else notesHtml = zoneTasks.map(noteHtml).join('');
@@ -1132,7 +1141,6 @@ function togglePersonalDone(id) {
   t.doneAt = t.done ? new Date().toISOString() : null;
   savePersonal(); renderPersonal();
 }
-// --- Модалка редактирования ---
 function storeFor(mode){ return mode.type === 'personal' ? personal : tasks; }
 function openEditModal(mode){
   editMode = mode;
@@ -1152,7 +1160,7 @@ function openEditModal(mode){
     title = '＋ Новая подзадача';
   }
   document.getElementById('editTitle').textContent = title;
-  openModal('editModal');
+  document.getElementById('editModal').classList.add('open');
   try {
     editEditor.init(content, asHtml);
   } catch(e) {
@@ -1160,9 +1168,9 @@ function openEditModal(mode){
     editEditor.init(content, false);
   }
   editInitialPlain = editEditor.plain();
-  setTimeout(() => editEditor.focus(), 60);
+  setTimeout(() => { editEditor.focus(); editEditor.cursorEnd(); }, 60);
 }
-function closeEdit(){ closeModal('editModal'); editEditor.destroy(); editMode = null; }
+function closeEdit(){ document.getElementById('editModal').classList.remove('open'); editEditor.destroy(); editMode = null; }
 function closeEditRequest(){
   if (editEditor.plain() !== editInitialPlain) {
     askConfirm('Закрыть без сохранения? Изменения будут потеряны.', () => { closeEdit(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
@@ -1186,7 +1194,7 @@ function saveEdit(){
     renderSubsList();
   } else if (m.type === 'subnew') {
     const t = storeFor({type: m.isPersonal ? 'personal' : 'task'}).find(x => x.id === m.tid);
-    if (t) t.subtasks.push({id: Date.now(), text: val, done: false});
+    if (t) t.subtasks.push({id: Date.now(), text: val, done: false, doneAt: null});
     if (m.isPersonal) { savePersonal(); renderPersonal(); } else { saveTasks(); render(); }
     renderSubsList();
   }
@@ -1195,16 +1203,15 @@ function saveEdit(){
 }
 document.getElementById('cancelEdit').addEventListener('click', closeEditRequest);
 document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
-// --- Модалка подзадач (просмотр) ---
 function openSubsModal(tid, isPersonal){
   subsMode = {tid: tid, isPersonal: !!isPersonal};
   const t = storeFor({type: isPersonal ? 'personal' : 'task'}).find(x => x.id === tid);
   if (!t) return;
   document.getElementById('subsTitle').textContent = '📝 Подзадачи: ' + shortText(t.text, 40);
   renderSubsList();
-  openModal('subsModal');
+  document.getElementById('subsModal').classList.add('open');
 }
-function closeSubs(){ closeModal('subsModal'); subsMode = null; }
+function closeSubs(){ document.getElementById('subsModal').classList.remove('open'); subsMode = null; }
 function renderSubsList(){
   const list = document.getElementById('subsList');
   if (!subsMode) return;
@@ -1229,6 +1236,7 @@ function toggleSubFromModal(tid, sid){
   const s = t.subtasks.find(y => y.id === sid);
   if (!s) return;
   s.done = !s.done;
+  s.doneAt = s.done ? new Date().toISOString() : null;
   if (personal.includes(t)) { savePersonal(); renderPersonal(); } else { saveTasks(); render(); }
   renderSubsList();
 }
@@ -1249,7 +1257,7 @@ document.getElementById('subsAddBtn').addEventListener('click', () => {
 });
 function toggleSub(tid, sid) {
   const t = tasks.find(x => x.id === tid);
-  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; saveTasks(); render(); } }
+  if (t) { const s = t.subtasks.find(y => y.id === sid); if (s) { s.done = !s.done; s.doneAt = s.done ? new Date().toISOString() : null; saveTasks(); render(); } }
 }
 function deletePersonal(id) {
   const t = personal.find(x => x.id === id);
@@ -1306,9 +1314,9 @@ function openDue(id) {
   currentNoteId = id;
   const t = tasks.find(x => x.id === id);
   document.getElementById('dueInput').value = t && t.due ? t.due : '';
-  openModal('dueModal');
+  document.getElementById('dueModal').classList.add('open');
 }
-function closeDue() { closeModal('dueModal'); }
+function closeDue() { document.getElementById('dueModal').classList.remove('open'); }
 function saveDue() {
   const t = tasks.find(x => x.id === currentNoteId);
   if (t) { t.due = document.getElementById('dueInput').value || null; saveTasks(); render(); }
@@ -1323,9 +1331,9 @@ document.getElementById('clearDoneBtn').addEventListener('click', () => {
   const n = tasks.filter(t => t.done && !t.archived).length;
   if (!n) { notify('Нет выполненных задач для отправки в архив.'); return; }
   document.getElementById('broomText').textContent = 'Отправить все выполненные задачи (' + n + ') в архив? В любой момент их можно вернуть из архива.';
-  openModal('broomModal');
+  document.getElementById('broomModal').classList.add('open');
 });
-function closeBroom() { closeModal('broomModal'); }
+function closeBroom() { document.getElementById('broomModal').classList.remove('open'); }
 function confirmBroom() {
   tasks.filter(t => t.done && !t.archived).forEach(t => { t.archived = true; });
   saveTasks(); render(); closeBroom();
@@ -1333,10 +1341,10 @@ function confirmBroom() {
 function openArchive() {
   document.getElementById('archSearch').value = '';
   renderArchList();
-  openModal('archiveModal');
+  document.getElementById('archiveModal').classList.add('open');
   closeSbMobile();
 }
-function closeArchive() { closeModal('archiveModal'); }
+function closeArchive() { document.getElementById('archiveModal').classList.remove('open'); }
 function renderArchList() {
   const q = (document.getElementById('archSearch').value || '').trim().toLowerCase();
   const list = document.getElementById('archList');
@@ -1359,7 +1367,7 @@ function renderArchList() {
 document.getElementById('archSearch').addEventListener('input', renderArchList);
 function openAddFor(zoneKey) {
   currentAddZone = zoneKey;
-  openModal('addModal');
+  document.getElementById('addModal').classList.add('open');
   addEditor.init('', false);
   setTimeout(() => addEditor.focus(), 60);
 }
@@ -1391,8 +1399,8 @@ function renderZonesList() {
     '</div>'
   ).join('');
 }
-function openZones() { renderZonesList(); openModal('zonesModal'); closeSbMobile(); }
-function closeZones() { closeModal('zonesModal'); }
+function openZones() { renderZonesList(); document.getElementById('zonesModal').classList.add('open'); closeSbMobile(); }
+function closeZones() { document.getElementById('zonesModal').classList.remove('open'); }
 document.getElementById('addZoneBtn').addEventListener('click', () => {
   const label = capFirst(document.getElementById('newZoneLabel').value.trim());
   if (!label) { notify('Введите название раздела.'); return; }
@@ -1405,7 +1413,7 @@ document.getElementById('addZoneBtn').addEventListener('click', () => {
 function createParsed(line, zoneKey) {
   const p = parseMagic(line);
   const text = capFirst(p.text || line.trim());
-  tasks.push(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
+  tasks.unshift(migrateTask({id: Date.now() + Math.floor(Math.random()*10000), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
   clearLeakedSearch(text);
   saveTasks(); render();
   notify('Задача добавлена.', true);
@@ -1433,7 +1441,7 @@ function quickAddMany(lines) {
     '<button class="move-btn" onclick="chooseQuickZone(\'' + z.key + '\')">' + (z.emoji || '') + ' ' + escapeHtml(z.label) +
     (z.hidden ? ' (скрыт — появится при выборе)' : '') + '</button>'
   ).join('');
-  openModal('quickZoneModal');
+  document.getElementById('quickZoneModal').classList.add('open');
 }
 function chooseQuickZone(zoneKey) {
   const z = zoneByKey(zoneKey);
@@ -1441,10 +1449,10 @@ function chooseQuickZone(zoneKey) {
   if (z.hidden) { z.hidden = false; saveZones(); }
   pendingQuickLines.forEach(l => createParsed(l, zoneKey));
   pendingQuickLines = [];
-  closeModal('quickZoneModal');
+  document.getElementById('quickZoneModal').classList.remove('open');
 }
 function closeQuickZone() {
-  closeModal('quickZoneModal');
+  document.getElementById('quickZoneModal').classList.remove('open');
   if (pendingQuickLines.length) {
     document.getElementById('quickAdd').value = pendingQuickLines.join('\n');
     pendingQuickLines = [];
@@ -1466,7 +1474,7 @@ document.getElementById('quickAdd').addEventListener('paste', e => {
     if (lines.length) { document.getElementById('quickAdd').value = ''; voiceBase = ''; quickAddMany(lines); }
   }
 });
-// --- Итоги: одна колонка, только отчёты по дням ---
+// --- Итоги: отчёты по дням (задачи + подзадачи, с форматированием) ---
 let lastResults = {md: ''};
 function mondayOf(dateStr) {
   const x = parseLocal(dateStr);
@@ -1496,10 +1504,10 @@ function setResultsPeriod(kind) {
 }
 function openResults() {
   setResultsPeriod('week');
-  openModal('resultsModal');
+  document.getElementById('resultsModal').classList.add('open');
   closeSbMobile();
 }
-function closeResults() { closeModal('resultsModal'); }
+function closeResults() { document.getElementById('resultsModal').classList.remove('open'); }
 function reportDatesInPeriod(from, to){
   const set = new Set();
   dayReports.forEach(r => { if (r.date >= from && r.date <= to) set.add(r.date); });
@@ -1508,6 +1516,12 @@ function reportDatesInPeriod(from, to){
       const d = String(t.doneAt).slice(0,10);
       if (d >= from && d <= to) set.add(d);
     }
+    (t.subtasks || []).forEach(s => {
+      if (s.done && s.doneAt) {
+        const d = String(s.doneAt).slice(0,10);
+        if (d >= from && d <= to) set.add(d);
+      }
+    });
   });
   return Array.from(set).sort();
 }
@@ -1521,7 +1535,7 @@ function buildReportsMd(from, to){
     const r = dayReportFor(d);
     if (r && htmlToPlain(r.text).trim()) md += htmlToPlain(r.text).trim() + '\n';
     const auto = autoLinesForDate(d);
-    if (auto.length) md += 'Закрыто на доске:\n' + auto.join('\n') + '\n';
+    if (auto.length) md += 'Закрыто на доске:\n' + auto.map(it => '- [' + it.zone + '] ' + (it.sub ? '↳ ' : '') + it.plain).join('\n') + '\n';
     md += '\n';
   });
   return md.trim() + '\n';
@@ -1541,14 +1555,13 @@ function renderResults() {
   box.innerHTML = dates.map(d => {
     const p = parseLocal(d);
     const r = dayReportFor(d);
-    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '<div class="res-rep-body" style="color:var(--text-muted)">Ручного отчёта нет</div>';
+    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
     const auto = autoLinesForDate(d);
-    const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
+    const autoHtml = auto.length ? '<div class="res-rep-auto">' + auto.map(it => '✅ [' + escapeHtml(it.zone) + '] ' + (it.sub ? '↳ ' : '') + it.html).join('<br>') + '</div>' : '';
     return '<div class="res-rep">' +
-      '<div class="res-rep-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">' +
-        '<h5 style="font-size:12px;color:var(--text-muted);font-weight:700">' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' +
-        '<button class="res-rep-edit" onclick="openDayReport(\'' + d + '\')">✏️ Изменить</button>' +
-      '</div>' + manual + autoHtml + '</div>';
+      '<div class="res-rep-head"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear() + '</h5>' +
+      '<button class="res-rep-edit" onclick="openDayReport(\'' + d + '\')">✏️ Изменить</button></div>' +
+      manual + autoHtml + '</div>';
   }).join('');
   lastResults = {md: buildReportsMd(from, to)};
 }
@@ -1730,12 +1743,12 @@ function openSettings(hint) {
   inp.value = getToken();
   wrap.appendChild(inp);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveSettings(); });
-  openModal('settingsModal');
+  document.getElementById('settingsModal').classList.add('open');
   setTimeout(() => inp.focus(), 0);
   closeSbMobile();
 }
 function closeSettings() {
-  closeModal('settingsModal');
+  document.getElementById('settingsModal').classList.remove('open');
   const wrap = document.getElementById('tokenInputWrap');
   if (wrap) wrap.innerHTML = '';
 }
@@ -1753,9 +1766,9 @@ document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('cancelAdd').addEventListener('click', closeAddRequest);
 function closeAddRequest(){
   if (addEditor.plain() !== '') {
-    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { closeModal('addModal'); addEditor.destroy(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
+    askConfirm('Закрыть без сохранения? Введённый текст будет потерян.', () => { document.getElementById('addModal').classList.remove('open'); addEditor.destroy(); notify('Закрыто без сохранения.'); }, 'Закрыть без сохранения');
   } else {
-    closeModal('addModal');
+    document.getElementById('addModal').classList.remove('open');
     addEditor.destroy();
   }
 }
@@ -1767,10 +1780,10 @@ document.getElementById('confirmAdd').addEventListener('click', () => {
   const p = parseMagic(plain);
   let text = val;
   if (p.due) text = capFirst(p.text || plain);
-  tasks.push(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
+  tasks.unshift(migrateTask({id: Date.now(), zone: zoneKey, text: text, done: false, created: new Date().toISOString(), doneAt: null, archived: false, due: p.due, tags: [], subtasks: [], subOpen: false}));
   clearLeakedSearch(plain);
   saveTasks(); render();
-  closeModal('addModal');
+  document.getElementById('addModal').classList.remove('open');
   addEditor.destroy();
   notify('Задача добавлена.', true);
 });
