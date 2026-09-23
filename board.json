@@ -186,6 +186,11 @@
           "id": 1790151182435,
           "text": "<p>Исторические&nbsp;данные</p><p></p>",
           "done": false
+        },
+        {
+          "id": 1790151191777,
+          "text": "<p>Заявки&nbsp;HDE</p>",
+          "done": false
         }
       ],
       "subOpen": false,
