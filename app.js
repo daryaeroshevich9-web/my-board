@@ -38,7 +38,7 @@ function loadZones(){
 function migrateSub(s){
   if (!s.id) s.id = Date.now() + Math.floor(Math.random()*10000);
   if (s.done === undefined) s.done = false;
-  if (s.doneAt === undefined) s.doneAt = s.done ? null : null;
+  if (s.doneAt === undefined) s.doneAt = null;
   return s;
 }
 function migratePersonalNote(t){
