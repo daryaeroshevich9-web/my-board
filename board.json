@@ -164,6 +164,12 @@
           "text": "<p>дополнительная&nbsp;итерация&nbsp;согласования</p>",
           "done": false,
           "doneAt": null
+        },
+        {
+          "id": 1790172360389,
+          "text": "<p>волшебная&nbsp;кнопка</p>",
+          "done": false,
+          "doneAt": null
         }
       ],
       "subOpen": false,
