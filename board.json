@@ -81,22 +81,6 @@
       "pinned": false
     },
     {
-      "id": 1789809090856,
-      "zone": "aviabit",
-      "text": "ASL рейсы - добавить проводников",
-      "done": false,
-      "created": "2026-09-19T09:11:30.856Z",
-      "doneAt": null,
-      "deleted": false,
-      "archived": false,
-      "due": null,
-      "repeat": null,
-      "subtasks": [],
-      "subOpen": false,
-      "tags": [],
-      "pinned": false
-    },
-    {
       "id": 1789810390422,
       "zone": "other",
       "text": "Справочники софи по ценам ТГО",
@@ -124,6 +108,22 @@
       "subOpen": false,
       "archived": true,
       "due": null,
+      "pinned": false
+    },
+    {
+      "id": 1789809090856,
+      "zone": "aviabit",
+      "text": "ASL рейсы - добавить проводников",
+      "done": false,
+      "created": "2026-09-19T09:11:30.856Z",
+      "doneAt": null,
+      "deleted": false,
+      "archived": false,
+      "due": null,
+      "repeat": null,
+      "subtasks": [],
+      "subOpen": false,
+      "tags": [],
       "pinned": false
     },
     {
