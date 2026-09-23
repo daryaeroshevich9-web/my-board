@@ -265,53 +265,19 @@ function renderRich(raw){
 function renderContent(text){
   return isHtmlText(text) ? sanitizeHtml(text) : renderRich(text);
 }
-// --- Редактор: Summernote из vendor/ с самоподгрузкой и бесшовным апгрейдом ---
-const SN_TOOLBAR = [
-  ['undo',['undo','redo']],
-  ['style',['style']],
-  ['font',['bold','italic','underline','strike','clear']],
-  ['color',['color']],
-  ['para',['ul','ol','indent','outdent']],
-  ['table',['table']],
-  ['insert',['link','hr']],
-  ['view',['codeview']]
+// --- Редактор: Quill 2 (snow) с таблицей и фолбэком ---
+const QUILL_TOOLBAR = [
+  [{ 'header': [1, 2, 3, false] }],
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'color': [] }, { 'background': [] }],
+  [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+  [{ 'indent': '-1' }, { 'indent': '+1' }],
+  ['blockquote', 'code-block'],
+  ['table'],
+  ['link'],
+  ['clean']
 ];
-function snAvailable(){ return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote); }
-let libPromise = null;
-function ensureEditorLib(){
-  if (snAvailable()) return Promise.resolve(true);
-  if (libPromise) return libPromise;
-  libPromise = new Promise(res => {
-    const has = (sel) => !!document.querySelector(sel);
-    const jq = document.createElement('script');
-    jq.src = 'vendor/jquery.min.js';
-    jq.onload = () => {
-      if (!has('link[href="vendor/summernote-lite.min.css"]')) {
-        const css = document.createElement('link');
-        css.rel = 'stylesheet';
-        css.href = 'vendor/summernote-lite.min.css';
-        document.head.appendChild(css);
-      }
-      const sn = document.createElement('script');
-      sn.src = 'vendor/summernote-lite.min.js';
-      sn.onload = () => {
-        if (!has('script[src="vendor/summernote-ru-RU.min.js"]')) {
-          const ru = document.createElement('script');
-          ru.src = 'vendor/summernote-ru-RU.min.js';
-          ru.onload = () => res(snAvailable());
-          ru.onerror = () => res(snAvailable());
-          document.head.appendChild(ru);
-        } else res(snAvailable());
-      };
-      sn.onerror = () => res(false);
-      document.head.appendChild(sn);
-    };
-    jq.onerror = () => res(false);
-    if (has('script[src="vendor/jquery.min.js"]') && window.jQuery) jq.onload();
-    else document.head.appendChild(jq);
-  });
-  return libPromise;
-}
+function quillAvailable(){ return typeof window.Quill !== 'undefined'; }
 function indentLines(ta, dir){
   const s = ta.selectionStart || 0, e = ta.selectionEnd || 0, v = ta.value;
   const ls = v.lastIndexOf('\n', s - 1) + 1;
@@ -324,87 +290,88 @@ function indentLines(ta, dir){
 }
 function makeEditor(hostId){
   const host = document.getElementById(hostId);
-  let snEl = null, ta = null, tb = null, banner = null, pending = null, pristine = true;
-  function clearHost(){
-    if (snEl) { try { snEl.summernote('destroy'); } catch(e){} snEl = null; }
-    if (ta) { ta.remove(); ta = null; }
-    if (tb) { tb.remove(); tb = null; }
-    if (banner) { banner.remove(); banner = null; }
-    host.innerHTML = '';
-  }
-  function mountSn(content, asHtml){
-    clearHost();
-    snEl = window.jQuery('<div></div>');
-    window.jQuery(host).append(snEl);
-    snEl.summernote({lang:'ru-RU', placeholder:'Текст…', toolbar:SN_TOOLBAR, disableDragAndDrop:true});
-    snEl.summernote('code', asHtml ? sanitizeHtml(content||'') : (content ? renderRich(content) : ''));
-  }
-  function mountFallback(content, asHtml){
-    clearHost();
-    tb = document.createElement('div');
-    tb.className = 'fmt-toolbar';
-    tb.innerHTML = '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
-      '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
-      '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
-      '<button class="fmt-btn" data-f="ind" title="Отступ">⇥</button>' +
-      '<button class="fmt-btn" data-f="outd" title="Убрать отступ">⇤</button>';
-    ta = document.createElement('textarea');
-    ta.className = 'ed-fallback';
-    ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
-    host.appendChild(tb);
-    host.appendChild(ta);
-    tb.querySelectorAll('.fmt-btn').forEach(btn => {
-      btn.addEventListener('mousedown', ev => ev.preventDefault());
-      btn.addEventListener('click', () => {
-        const f = btn.dataset.f;
-        if (f === 'ind') indentLines(ta, 1);
-        else if (f === 'outd') indentLines(ta, -1);
-        else fmtApply(ta, f);
-      });
-    });
-    ta.addEventListener('input', () => { pristine = false; });
-    autoGrow(ta);
-  }
-  function addBanner(){
-    if (banner) return;
-    banner = document.createElement('div');
-    banner.style.cssText = 'font-size:11px;color:#8a6d1b;background:rgba(240,200,60,.18);border:1px solid rgba(200,160,20,.45);border-radius:8px;padding:6px 10px;margin-bottom:6px';
-    banner.textContent = '⚠️ Расширенный редактор недоступен — работает простой режим (жирный/курсив/список/отступы). Проверь папку vendor/.';
-    host.insertBefore(banner, host.firstChild);
-  }
+  let quill = null, quillWrap = null, ta = null;
   return {
     init(content, asHtml){
       this.destroy();
-      pending = {content: content, asHtml: asHtml};
-      pristine = true;
-      if (snAvailable()) { mountSn(content, asHtml); return; }
-      mountFallback(content, asHtml);
-      ensureEditorLib().then(ok => {
-        if (ok && ta && pristine) { const c = ta.value; mountSn(c, false); }
-        else if (!ok) { addBanner(); }
+      if (!host) return;
+      const html = asHtml ? sanitizeHtml(content||'') : (content ? renderRich(content) : '');
+      if (quillAvailable()) {
+        try {
+          quillWrap = document.createElement('div');
+          quillWrap.className = 'quill-editor';
+          host.appendChild(quillWrap);
+          quill = new window.Quill(quillWrap, { theme: 'snow', placeholder: 'Текст…', modules: { toolbar: QUILL_TOOLBAR } });
+          try {
+            const tbMod = quill.getModule('toolbar');
+            if (typeof quill.insertTable === 'function') {
+              tbMod.addHandler('table', function(){ this.quill.insertTable(2, 3); });
+            } else {
+              const btn = host.querySelector('.ql-table');
+              if (btn) btn.style.display = 'none';
+            }
+          } catch(e){}
+          if (html) {
+            try { quill.clipboard.dangerouslyPasteHTML(html); }
+            catch(e) { quill.root.innerHTML = html; }
+          }
+          return;
+        } catch(e) {
+          quill = null;
+          if (quillWrap) { quillWrap.remove(); quillWrap = null; }
+          host.innerHTML = '';
+        }
+      }
+      const tb = document.createElement('div');
+      tb.className = 'fmt-toolbar';
+      tb.innerHTML = '<button class="fmt-btn" data-f="b" title="Жирный">Ж</button>' +
+        '<button class="fmt-btn i" data-f="i" title="Курсив">К</button>' +
+        '<button class="fmt-btn" data-f="l" title="Список">•</button>' +
+        '<button class="fmt-btn" data-f="ind" title="Отступ">⇥</button>' +
+        '<button class="fmt-btn" data-f="outd" title="Убрать отступ">⇤</button>';
+      ta = document.createElement('textarea');
+      ta.className = 'ed-fallback';
+      ta.value = asHtml ? htmlToPlain(content||'') : (content||'');
+      host.appendChild(tb);
+      host.appendChild(ta);
+      tb.querySelectorAll('.fmt-btn').forEach(btn => {
+        btn.addEventListener('mousedown', ev => ev.preventDefault());
+        btn.addEventListener('click', () => {
+          const f = btn.dataset.f;
+          if (f === 'ind') indentLines(ta, 1);
+          else if (f === 'outd') indentLines(ta, -1);
+          else fmtApply(ta, f);
+        });
       });
+      autoGrow(ta);
     },
     get(){
-      if (snEl) return sanitizeHtml(snEl.summernote('code'));
-      if (ta) return ta.value;
-      return pending ? (pending.asHtml ? sanitizeHtml(pending.content||'') : (pending.content||'')) : '';
+      if (quill) {
+        let html;
+        try { html = (typeof quill.getSemanticHTML === 'function') ? quill.getSemanticHTML() : quill.root.innerHTML; }
+        catch(e) { html = quill.root.innerHTML; }
+        return sanitizeHtml(html);
+      }
+      return ta ? ta.value : '';
     },
     plain(){ return htmlToPlain(this.get()).trim(); },
     appendText(chunk){
       if (!chunk) return;
-      if (snEl) {
-        let c = snEl.summernote('code');
-        c = c.replace(/<p><br\s*\/?><\/p>\s*$/,'');
-        c += '<p>' + escapeHtml(chunk).replace(/\n/g,'<br>') + '</p>';
-        snEl.summernote('code', c);
+      if (quill) {
+        try { quill.insertText(quill.getLength() - 1, chunk, 'user'); }
+        catch(e) { quill.root.innerHTML += '<p>' + escapeHtml(chunk) + '</p>'; }
       } else if (ta) {
         ta.value += (ta.value && !/\n$/.test(ta.value) ? '\n' : '') + chunk;
-        pristine = false;
         autoGrow(ta);
       }
     },
-    focus(){ if (snEl) { try { snEl.summernote('focus'); } catch(e){} } else if (ta) ta.focus(); },
-    destroy(){ clearHost(); pending = null; }
+    focus(){ if (quill) { try { quill.focus(); } catch(e){} } else if (ta) ta.focus(); },
+    destroy(){
+      if (quill) { quill = null; }
+      if (quillWrap) { quillWrap.remove(); quillWrap = null; }
+      if (host) host.innerHTML = '';
+      ta = null;
+    }
   };
 }
 const addEditor = makeEditor('addEditor');
@@ -665,7 +632,12 @@ function openDayReport(){
   document.getElementById('dayReportTitle').textContent = '📄 Отчёт за ' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + ' ' + p.getFullYear();
   document.getElementById('dayReportModal').classList.add('open');
   const r = dayReportFor(date);
-  repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
+  try {
+    repEditor.init(r ? r.text : '', r ? isHtmlText(r.text) : false);
+  } catch(e) {
+    try { repEditor.destroy(); } catch(e2){}
+    repEditor.init(r ? r.text : '', false);
+  }
   dayReportInitialPlain = repEditor.plain();
   renderDayReportAuto(date);
   setTimeout(() => repEditor.focus(), 60);
@@ -1166,7 +1138,12 @@ function openEditModal(mode){
   }
   document.getElementById('editTitle').textContent = title;
   document.getElementById('editModal').classList.add('open');
-  editEditor.init(content, asHtml);
+  try {
+    editEditor.init(content, asHtml);
+  } catch(e) {
+    try { editEditor.destroy(); } catch(e2){}
+    editEditor.init(content, false);
+  }
   editInitialPlain = editEditor.plain();
   setTimeout(() => editEditor.focus(), 60);
 }
@@ -1563,19 +1540,20 @@ function renderResults() {
     bodyHtml += '</div>';
   });
   if (!bodyHtml) bodyHtml = '<div class="results-sub">Задач за период нет</div>';
-  const dates = reportDatesInPeriod(from, to);
-  let repHtml = '';
-  dates.forEach(d => {
-    const p = parseLocal(d);
-    const r = dayReportFor(d);
-    const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="results-item">' + sanitizeHtml(r.text) + '</div>' : '';
-    const auto = autoLinesForDate(d);
-    const autoHtml = auto.length ? '<div class="results-item">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
-    repHtml += '<div class="results-block"><h4>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h4>' + (manual || autoHtml || '<div class="results-item">Пусто</div>') + '</div>';
-  });
-  if (!repHtml) repHtml = '<div class="results-sub">Отчётов за период нет</div>';
   const bodyEl = document.getElementById('resBody');
-  if (bodyEl) bodyEl.innerHTML = bodyHtml + '<div class="results-sub">Отчёты по дням</div>' + repHtml;
+  if (bodyEl) bodyEl.innerHTML = bodyHtml;
+  const dates = reportDatesInPeriod(from, to);
+  const repEl = document.getElementById('resReports');
+  if (repEl) repEl.innerHTML = dates.length
+    ? dates.map(d => {
+        const p = parseLocal(d);
+        const r = dayReportFor(d);
+        const manual = (r && htmlToPlain(r.text).trim()) ? '<div class="res-rep-body">' + sanitizeHtml(r.text) + '</div>' : '';
+        const auto = autoLinesForDate(d);
+        const autoHtml = auto.length ? '<div class="res-rep-auto">✅ ' + auto.map(l => escapeHtml(l.replace(/^- /,''))).join('<br>✅ ') + '</div>' : '';
+        return '<div class="res-rep"><h5>' + p.getDate() + ' ' + MONTHS_GEN[p.getMonth()] + '</h5>' + manual + autoHtml + '</div>';
+      }).join('')
+    : '<div class="empty">За период отчётов нет</div>';
   let md = '# Итоги\nПериод: ' + from + ' — ' + to + '\n\n';
   md += 'Выполнено за период: ' + doneInPeriod.length + '\n';
   md += 'В работе на конец периода: ' + openTasks.length + '\n\n';
@@ -1621,6 +1599,17 @@ function downloadResultsMd() {
 function downloadResultsCsv() {
   downloadBlob('\ufeff' + resultsCsv(), 'itogi-nedeli-' + document.getElementById('resTo').value + '.csv', 'text/csv;charset=utf-8');
   notify('Файл CSV сохранён.', true);
+}
+function copyReportsOnly() {
+  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
+  if (!md) { notify('За период отчётов нет.'); return; }
+  navigator.clipboard.writeText(md).then(() => notify('Отчёты скопированы.', true));
+}
+function downloadReportsOnly() {
+  const md = buildReportsMd(document.getElementById('resFrom').value, document.getElementById('resTo').value);
+  if (!md) { notify('За период отчётов нет.'); return; }
+  downloadBlob(md, 'otchety-' + document.getElementById('resFrom').value + '-' + document.getElementById('resTo').value + '.md', 'text/markdown;charset=utf-8');
+  notify('Файл Markdown сохранён.', true);
 }
 document.getElementById('resFrom').addEventListener('change', renderResults);
 document.getElementById('resTo').addEventListener('change', renderResults);
