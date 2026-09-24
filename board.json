@@ -162,22 +162,6 @@
       "pinned": false
     },
     {
-      "id": 1789753251002,
-      "zone": "aviabit",
-      "text": "Косте согласовать обновление",
-      "done": false,
-      "created": "2026-09-18T17:40:51.002Z",
-      "doneAt": null,
-      "deleted": false,
-      "subtasks": [],
-      "subOpen": false,
-      "archived": false,
-      "due": null,
-      "repeat": null,
-      "tags": [],
-      "pinned": false
-    },
-    {
       "id": 1789756659211,
       "zone": "aviabit",
       "text": "Отловить профайлером маркера",
@@ -206,6 +190,22 @@
       "subOpen": false,
       "archived": true,
       "due": null,
+      "pinned": false
+    },
+    {
+      "id": 1789753251002,
+      "zone": "aviabit",
+      "text": "Косте согласовать обновление",
+      "done": false,
+      "created": "2026-09-18T17:40:51.002Z",
+      "doneAt": null,
+      "deleted": false,
+      "subtasks": [],
+      "subOpen": false,
+      "archived": false,
+      "due": null,
+      "repeat": null,
+      "tags": [],
       "pinned": false
     },
     {
