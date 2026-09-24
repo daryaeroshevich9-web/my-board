@@ -1,6 +1,21 @@
 {
   "tasks": [
     {
+      "id": 1789810390422,
+      "zone": "other",
+      "text": "<p>Справочники&nbsp;софи&nbsp;по&nbsp;ценам&nbsp;ТГО</p>",
+      "done": false,
+      "created": "2026-09-19T09:33:10.422Z",
+      "doneAt": null,
+      "archived": false,
+      "due": "2026-09-23",
+      "tags": [],
+      "subtasks": [],
+      "subOpen": false,
+      "deleted": false,
+      "pinned": false
+    },
+    {
       "id": 1790172235031,
       "zone": "portal",
       "text": "<p>Доставка&nbsp;в&nbsp;LED</p>",
@@ -176,21 +191,6 @@
       "due": null,
       "repeat": null,
       "tags": [],
-      "pinned": false
-    },
-    {
-      "id": 1789810390422,
-      "zone": "other",
-      "text": "<p>Справочники&nbsp;софи&nbsp;по&nbsp;ценам&nbsp;ТГО</p>",
-      "done": false,
-      "created": "2026-09-19T09:33:10.422Z",
-      "doneAt": null,
-      "archived": false,
-      "due": "2026-09-23",
-      "tags": [],
-      "subtasks": [],
-      "subOpen": false,
-      "deleted": false,
       "pinned": false
     },
     {
