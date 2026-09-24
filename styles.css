@@ -93,7 +93,7 @@ h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spac
 .note::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--zone-color)}
 .note-checkbox{position:absolute;left:12px;top:12px;width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--zone-color)}
 .note-body{flex:1;min-width:0;display:flex;flex-direction:column}
-.note-content{cursor:text;min-width:0}
+.note-content{cursor:text;min-width:0;overflow:hidden}
 .note-content ul,.note-content ol{margin:4px 0 2px 18px;padding:0}
 .note-content li{margin:2px 0}
 .note-content .rich-line{min-height:1em}
@@ -296,9 +296,9 @@ textarea.ed-fallback{min-height:140px}
 #resultsModal .modal-content{padding:16px}
 #resBody{padding:12px 14px}
 }
-/* Перенос слов: только целиком по пробелам; внутри слова — лишь если слово длиннее всей строки */
+/* Перенос слов: только целиком по пробелам; внутри слова не рвём никогда */
 .note-content,.note-text,.sub-content,.sub-text,.res-rep-body,.res-rep-auto,.subs-row .sub-text,.note-editor .ql-editor,textarea.ed-fallback,.cal-pop-note{
   word-break:normal !important;
-  overflow-wrap:break-word !important;
+  overflow-wrap:normal !important;
   hyphens:none !important;
 }
