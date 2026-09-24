@@ -23,6 +23,82 @@
       "pinned": false
     },
     {
+      "id": 1790062684294,
+      "zone": "portal",
+      "text": "<p>Supervision</p>",
+      "done": false,
+      "created": "2026-09-22T07:38:04.294Z",
+      "doneAt": null,
+      "archived": false,
+      "due": null,
+      "tags": [],
+      "subtasks": [
+        {
+          "id": 1790063821370,
+          "text": "Мобильная версия",
+          "done": false,
+          "doneAt": null
+        },
+        {
+          "id": 1790063845835,
+          "text": "Кол-во пассажиров Услуги не равно 0",
+          "done": true,
+          "doneAt": null
+        },
+        {
+          "id": 1790065922090,
+          "text": "Задача на уведомления",
+          "done": true,
+          "doneAt": null
+        },
+        {
+          "id": 1790066993878,
+          "text": "Текст для операций вне ТГО по SVO ",
+          "done": true,
+          "doneAt": null
+        },
+        {
+          "id": 1790067005849,
+          "text": "Оренбург",
+          "done": true,
+          "doneAt": null
+        },
+        {
+          "id": 1790096146752,
+          "text": "доступ ГПХ",
+          "done": true,
+          "doneAt": "2026-09-23T13:35:24.402Z"
+        },
+        {
+          "id": 1790151182435,
+          "text": "<p>Исторические&nbsp;данные</p><p></p>",
+          "done": false,
+          "doneAt": null
+        },
+        {
+          "id": 1790151191777,
+          "text": "<p>Заявки&nbsp;HDE</p>",
+          "done": false,
+          "doneAt": null
+        },
+        {
+          "id": 1790153540347,
+          "text": "<p>Подумать&nbsp;сколько&nbsp;хранить&nbsp;данные</p><p></p>",
+          "done": false,
+          "doneAt": null
+        },
+        {
+          "id": 1790170537716,
+          "text": "<p>Данные&nbsp;для&nbsp;базы</p>",
+          "done": false,
+          "doneAt": null
+        }
+      ],
+      "subOpen": false,
+      "deleted": false,
+      "pinned": false
+    },
+    {
       "id": 1750000000002,
       "zone": "portal",
       "text": "Текст для операций вне ТГО по SVO + Оренбург",
@@ -168,82 +244,6 @@
         {
           "id": 1790172360389,
           "text": "<p>волшебная&nbsp;кнопка</p>",
-          "done": false,
-          "doneAt": null
-        }
-      ],
-      "subOpen": false,
-      "deleted": false,
-      "pinned": false
-    },
-    {
-      "id": 1790062684294,
-      "zone": "portal",
-      "text": "<p>Supervision</p>",
-      "done": false,
-      "created": "2026-09-22T07:38:04.294Z",
-      "doneAt": null,
-      "archived": false,
-      "due": null,
-      "tags": [],
-      "subtasks": [
-        {
-          "id": 1790063821370,
-          "text": "Мобильная версия",
-          "done": false,
-          "doneAt": null
-        },
-        {
-          "id": 1790063845835,
-          "text": "Кол-во пассажиров Услуги не равно 0",
-          "done": true,
-          "doneAt": null
-        },
-        {
-          "id": 1790065922090,
-          "text": "Задача на уведомления",
-          "done": true,
-          "doneAt": null
-        },
-        {
-          "id": 1790066993878,
-          "text": "Текст для операций вне ТГО по SVO ",
-          "done": true,
-          "doneAt": null
-        },
-        {
-          "id": 1790067005849,
-          "text": "Оренбург",
-          "done": true,
-          "doneAt": null
-        },
-        {
-          "id": 1790096146752,
-          "text": "доступ ГПХ",
-          "done": true,
-          "doneAt": "2026-09-23T13:35:24.402Z"
-        },
-        {
-          "id": 1790151182435,
-          "text": "<p>Исторические&nbsp;данные</p><p></p>",
-          "done": false,
-          "doneAt": null
-        },
-        {
-          "id": 1790151191777,
-          "text": "<p>Заявки&nbsp;HDE</p>",
-          "done": false,
-          "doneAt": null
-        },
-        {
-          "id": 1790153540347,
-          "text": "<p>Подумать&nbsp;сколько&nbsp;хранить&nbsp;данные</p><p></p>",
-          "done": false,
-          "doneAt": null
-        },
-        {
-          "id": 1790170537716,
-          "text": "<p>Данные&nbsp;для&nbsp;базы</p>",
           "done": false,
           "doneAt": null
         }
