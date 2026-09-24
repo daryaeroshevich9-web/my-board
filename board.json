@@ -14,8 +14,8 @@
         {
           "id": 1790172276711,
           "text": "<ul><li>не&nbsp;пришло&nbsp;письмо&nbsp;(каждые&nbsp;2&nbsp;часа)</li><li>не&nbsp;редактируются&nbsp;часы&nbsp;без&nbsp;клика&nbsp;на&nbsp;минуты</li><li>форматирование&nbsp;записи&nbsp;с&nbsp;изменениями&nbsp;в&nbsp;рамках&nbsp;2х&nbsp;часов</li></ul><p></p>",
-          "done": false,
-          "doneAt": null
+          "done": true,
+          "doneAt": "2026-09-24T06:47:55.412Z"
         }
       ],
       "subOpen": false,
