@@ -1,5 +1,5 @@
-/* board sw v11 — network-first for same-origin */
-const CACHE = 'darya-board-v11';
+/* board sw v12 — network-first for same-origin */
+const CACHE = 'darya-board-v12';
 const SHELL = [
   './',
   './index.html',
