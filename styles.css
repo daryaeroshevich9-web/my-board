@@ -93,14 +93,14 @@ h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spac
 .note::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--zone-color)}
 .note-checkbox{position:absolute;left:12px;top:12px;width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--zone-color)}
 .note-body{flex:1;min-width:0;display:flex;flex-direction:column}
-.note-content{cursor:text;min-width:0;word-break:normal;overflow-wrap:break-word}
+.note-content{cursor:text;min-width:0;word-break:normal;overflow-wrap:break-word;hyphens:none}
 .note-content ul,.note-content ol{margin:4px 0 2px 18px;padding:0}
 .note-content li{margin:2px 0}
 .note-content .rich-line{min-height:1em}
 .note-content table,.sub-content table,.res-rep-body table,.res-rep-auto table,.subs-row .sub-text table,.dayreport-auto table{border-collapse:collapse;width:100%;font-size:12px;margin:4px 0;table-layout:fixed}
 .note-content td,.note-content th,.sub-content td,.sub-content th,.res-rep-body td,.res-rep-body th,.res-rep-auto td,.res-rep-auto th,.subs-row .sub-text td,.subs-row .sub-text th,.dayreport-auto td,.dayreport-auto th{border:1px solid var(--border);padding:4px 6px;text-align:left;word-break:normal;overflow-wrap:break-word}
 .note-text.clamped{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.sub-content{min-width:0;word-break:normal;overflow-wrap:break-word}
+.sub-content{min-width:0;word-break:normal;overflow-wrap:break-word;hyphens:none}
 .sub-content.clamped-sub{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
 .sub-content ul,.sub-content ol{margin:2px 0 2px 16px;padding:0}
 .collapse-toggle{display:block;width:100%;border:none;background:transparent;color:var(--text-muted);font:inherit;font-size:11px;font-weight:600;cursor:pointer;padding:2px 2px 0 0;margin-top:2px;text-align:right;letter-spacing:.2px}
@@ -116,7 +116,7 @@ h1{font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;letter-spac
 .due-done{background:var(--soft);border-color:var(--border);color:var(--text-muted)}
 .emoji-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);margin-right:8px;font-size:15px;vertical-align:middle}
 .sub-count{font-size:11px;color:var(--text-muted);background:var(--soft);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
-.subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.subtasks{margin-top:8px;display:flex;flex-direction:column;gap:6px;margin-right:-92px}
 .subtask{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:500;color:var(--text-secondary)}
 .subtask.sub-hidden{display:none}
 .subtask input[type="checkbox"]{width:16px;height:16px;accent-color:var(--zone-color);cursor:pointer;flex:none;margin-top:2px}
@@ -190,7 +190,7 @@ textarea.ed-fallback:focus{outline:none;border-color:var(--accent)}
 .dayreport-auto li{font-size:13px;color:var(--text-secondary);margin:2px 0}
 .subs-list{margin-bottom:14px}
 .subs-row{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)}
-.subs-row .sub-text{flex:1;min-width:0;font-size:14px;color:var(--text-secondary);line-height:1.45}
+.subs-row .sub-text{flex:1;min-width:0;font-size:14px;color:var(--text-secondary);line-height:1.45;word-break:normal;overflow-wrap:break-word}
 .subs-row .sub-text ul,.subs-row .sub-text ol{margin:2px 0 2px 16px}
 .subs-row.done .sub-text{text-decoration:line-through;opacity:.6}
 .subs-row input[type="checkbox"]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex:none;margin-top:2px}
@@ -284,6 +284,7 @@ h1{font-size:17px}
 .zone{border-radius:16px;padding:14px;min-height:auto}
 .notes{flex:0 0 auto;max-height:none}
 .note{padding:12px 14px 12px 44px}
+.subtasks{margin-right:0}
 .note-actions{position:static;opacity:1;margin-top:8px;justify-content:flex-end}
 .personal-layout{padding:14px 16px 32px}
 .fab{right:16px;bottom:16px}
